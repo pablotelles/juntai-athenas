@@ -4,19 +4,16 @@ import type { AuthUser, Membership } from "@/types/auth";
 const MOCK_USERS: Record<string, AuthUser> = {
   "admin@juntai.com": {
     id: "u1",
-    type: "user",
     name: "João Paulo",
     email: "admin@juntai.com",
   },
   "staff@juntai.com": {
     id: "u2",
-    type: "user",
     name: "Ana Lima",
     email: "staff@juntai.com",
   },
   "owner@juntai.com": {
     id: "u3",
-    type: "user",
     name: "Carlos Mendes",
     email: "owner@juntai.com",
   },
@@ -86,12 +83,4 @@ export function validateMagicToken(
   } catch {
     return null;
   }
-}
-
-// ── Guest session ───────────────────────────────────────────────────────────
-export function createGuestUser(): AuthUser {
-  return {
-    id: `guest-${Math.random().toString(36).slice(2, 10)}`,
-    type: "guest",
-  };
 }

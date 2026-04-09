@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { AuthUser, AuthState, Membership, UserRole, EntityType } from "@/types/auth";
+import type { AuthState, UserRole, EntityType } from "@/types/auth";
 import { loadAuthState, saveAuthState, clearAuthState } from "@/lib/session";
 import {
   requestMagicLink as mockRequestMagicLink,
@@ -11,10 +11,8 @@ import {
 
 // ── Context value contract ──────────────────────────────────────────────────
 interface AuthContextValue extends AuthState {
-  /** True when user.type === 'user' (authenticated staff/admin) */
+  /** True when there is an active session */
   isAuthenticated: boolean;
-  /** True when user.type === 'guest' */
-  isGuest: boolean;
   /**
    * Request a magic link for the given email.
    * In mock mode, logs the link to the console and returns the URL.
@@ -38,8 +36,7 @@ const AuthCtx = React.createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<AuthState>(() => loadAuthState());
 
-  const isAuthenticated = state.user?.type === "user";
-  const isGuest = state.user?.type === "guest";
+  const isAuthenticated = state.user !== null;
   const isPlatformAdmin =
     isAuthenticated &&
     state.memberships.some(
@@ -88,7 +85,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         ...state,
         isAuthenticated,
-        isGuest,
         isPlatformAdmin,
         requestMagicLink,
         loginWithToken,
