@@ -52,6 +52,18 @@ export type { CheckboxProps } from "./checkbox/Checkbox";
 export { Switch } from "./switch/Switch";
 export type { SwitchProps } from "./switch/Switch";
 export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+  SelectScrollUpButton,
+  SelectScrollDownButton,
+} from "./select/Select";
+export {
   FormField,
   FormControl,
   FormError,

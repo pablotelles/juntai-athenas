@@ -1,5 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/shared/card/Card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/shared/card/Card";
 import { Button } from "@/components/primitives/button/Button";
 
 const meta: Meta<typeof Card> = {
@@ -22,7 +29,9 @@ export const Default: Story = {
         <p className="text-sm text-muted-foreground">Conteúdo do card aqui.</p>
       </CardContent>
       <CardFooter className="gap-2">
-        <Button variant="outline" size="sm">Cancelar</Button>
+        <Button variant="outline" size="sm">
+          Cancelar
+        </Button>
         <Button size="sm">Confirmar</Button>
       </CardFooter>
     </Card>

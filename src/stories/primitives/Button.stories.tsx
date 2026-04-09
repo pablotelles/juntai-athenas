@@ -45,7 +45,9 @@ export const Sizes: Story = {
       <Button size="sm">Small</Button>
       <Button size="md">Medium</Button>
       <Button size="lg">Large</Button>
-      <Button size="icon"><Plus /></Button>
+      <Button size="icon">
+        <Plus />
+      </Button>
     </div>
   ),
 };
@@ -53,8 +55,14 @@ export const Sizes: Story = {
 export const WithIcon: Story = {
   render: () => (
     <div className="flex gap-3">
-      <Button><Plus className="h-4 w-4" />Adicionar</Button>
-      <Button variant="destructive"><Trash2 className="h-4 w-4" />Remover</Button>
+      <Button>
+        <Plus className="h-4 w-4" />
+        Adicionar
+      </Button>
+      <Button variant="destructive">
+        <Trash2 className="h-4 w-4" />
+        Remover
+      </Button>
     </div>
   ),
 };

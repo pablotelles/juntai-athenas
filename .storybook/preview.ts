@@ -37,7 +37,7 @@ const preview: Preview = {
       if (typeof document !== "undefined") {
         document.documentElement.setAttribute(
           "data-theme",
-          theme === "dark" ? "dark" : ""
+          theme === "dark" ? "dark" : "",
         );
         document.documentElement.style.backgroundColor =
           theme === "dark" ? "#0a0a0f" : "#fafafa";

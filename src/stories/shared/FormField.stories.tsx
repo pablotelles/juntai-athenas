@@ -4,7 +4,10 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Formik, Form } from "formik";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { z } from "zod";
-import { FormField, FormSubmitButton } from "@/components/shared/form-field/FormField";
+import {
+  FormField,
+  FormSubmitButton,
+} from "@/components/shared/form-field/FormField";
 import { Input } from "@/components/primitives/input/Input";
 
 const meta: Meta = {
@@ -31,12 +34,23 @@ export const Default: Story = {
         <Form className="flex flex-col gap-4 w-80">
           <FormField name="name" label="Nome" required>
             {({ field, hasError }) => (
-              <Input {...field} value={String(field.value)} error={hasError} placeholder="Seu nome" />
+              <Input
+                {...field}
+                value={String(field.value)}
+                error={hasError}
+                placeholder="Seu nome"
+              />
             )}
           </FormField>
           <FormField name="email" label="Email" required>
             {({ field, hasError }) => (
-              <Input {...field} value={String(field.value)} type="email" error={hasError} placeholder="seu@email.com" />
+              <Input
+                {...field}
+                value={String(field.value)}
+                type="email"
+                error={hasError}
+                placeholder="seu@email.com"
+              />
             )}
           </FormField>
           <FormSubmitButton>Enviar</FormSubmitButton>
@@ -59,12 +73,23 @@ export const WithInitialErrors: Story = {
         <Form className="flex flex-col gap-4 w-80">
           <FormField name="name" label="Nome" required>
             {({ field, hasError }) => (
-              <Input {...field} value={String(field.value)} error={hasError} placeholder="Seu nome" />
+              <Input
+                {...field}
+                value={String(field.value)}
+                error={hasError}
+                placeholder="Seu nome"
+              />
             )}
           </FormField>
           <FormField name="email" label="Email" required>
             {({ field, hasError }) => (
-              <Input {...field} value={String(field.value)} type="email" error={hasError} placeholder="seu@email.com" />
+              <Input
+                {...field}
+                value={String(field.value)}
+                type="email"
+                error={hasError}
+                placeholder="seu@email.com"
+              />
             )}
           </FormField>
           <FormSubmitButton>Enviar</FormSubmitButton>

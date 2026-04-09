@@ -8,7 +8,10 @@ const meta: Meta<typeof Input> = {
   argTypes: {
     error: { control: "boolean" },
     disabled: { control: "boolean" },
-    type: { control: "select", options: ["text", "email", "password", "number"] },
+    type: {
+      control: "select",
+      options: ["text", "email", "password", "number"],
+    },
   },
 };
 
@@ -20,7 +23,11 @@ export const Default: Story = {
 };
 
 export const WithError: Story = {
-  args: { placeholder: "Email inválido", error: true, defaultValue: "nao@email" },
+  args: {
+    placeholder: "Email inválido",
+    error: true,
+    defaultValue: "nao@email",
+  },
 };
 
 export const Disabled: Story = {
@@ -38,7 +45,12 @@ export const AllTypes: Story = {
       <Input type="email" placeholder="Email" />
       <Input type="password" placeholder="Senha" />
       <Input type="number" placeholder="Número" />
-      <Input type="text" error placeholder="Com erro" defaultValue="valor inválido" />
+      <Input
+        type="text"
+        error
+        placeholder="Com erro"
+        defaultValue="valor inválido"
+      />
       <Input type="text" disabled placeholder="Desabilitado" />
     </div>
   ),
