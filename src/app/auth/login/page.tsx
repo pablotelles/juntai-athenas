@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
-import { ArrowRight, Loader2, CheckCircle2, ExternalLink } from "lucide-react";
+import { ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth/AuthProvider";
 import { Button } from "@/components/primitives/button/Button";
 import { Input } from "@/components/primitives/input/Input";
@@ -11,19 +10,11 @@ import { Label } from "@/components/primitives/label/Label";
 type FormState = "idle" | "loading" | "sent" | "error";
 
 export default function LoginPage() {
-  const router = useRouter();
   const { requestMagicLink } = useAuth();
 
   const [email, setEmail] = React.useState("");
   const [formState, setFormState] = React.useState<FormState>("idle");
-  const [mockUrl, setMockUrl] = React.useState<string | null>(null);
   const [errorMsg, setErrorMsg] = React.useState("");
-
-  // Read `next` from URL without useSearchParams() to avoid Suspense requirement
-  const nextPath =
-    typeof window !== "undefined"
-      ? (new URLSearchParams(window.location.search).get("next") ?? "/dashboard")
-      : "/dashboard";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,26 +24,17 @@ export default function LoginPage() {
     setErrorMsg("");
 
     try {
-      const url = await requestMagicLink(email.trim().toLowerCase());
-      setMockUrl(url);
+      await requestMagicLink(email.trim().toLowerCase());
       setFormState("sent");
     } catch {
-      setErrorMsg("Ocorreu um erro. Tente novamente.");
+      setErrorMsg("Ocorreu um erro. Verifique o e-mail e tente novamente.");
       setFormState("error");
     }
   }
 
   function handleReset() {
     setFormState("idle");
-    setMockUrl(null);
     setEmail("");
-  }
-
-  // In dev mode: allow clicking the generated link directly
-  function handleMockLinkClick() {
-    if (!mockUrl) return;
-    const url = new URL(mockUrl);
-    router.push(url.pathname + url.search);
   }
 
   return (
@@ -66,7 +48,7 @@ export default function LoginPage() {
           Juntai Console
         </h1>
         <p className="text-sm text-muted-foreground">
-          Plataforma de gestão de restaurantes
+          Plataforma de gestÃ£o de restaurantes
         </p>
       </div>
 
@@ -111,7 +93,7 @@ export default function LoginPage() {
                 {formState === "loading" ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    Enviando…
+                    Enviandoâ€¦
                   </>
                 ) : (
                   <>
@@ -121,14 +103,6 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
-
-            {/* Mock hint */}
-            <div className="rounded-md border border-border bg-secondary/50 px-3 py-2">
-              <p className="text-[11px] text-muted-foreground">
-                <span className="font-medium">Contas de teste:</span>{" "}
-                admin@juntai.com · staff@juntai.com · owner@juntai.com
-              </p>
-            </div>
           </>
         ) : (
           /* Sent state */
@@ -140,32 +114,14 @@ export default function LoginPage() {
               </h2>
               <p className="text-sm text-muted-foreground">
                 Verifique seu e-mail em{" "}
-                <span className="font-medium text-foreground">{email}</span>{" "}
-                e clique no link para entrar.
+                <span className="font-medium text-foreground">{email}</span> e
+                clique no link para entrar.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Em ambiente de desenvolvimento, o link aparece no terminal do
+                servidor.
               </p>
             </div>
-
-            {/* DEV MODE — show mock link directly */}
-            {mockUrl && (
-              <div className="rounded-md border border-primary/30 bg-primary/5 p-3 space-y-2">
-                <p className="text-[11px] font-medium text-primary uppercase tracking-wide">
-                  DEV MODE — Link gerado
-                </p>
-                <p className="text-[11px] text-muted-foreground break-all">
-                  {mockUrl}
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs"
-                  onClick={handleMockLinkClick}
-                >
-                  <ExternalLink size={12} />
-                  Acessar agora
-                </Button>
-              </div>
-            )}
 
             <Button
               type="button"

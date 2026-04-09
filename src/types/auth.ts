@@ -1,17 +1,33 @@
-export type UserRole = "admin" | "owner" | "staff";
+// Roles do BE (actor roles)
+export type UserRole =
+  | "PLATFORM_ADMIN"
+  | "OWNER"
+  | "MANAGER"
+  | "WAITER"
+  | "SESSION_USER"
+  | "AUTHENTICATED"
+  | "GUEST";
 
-export type EntityType = "platform" | "group" | "restaurant";
+// Tipos de entidade para memberships
+export type EntityType = "platform" | "restaurant" | "location";
+
+// Papel dentro de uma membership
+export type MembershipRole = "admin" | "owner" | "manager" | "waiter";
 
 export interface AuthUser {
   id: string;
-  name?: string;
-  email?: string;
+  type: "guest" | "user";
+  name: string | null;
+  email: string | null;
+  createdAt: string;
 }
 
 export interface Membership {
+  id: string;
+  userId: string;
   entityType: EntityType;
   entityId: string;
-  role: UserRole;
+  role: MembershipRole;
 }
 
 export interface AuthState {

@@ -1,13 +1,15 @@
 "use client";
 
 import * as React from "react";
-import type { AuthState, UserRole, EntityType } from "@/types/auth";
+import type {
+  AuthState,
+  AuthUser,
+  Membership,
+  MembershipRole,
+  EntityType,
+} from "@/types/auth";
 import { loadAuthState, saveAuthState, clearAuthState } from "@/lib/session";
-import {
-  requestMagicLink as mockRequestMagicLink,
-  validateMagicToken,
-  MOCK_MEMBERSHIPS,
-} from "@/lib/mock-auth";
+import { apiClient } from "@/lib/api";
 
 // ── Context value contract ──────────────────────────────────────────────────
 interface AuthContextValue extends AuthState {
@@ -15,17 +17,22 @@ interface AuthContextValue extends AuthState {
   isAuthenticated: boolean;
   /**
    * Request a magic link for the given email.
-   * In mock mode, logs the link to the console and returns the URL.
+   * Calls POST /auth/magic-link on the BE — the link is sent by e-mail (console in dev).
    */
-  requestMagicLink: (email: string) => Promise<string>;
+  requestMagicLink: (email: string) => Promise<void>;
   /**
-   * Validate a magic link token and create a session.
+   * Validate a magic link — receives the code + email from the callback URL,
+   * calls POST /auth/verify and hydrates the session.
    * Returns true on success.
    */
-  loginWithToken: (token: string) => Promise<boolean>;
+  loginWithToken: (email: string, code: string) => Promise<boolean>;
   logout: () => void;
   /** Check if the current user has a specific role in an entity */
-  hasRole: (entityType: EntityType, entityId: string, role: UserRole) => boolean;
+  hasRole: (
+    entityType: EntityType,
+    entityId: string,
+    role: MembershipRole,
+  ) => boolean;
   /** True if user has the platform admin role */
   isPlatformAdmin: boolean;
 }
@@ -43,34 +50,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       (m) => m.entityType === "platform" && m.role === "admin",
     );
 
-  async function requestMagicLink(email: string): Promise<string> {
-    return mockRequestMagicLink(email);
+  async function requestMagicLink(email: string): Promise<void> {
+    await apiClient().post("/auth/magic-link", { email });
   }
 
-  async function loginWithToken(token: string): Promise<boolean> {
-    const result = validateMagicToken(token);
-    if (!result) return false;
+  async function loginWithToken(email: string, code: string): Promise<boolean> {
+    try {
+      const { token } = await apiClient().post<{
+        token: string;
+        user: AuthUser;
+      }>("/auth/verify", { email, code });
+      const { user, memberships } = await apiClient(token).get<{
+        user: AuthUser;
+        memberships: Membership[];
+      }>("/auth/me");
 
-    const { user, sessionToken } = result;
-    const newState: AuthState = {
-      user,
-      sessionToken,
-      memberships: MOCK_MEMBERSHIPS[user.id] ?? [],
-    };
-    setState(newState);
-    saveAuthState(newState);
-    return true;
+      const newState: AuthState = { user, sessionToken: token, memberships };
+      setState(newState);
+      saveAuthState(newState);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   function logout(): void {
+    const token = state.sessionToken;
     clearAuthState();
     setState({ user: null, sessionToken: null, memberships: [] });
+    if (token) {
+      apiClient(token)
+        .delete("/auth/session")
+        .catch(() => undefined);
+    }
   }
 
   function hasRole(
     entityType: EntityType,
     entityId: string,
-    role: UserRole,
+    role: MembershipRole,
   ): boolean {
     return state.memberships.some(
       (m) =>

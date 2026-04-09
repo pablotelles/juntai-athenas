@@ -15,15 +15,18 @@ export default function AuthCallbackPage() {
   const [state, setState] = React.useState<CallbackState>("validating");
 
   React.useEffect(() => {
-    // Read token from window.location to avoid useSearchParams() Suspense issues
-    const token = new URLSearchParams(window.location.search).get("token");
+    // Read email + code from the magic link URL
+    // Format: /auth/callback?email=<email>&code=<6-digit-code>
+    const params = new URLSearchParams(window.location.search);
+    const email = params.get("email");
+    const code = params.get("code");
 
-    if (!token) {
+    if (!email || !code) {
       setState("error");
       return;
     }
 
-    loginWithToken(token).then((ok) => {
+    loginWithToken(email, code).then((ok) => {
       if (ok) {
         setState("success");
         setTimeout(() => router.replace("/dashboard"), 800);
