@@ -1,62 +1,42 @@
 "use client";
 
 import * as React from "react";
-import {
-  LayoutDashboard,
-  UtensilsCrossed,
-  Users,
-  CreditCard,
-  ShoppingBag,
-  BookOpen,
-  LayoutList,
-  BarChart2,
-  Settings,
-  ChevronLeft,
-} from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { PageLayout, PageContent } from "@/components/compositions/page-layout/PageLayout";
 import { Sidebar } from "@/components/compositions/sidebar/Sidebar";
+import { AppHeader } from "@/components/compositions/app-header/AppHeader";
 import { Avatar } from "@/components/shared/avatar/Avatar";
 import { cn } from "@/lib/cn";
+import { useActiveContext } from "@/contexts/active-context/ActiveContextProvider";
+import { NAV_ITEMS } from "@/config/navigation";
 import type { NavSection } from "@/components/compositions/sidebar/Sidebar";
-
-const adminSections: NavSection[] = [
-  {
-    title: "Admin",
-    items: [
-      { label: "Dashboard", href: "/admin", icon: LayoutDashboard, exact: true },
-      { label: "Restaurantes", href: "/admin/restaurants", icon: UtensilsCrossed },
-      { label: "Usuários", href: "/admin/users", icon: Users },
-      { label: "Financeiro", href: "/admin/finance", icon: CreditCard },
-    ],
-  },
-  {
-    title: "Restaurante",
-    items: [
-      { label: "Dashboard", href: "/restaurant", icon: LayoutDashboard, exact: true },
-      { label: "Pedidos", href: "/restaurant/orders", icon: ShoppingBag },
-      { label: "Cardápio", href: "/restaurant/menu", icon: BookOpen },
-      { label: "Mesas", href: "/restaurant/tables", icon: LayoutList },
-      { label: "Financeiro", href: "/restaurant/finance", icon: CreditCard },
-      { label: "Relatórios", href: "/restaurant/reports", icon: BarChart2 },
-    ],
-  },
-  {
-    title: "Sistema",
-    items: [
-      { label: "Configurações", href: "/settings", icon: Settings },
-    ],
-  },
-];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = React.useState(false);
+  const { context } = useActiveContext();
 
+  // ── Dynamic nav: filter by active context ──────────────────────────────────
+  const filtered = NAV_ITEMS.filter((item) =>
+    item.contexts.includes(context.type),
+  );
+
+  const mainItems = filtered.filter((i) => i.href !== "/settings");
+  const systemItems = filtered.filter((i) => i.href === "/settings");
+
+  const sections: NavSection[] = [
+    { items: mainItems },
+    ...(systemItems.length > 0
+      ? [{ title: "Sistema", items: systemItems }]
+      : []),
+  ].filter((s) => s.items.length > 0);
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <PageLayout
       sidebar={
         <div className="relative h-full">
           <Sidebar
-            sections={adminSections}
+            sections={sections}
             collapsed={collapsed}
             logo={
               collapsed ? (
@@ -112,6 +92,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       }
     >
+      {/* Global header: breadcrumb | ⌘K | ContextSwitcher | UserMenu */}
+      <AppHeader />
       <PageContent>{children}</PageContent>
     </PageLayout>
   );

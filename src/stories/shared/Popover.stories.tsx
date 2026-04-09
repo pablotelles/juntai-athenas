@@ -25,7 +25,9 @@ export const Default: Story = {
           <Button variant="outline">Abrir popover</Button>
         </PopoverTrigger>
         <PopoverContent className="w-64 p-4">
-          <Text variant="h4" className="mb-1">Título do popover</Text>
+          <Text variant="h4" className="mb-1">
+            Título do popover
+          </Text>
           <Text variant="sm" muted>
             Conteúdo explicativo. Pode conter qualquer elemento React.
           </Text>
@@ -47,8 +49,12 @@ export const WithActions: Story = {
             Tem certeza que deseja continuar?
           </Text>
           <div className="flex gap-2 justify-end">
-            <Button variant="outline" size="sm">Cancelar</Button>
-            <Button variant="destructive" size="sm">Confirmar</Button>
+            <Button variant="outline" size="sm">
+              Cancelar
+            </Button>
+            <Button variant="destructive" size="sm">
+              Confirmar
+            </Button>
           </div>
         </PopoverContent>
       </Popover>

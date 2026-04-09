@@ -64,13 +64,15 @@ const restaurantOptions: ComboboxOption[] = [
     value: "r1",
     label: "Cantina do Paulo",
     description: "Italiana · São Paulo, SP",
-    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=64&h=64&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=64&h=64&fit=crop",
   },
   {
     value: "r2",
     label: "Burguer Factory",
     description: "Hambúrgueres · Rio de Janeiro, RJ",
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=64&h=64&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=64&h=64&fit=crop",
   },
   {
     value: "r3",
@@ -82,7 +84,8 @@ const restaurantOptions: ComboboxOption[] = [
     value: "r4",
     label: "Pizzaria Bella",
     description: "Italiana · Belo Horizonte, MG",
-    image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=64&h=64&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=64&h=64&fit=crop",
   },
 ];
 
@@ -91,13 +94,15 @@ const menuOptions: ComboboxOption[] = [
     value: "m1",
     label: "Pizza Margherita",
     description: "R$ 49,90 · Pizzas",
-    image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=64&h=64&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=64&h=64&fit=crop",
   },
   {
     value: "m2",
     label: "X-Burguer Clássico",
     description: "R$ 32,00 · Lanches",
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=64&h=64&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=64&h=64&fit=crop",
   },
   {
     value: "m3",

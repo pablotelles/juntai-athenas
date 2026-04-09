@@ -133,8 +133,12 @@ export const WithRadioGroup: Story = {
           <DropdownMenuContent className="w-40">
             <DropdownMenuRadioGroup value={status} onValueChange={setStatus}>
               <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="active">Ativo</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="inactive">Inativo</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="active">
+                Ativo
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="inactive">
+                Inativo
+              </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>

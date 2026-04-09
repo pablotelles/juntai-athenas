@@ -27,7 +27,12 @@ type Story = StoryObj<typeof Sidebar>;
 const restaurantSections: NavSection[] = [
   {
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
+      {
+        label: "Dashboard",
+        href: "/dashboard",
+        icon: LayoutDashboard,
+        exact: true,
+      },
       { label: "Pedidos", href: "/orders", icon: ShoppingBag, badge: 5 },
       { label: "Cardápio", href: "/menu", icon: UtensilsCrossed },
       { label: "Financeiro", href: "/finance", icon: CreditCard },
@@ -46,15 +51,26 @@ const restaurantSections: NavSection[] = [
 const adminSections: NavSection[] = [
   {
     items: [
-      { label: "Dashboard", href: "/admin", icon: LayoutDashboard, exact: true },
-      { label: "Restaurantes", href: "/admin/restaurants", icon: UtensilsCrossed },
+      {
+        label: "Dashboard",
+        href: "/admin",
+        icon: LayoutDashboard,
+        exact: true,
+      },
+      {
+        label: "Restaurantes",
+        href: "/admin/restaurants",
+        icon: UtensilsCrossed,
+      },
       { label: "Usuários", href: "/admin/users", icon: Users },
       { label: "Financeiro", href: "/admin/finance", icon: CreditCard },
     ],
   },
   {
     title: "Sistema",
-    items: [{ label: "Configurações", href: "/admin/settings", icon: Settings }],
+    items: [
+      { label: "Configurações", href: "/admin/settings", icon: Settings },
+    ],
   },
 ];
 
@@ -64,8 +80,12 @@ const footer = (
   <div className="flex items-center gap-2 p-2">
     <Avatar fallback="JP" size="sm" />
     <div className="flex flex-col min-w-0">
-      <span className="text-xs font-medium text-sidebar-fg-active truncate">João Paulo</span>
-      <span className="text-[10px] text-sidebar-fg truncate">joao@juntai.com</span>
+      <span className="text-xs font-medium text-sidebar-fg-active truncate">
+        João Paulo
+      </span>
+      <span className="text-[10px] text-sidebar-fg truncate">
+        joao@juntai.com
+      </span>
     </div>
   </div>
 );
@@ -89,7 +109,12 @@ export const AdminGlobal: Story = {
 export const Collapsed: Story = {
   render: () => (
     <div className="h-screen">
-      <Sidebar sections={restaurantSections} logo={logo} footer={footer} collapsed />
+      <Sidebar
+        sections={restaurantSections}
+        logo={logo}
+        footer={footer}
+        collapsed
+      />
     </div>
   ),
 };

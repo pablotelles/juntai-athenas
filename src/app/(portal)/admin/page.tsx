@@ -1,13 +1,13 @@
 import { Header } from "@/components/compositions/header/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/shared/card/Card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/shared/card/Card";
 import { Badge } from "@/components/primitives/badge/Badge";
 import { Text } from "@/components/primitives/text/Text";
-import {
-  UtensilsCrossed,
-  Users,
-  CreditCard,
-  TrendingUp,
-} from "lucide-react";
+import { UtensilsCrossed, Users, CreditCard, TrendingUp } from "lucide-react";
 
 const stats = [
   {

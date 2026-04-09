@@ -37,11 +37,15 @@ export const Disabled: Story = {
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <Switch id="sw3" disabled />
-        <Label htmlFor="sw3" className="opacity-50">Desabilitado</Label>
+        <Label htmlFor="sw3" className="opacity-50">
+          Desabilitado
+        </Label>
       </div>
       <div className="flex items-center gap-2">
         <Switch id="sw4" disabled defaultChecked />
-        <Label htmlFor="sw4" className="opacity-50">Desabilitado ativo</Label>
+        <Label htmlFor="sw4" className="opacity-50">
+          Desabilitado ativo
+        </Label>
       </div>
     </div>
   ),

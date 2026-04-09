@@ -50,9 +50,7 @@ export const WithBreadcrumb: Story = {
         <span className="text-foreground font-medium">Editar item</span>
       </nav>
     ),
-    actions: (
-      <Button size="sm">Salvar alterações</Button>
-    ),
+    actions: <Button size="sm">Salvar alterações</Button>,
   },
 };
 
@@ -62,9 +60,14 @@ export const WithBadge: Story = {
       <header className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border bg-surface shrink-0">
         <div className="flex flex-col gap-0.5 min-w-0">
           <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            Pedidos <Badge variant="warning" dot>12 pendentes</Badge>
+            Pedidos{" "}
+            <Badge variant="warning" dot>
+              12 pendentes
+            </Badge>
           </h1>
-          <p className="text-sm text-muted-foreground">Atualizados em tempo real</p>
+          <p className="text-sm text-muted-foreground">
+            Atualizados em tempo real
+          </p>
         </div>
         <Button size="sm">Ver todos</Button>
       </header>

@@ -52,7 +52,10 @@ export interface ComboboxProps {
    * Custom renderer for each option in the list.
    * Receives the option and whether it is currently selected.
    */
-  renderOption?: (option: ComboboxOption, isSelected: boolean) => React.ReactNode;
+  renderOption?: (
+    option: ComboboxOption,
+    isSelected: boolean,
+  ) => React.ReactNode;
   /**
    * Custom renderer for the selected value shown in the trigger.
    * Receives the currently selected option.
@@ -120,9 +123,7 @@ function DefaultSelectedRenderer({ option }: { option: ComboboxOption }) {
   const hasImage = option.image !== undefined;
   return (
     <div className="flex items-center gap-2 min-w-0">
-      {hasImage && (
-        <ImageAvatar src={option.image!} label={option.label} />
-      )}
+      {hasImage && <ImageAvatar src={option.image!} label={option.label} />}
       <span className="truncate text-foreground text-sm">{option.label}</span>
     </div>
   );
@@ -298,7 +299,10 @@ export function Combobox({
                     {renderOption ? (
                       renderOption(option, isSelected)
                     ) : (
-                      <DefaultOptionRenderer option={option} isSelected={isSelected} />
+                      <DefaultOptionRenderer
+                        option={option}
+                        isSelected={isSelected}
+                      />
                     )}
                   </button>
                 );

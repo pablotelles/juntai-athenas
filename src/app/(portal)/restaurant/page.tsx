@@ -1,13 +1,13 @@
 import { Header } from "@/components/compositions/header/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/shared/card/Card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/shared/card/Card";
 import { Badge } from "@/components/primitives/badge/Badge";
 import { Text } from "@/components/primitives/text/Text";
-import {
-  ShoppingBag,
-  CreditCard,
-  Star,
-  Clock,
-} from "lucide-react";
+import { ShoppingBag, CreditCard, Star, Clock } from "lucide-react";
 
 const stats = [
   {
@@ -41,13 +41,36 @@ const stats = [
 ];
 
 const recentOrders = [
-  { id: "#1042", customer: "Mesa 4", items: "2x Pizza, 1x Suco", status: "preparing" },
-  { id: "#1041", customer: "Delivery", items: "1x X-Burguer, 2x Batata", status: "ready" },
-  { id: "#1040", customer: "Mesa 7", items: "3x Temaki, 2x Refrigerante", status: "delivered" },
-  { id: "#1039", customer: "Delivery", items: "1x Combo Família", status: "delivered" },
+  {
+    id: "#1042",
+    customer: "Mesa 4",
+    items: "2x Pizza, 1x Suco",
+    status: "preparing",
+  },
+  {
+    id: "#1041",
+    customer: "Delivery",
+    items: "1x X-Burguer, 2x Batata",
+    status: "ready",
+  },
+  {
+    id: "#1040",
+    customer: "Mesa 7",
+    items: "3x Temaki, 2x Refrigerante",
+    status: "delivered",
+  },
+  {
+    id: "#1039",
+    customer: "Delivery",
+    items: "1x Combo Família",
+    status: "delivered",
+  },
 ];
 
-const statusMap: Record<string, { label: string; variant: "warning" | "info" | "success" | "secondary" }> = {
+const statusMap: Record<
+  string,
+  { label: string; variant: "warning" | "info" | "success" | "secondary" }
+> = {
   preparing: { label: "Preparando", variant: "warning" },
   ready: { label: "Pronto", variant: "info" },
   delivered: { label: "Entregue", variant: "success" },

@@ -46,11 +46,15 @@ export const Disabled: Story = {
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <Checkbox id="dis1" disabled />
-        <Label htmlFor="dis1" className="opacity-50">Desabilitado</Label>
+        <Label htmlFor="dis1" className="opacity-50">
+          Desabilitado
+        </Label>
       </div>
       <div className="flex items-center gap-2">
         <Checkbox id="dis2" disabled defaultChecked />
-        <Label htmlFor="dis2" className="opacity-50">Desabilitado marcado</Label>
+        <Label htmlFor="dis2" className="opacity-50">
+          Desabilitado marcado
+        </Label>
       </div>
     </div>
   ),

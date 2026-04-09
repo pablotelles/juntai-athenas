@@ -27,16 +27,24 @@ export const Sides: Story = {
   render: () => (
     <div className="flex items-center justify-center gap-8 p-16">
       <Tooltip content="Acima" side="top">
-        <Button variant="outline" size="sm">Top</Button>
+        <Button variant="outline" size="sm">
+          Top
+        </Button>
       </Tooltip>
       <Tooltip content="Direita" side="right">
-        <Button variant="outline" size="sm">Right</Button>
+        <Button variant="outline" size="sm">
+          Right
+        </Button>
       </Tooltip>
       <Tooltip content="Abaixo" side="bottom">
-        <Button variant="outline" size="sm">Bottom</Button>
+        <Button variant="outline" size="sm">
+          Bottom
+        </Button>
       </Tooltip>
       <Tooltip content="Esquerda" side="left">
-        <Button variant="outline" size="sm">Left</Button>
+        <Button variant="outline" size="sm">
+          Left
+        </Button>
       </Tooltip>
     </div>
   ),

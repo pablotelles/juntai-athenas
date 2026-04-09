@@ -34,8 +34,12 @@ export const Muted: Story = {
   render: () => (
     <div className="flex flex-col gap-2">
       <Text variant="body">Texto normal</Text>
-      <Text variant="body" muted>Texto muted</Text>
-      <Text variant="sm" muted>Small muted</Text>
+      <Text variant="body" muted>
+        Texto muted
+      </Text>
+      <Text variant="sm" muted>
+        Small muted
+      </Text>
     </div>
   ),
 };
