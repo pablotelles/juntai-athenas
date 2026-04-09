@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Mail, ArrowRight, Loader2, CheckCircle2, ExternalLink } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowRight, Loader2, CheckCircle2, ExternalLink } from "lucide-react";
 import { useAuth } from "@/contexts/auth/AuthProvider";
 import { Button } from "@/components/primitives/button/Button";
 import { Input } from "@/components/primitives/input/Input";
@@ -12,7 +12,6 @@ type FormState = "idle" | "loading" | "sent" | "error";
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { requestMagicLink } = useAuth();
 
   const [email, setEmail] = React.useState("");
@@ -20,7 +19,11 @@ export default function LoginPage() {
   const [mockUrl, setMockUrl] = React.useState<string | null>(null);
   const [errorMsg, setErrorMsg] = React.useState("");
 
-  const nextPath = searchParams.get("next") ?? "/dashboard";
+  // Read `next` from URL without useSearchParams() to avoid Suspense requirement
+  const nextPath =
+    typeof window !== "undefined"
+      ? (new URLSearchParams(window.location.search).get("next") ?? "/dashboard")
+      : "/dashboard";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

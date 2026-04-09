@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Loader2, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/auth/AuthProvider";
 import { Button } from "@/components/primitives/button/Button";
@@ -10,13 +10,13 @@ type CallbackState = "validating" | "success" | "error";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { loginWithToken } = useAuth();
 
   const [state, setState] = React.useState<CallbackState>("validating");
 
   React.useEffect(() => {
-    const token = searchParams.get("token");
+    // Read token from window.location to avoid useSearchParams() Suspense issues
+    const token = new URLSearchParams(window.location.search).get("token");
 
     if (!token) {
       setState("error");
@@ -26,13 +26,11 @@ export default function AuthCallbackPage() {
     loginWithToken(token).then((ok) => {
       if (ok) {
         setState("success");
-        // Small delay so the user sees the success state
         setTimeout(() => router.replace("/dashboard"), 800);
       } else {
         setState("error");
       }
     });
-    // Run only once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
