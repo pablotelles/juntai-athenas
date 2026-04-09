@@ -36,7 +36,7 @@ export function Sidebar({
   collapsed = false,
   className,
 }: SidebarProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
 
   return (
     <aside
