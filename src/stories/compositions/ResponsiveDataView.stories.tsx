@@ -17,7 +17,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/shared/dropdown-menu/DropdownMenu";
-import type { ColumnDef, RowAction } from "@/components/compositions/data-table/DataTable";
+import type {
+  ColumnDef,
+  RowAction,
+} from "@/components/compositions/data-table/DataTable";
 import type { BadgeVariant } from "@/components/primitives/badge/Badge";
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
@@ -46,11 +49,46 @@ const STATUS_VARIANT: Record<Order["status"], BadgeVariant> = {
 };
 
 const MOCK_ORDERS: Order[] = [
-  { id: "ORD-001", customer: "Ana Lima", table: "Mesa 3", total: "R$ 89,90", items: 3, status: "pending" },
-  { id: "ORD-002", customer: "Bruno Sousa", table: "Mesa 7", total: "R$ 142,00", items: 5, status: "preparing" },
-  { id: "ORD-003", customer: "Carla Dias", table: "Mesa 1", total: "R$ 55,50", items: 2, status: "delivered" },
-  { id: "ORD-004", customer: "Diego Melo", table: "Mesa 12", total: "R$ 22,00", items: 1, status: "cancelled" },
-  { id: "ORD-005", customer: "Eva Torres", table: "Mesa 5", total: "R$ 210,30", items: 7, status: "preparing" },
+  {
+    id: "ORD-001",
+    customer: "Ana Lima",
+    table: "Mesa 3",
+    total: "R$ 89,90",
+    items: 3,
+    status: "pending",
+  },
+  {
+    id: "ORD-002",
+    customer: "Bruno Sousa",
+    table: "Mesa 7",
+    total: "R$ 142,00",
+    items: 5,
+    status: "preparing",
+  },
+  {
+    id: "ORD-003",
+    customer: "Carla Dias",
+    table: "Mesa 1",
+    total: "R$ 55,50",
+    items: 2,
+    status: "delivered",
+  },
+  {
+    id: "ORD-004",
+    customer: "Diego Melo",
+    table: "Mesa 12",
+    total: "R$ 22,00",
+    items: 1,
+    status: "cancelled",
+  },
+  {
+    id: "ORD-005",
+    customer: "Eva Torres",
+    table: "Mesa 5",
+    total: "R$ 210,30",
+    items: 7,
+    status: "preparing",
+  },
 ];
 
 // ── Shared columns for DataTable ──────────────────────────────────────────────
@@ -84,7 +122,9 @@ const COLUMNS: ColumnDef<Order>[] = [
     key: "total",
     header: "Total",
     align: "right",
-    cell: (row) => <span className="font-medium tabular-nums">{row.total}</span>,
+    cell: (row) => (
+      <span className="font-medium tabular-nums">{row.total}</span>
+    ),
   },
   {
     key: "status",
@@ -223,11 +263,7 @@ export const ForceCard: Story = {
 /** **Loading** skeleton state in card mode */
 export const LoadingCard: Story = {
   render: () => (
-    <CardList
-      data={[] as Order[]}
-      renderCard={() => null}
-      isLoading
-    />
+    <CardList data={[] as Order[]} renderCard={() => null} isLoading />
   ),
 };
 
@@ -261,7 +297,11 @@ export const DataCardShowcase: Story = {
             <Button variant="ghost" size="sm">
               <Pencil size={14} className="mr-1" /> Editar
             </Button>
-            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive"
+            >
               <Trash2 size={14} className="mr-1" /> Cancelar
             </Button>
           </>

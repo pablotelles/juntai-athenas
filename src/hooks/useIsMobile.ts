@@ -29,7 +29,9 @@ const MD_BREAKPOINT = 768;
  * SSR-safe: defaults to `"desktop"` on the server.
  */
 export function useBreakpoint(): "mobile" | "tablet" | "desktop" {
-  const [bp, setBp] = React.useState<"mobile" | "tablet" | "desktop">("desktop");
+  const [bp, setBp] = React.useState<"mobile" | "tablet" | "desktop">(
+    "desktop",
+  );
 
   React.useEffect(() => {
     function calculate() {

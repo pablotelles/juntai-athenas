@@ -2,7 +2,10 @@
 
 import * as React from "react";
 import { ChevronLeft, X } from "lucide-react";
-import { PageLayout, PageContent } from "@/components/compositions/page-layout/PageLayout";
+import {
+  PageLayout,
+  PageContent,
+} from "@/components/compositions/page-layout/PageLayout";
 import { Sidebar } from "@/components/compositions/sidebar/Sidebar";
 import { AppHeader } from "@/components/compositions/app-header/AppHeader";
 import { Avatar } from "@/components/shared/avatar/Avatar";
@@ -166,4 +169,3 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </PageLayout>
   );
 }
-

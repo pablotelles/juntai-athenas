@@ -119,4 +119,3 @@ export const TabletLayout: Story = {
   },
   render: Default.render,
 };
-

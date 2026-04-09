@@ -49,12 +49,14 @@ export interface StackProps extends React.HTMLAttributes<HTMLDivElement> {
 /**
  * Vertical flex container with a consistent gap scale.
  */
-export function Stack({ gap = "md", className, children, ...props }: StackProps) {
+export function Stack({
+  gap = "md",
+  className,
+  children,
+  ...props
+}: StackProps) {
   return (
-    <div
-      className={cn("flex flex-col", STACK_GAP[gap], className)}
-      {...props}
-    >
+    <div className={cn("flex flex-col", STACK_GAP[gap], className)} {...props}>
       {children}
     </div>
   );
@@ -127,7 +129,9 @@ export function Section({
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-0.5 min-w-0">
             {title && (
-              <h2 className="text-base font-semibold text-foreground">{title}</h2>
+              <h2 className="text-base font-semibold text-foreground">
+                {title}
+              </h2>
             )}
             {description && (
               <p className="text-sm text-muted-foreground">{description}</p>
@@ -169,11 +173,7 @@ export function FormGrid({
 }: FormGridProps) {
   return (
     <div
-      className={cn(
-        "grid grid-cols-1 gap-4",
-        FORM_COLS[cols],
-        className,
-      )}
+      className={cn("grid grid-cols-1 gap-4", FORM_COLS[cols], className)}
       {...props}
     >
       {children}

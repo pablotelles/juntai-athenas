@@ -14,7 +14,7 @@ export function useUsers(params: ListUsersParams = {}) {
     context.type === "restaurant"
       ? {
           restaurantId: context.restaurantId,
-          ...(("locationId" in context && context.locationId)
+          ...("locationId" in context && context.locationId
             ? { locationId: (context as { locationId: string }).locationId }
             : {}),
         }

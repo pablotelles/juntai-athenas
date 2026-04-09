@@ -32,7 +32,9 @@ export function ResponsiveDataView({
   const isMobile = useIsMobile();
   const showCard = forceView ? forceView === "card" : isMobile;
 
-  return <div className={cn("w-full", className)}>{showCard ? card : table}</div>;
+  return (
+    <div className={cn("w-full", className)}>{showCard ? card : table}</div>
+  );
 }
 
 // ─── CardList ─────────────────────────────────────────────────────────────────

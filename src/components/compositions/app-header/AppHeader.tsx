@@ -51,4 +51,3 @@ export function AppHeader({ className, onMenuToggle }: AppHeaderProps) {
     </header>
   );
 }
-

@@ -1,7 +1,13 @@
 "use client";
 
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { PageContainer, Stack, Grid, Section, FormGrid } from "@/components/compositions/layout/Layout";
+import {
+  PageContainer,
+  Stack,
+  Grid,
+  Section,
+  FormGrid,
+} from "@/components/compositions/layout/Layout";
 import { Input } from "@/components/primitives/input/Input";
 import { Button } from "@/components/primitives/button/Button";
 import {
@@ -25,7 +31,13 @@ type Story = StoryObj;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function Placeholder({ label, className }: { label: string; className?: string }) {
+function Placeholder({
+  label,
+  className,
+}: {
+  label: string;
+  className?: string;
+}) {
   return (
     <div
       className={`flex items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted text-muted-foreground text-sm py-6 px-4 ${className ?? ""}`}
@@ -200,11 +212,15 @@ export const FormGridStory: Story = {
             <Input placeholder="boteco-da-praca" />
           </div>
           <div className="flex flex-col gap-1.5 md:col-span-2">
-            <label className="text-sm font-medium text-foreground">Endereço</label>
+            <label className="text-sm font-medium text-foreground">
+              Endereço
+            </label>
             <Input placeholder="Rua das Flores, 123" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-foreground">Cidade</label>
+            <label className="text-sm font-medium text-foreground">
+              Cidade
+            </label>
             <Input placeholder="São Paulo" />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -235,14 +251,21 @@ export const FormGrid3Cols: Story = {
   render: () => (
     <div className="p-8 bg-background max-w-3xl">
       <FormGrid cols={3}>
-        {["Nome", "E-mail", "Telefone", "Cargo", "Filial", "Data de entrada"].map(
-          (label) => (
-            <div key={label} className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground">{label}</label>
-              <Input placeholder={label} />
-            </div>
-          ),
-        )}
+        {[
+          "Nome",
+          "E-mail",
+          "Telefone",
+          "Cargo",
+          "Filial",
+          "Data de entrada",
+        ].map((label) => (
+          <div key={label} className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-foreground">
+              {label}
+            </label>
+            <Input placeholder={label} />
+          </div>
+        ))}
       </FormGrid>
     </div>
   ),
@@ -275,7 +298,9 @@ export const FullPageComposition: Story = {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {stat.value}
+                    </p>
                   </CardContent>
                 </Card>
               ))}
