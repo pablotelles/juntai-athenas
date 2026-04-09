@@ -1,12 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  Globe,
-  UtensilsCrossed,
-  ChevronDown,
-  Check,
-} from "lucide-react";
+import { Globe, UtensilsCrossed, ChevronDown, Check } from "lucide-react";
 import {
   Popover,
   PopoverTrigger,
@@ -22,9 +17,14 @@ import {
 // Helpers
 // ─────────────────────────────────────────────────────────────
 
-function resolveLabel(ctx: ActiveContextValue, restaurants: { id: string; name: string }[]): string {
+function resolveLabel(
+  ctx: ActiveContextValue,
+  restaurants: { id: string; name: string }[],
+): string {
   if (ctx.type === "platform") return "Plataforma";
-  return restaurants.find((r) => r.id === ctx.restaurantId)?.name ?? ctx.restaurantId;
+  return (
+    restaurants.find((r) => r.id === ctx.restaurantId)?.name ?? ctx.restaurantId
+  );
 }
 
 function ContextIcon({

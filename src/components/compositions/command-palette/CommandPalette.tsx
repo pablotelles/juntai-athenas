@@ -2,12 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import {
-  Search,
-  Globe,
-  UtensilsCrossed,
-  ArrowRight,
-} from "lucide-react";
+import { Search, Globe, UtensilsCrossed, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 import {
   useActiveContext,

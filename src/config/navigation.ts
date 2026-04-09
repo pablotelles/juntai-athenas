@@ -13,6 +13,7 @@ import {
   CreditCard,
   BarChart2,
   Settings,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -46,6 +47,12 @@ export const NAV_ITEMS: NavConfigItem[] = [
     href: "/restaurants",
     icon: UtensilsCrossed,
     contexts: ["platform"],
+  },
+  {
+    label: "Usuários",
+    href: "/users",
+    icon: Users,
+    contexts: ["platform", "restaurant"],
   },
   {
     label: "Pedidos",

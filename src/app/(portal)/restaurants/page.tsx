@@ -1,20 +1,18 @@
-import { ActiveContextBanner } from "@/components/compositions/context-display/ActiveContextBanner";
+"use client";
+
 import { Text } from "@/components/primitives/text/Text";
+import { RestaurantsView } from "@/features/restaurants/components/RestaurantsView";
 
 export default function RestaurantsPage() {
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
+    <div className="flex flex-col gap-6">
       <div>
         <Text variant="h2">Restaurantes</Text>
         <Text variant="sm" muted className="mt-1">
-          Lista de restaurantes da plataforma ou do grupo.
+          Todos os restaurantes cadastrados na plataforma.
         </Text>
       </div>
-      <ActiveContextBanner />
-      <Text variant="sm" muted>
-        Esta página está em construção. Exibirá todos os restaurantes do
-        contexto ativo (platform → todos, group → do grupo).
-      </Text>
+      <RestaurantsView />
     </div>
   );
 }

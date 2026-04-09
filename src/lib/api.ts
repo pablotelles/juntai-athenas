@@ -64,5 +64,17 @@ export function apiClient(token?: string | null) {
         headers: buildHeaders(token, headers),
       }).then((r) => handleResponse<T>(r));
     },
+
+    put<T>(
+      path: string,
+      body: unknown,
+      headers?: Record<string, string>,
+    ): Promise<T> {
+      return fetch(`${BASE_URL}${path}`, {
+        method: "PUT",
+        headers: buildHeaders(token, headers),
+        body: JSON.stringify(body),
+      }).then((r) => handleResponse<T>(r));
+    },
   };
 }
