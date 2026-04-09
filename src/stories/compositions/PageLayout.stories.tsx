@@ -52,29 +52,29 @@ const navSections: NavSection[] = [
   },
 ];
 
+const sidebarNode = (
+  <Sidebar
+    sections={navSections}
+    logo={<span className="text-white font-bold text-lg">Juntai</span>}
+    footer={
+      <div className="flex items-center gap-2 p-2">
+        <Avatar fallback="JP" size="sm" />
+        <div className="flex flex-col min-w-0">
+          <span className="text-xs font-medium text-sidebar-fg-active truncate">
+            João Paulo
+          </span>
+          <span className="text-[10px] text-sidebar-fg truncate">
+            joao@juntai.com
+          </span>
+        </div>
+      </div>
+    }
+  />
+);
+
 export const Default: Story = {
   render: () => (
-    <PageLayout
-      sidebar={
-        <Sidebar
-          sections={navSections}
-          logo={<span className="text-white font-bold text-lg">Juntai</span>}
-          footer={
-            <div className="flex items-center gap-2 p-2">
-              <Avatar fallback="JP" size="sm" />
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs font-medium text-sidebar-fg-active truncate">
-                  João Paulo
-                </span>
-                <span className="text-[10px] text-sidebar-fg truncate">
-                  joao@juntai.com
-                </span>
-              </div>
-            </div>
-          }
-        />
-      }
-    >
+    <PageLayout sidebar={sidebarNode}>
       <Header
         title="Pedidos"
         description="Gerencie os pedidos em tempo real"
@@ -90,3 +90,33 @@ export const Default: Story = {
     </PageLayout>
   ),
 };
+
+/** Mobile layout — no sidebar, content fills full width */
+export const MobileLayout: Story = {
+  parameters: {
+    viewport: { defaultViewport: "mobile" },
+  },
+  render: () => (
+    <PageLayout sidebar={null}>
+      <Header
+        title="Pedidos"
+        description="Gerencie os pedidos em tempo real"
+        actions={<Button size="sm">Novo</Button>}
+      />
+      <PageContent>
+        <p className="text-muted-foreground text-sm">
+          Em mobile, a sidebar vira um drawer. O conteúdo ocupa 100% da largura.
+        </p>
+      </PageContent>
+    </PageLayout>
+  ),
+};
+
+/** Tablet layout */
+export const TabletLayout: Story = {
+  parameters: {
+    viewport: { defaultViewport: "tablet" },
+  },
+  render: Default.render,
+};
+

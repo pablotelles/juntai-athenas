@@ -118,3 +118,16 @@ export const Collapsed: Story = {
     </div>
   ),
 };
+
+/** Sidebar rendered at mobile width — in production this is the drawer content */
+export const MobileDrawer: Story = {
+  parameters: {
+    viewport: { defaultViewport: "mobile" },
+  },
+  render: () => (
+    <div className="h-screen">
+      <Sidebar sections={restaurantSections} logo={logo} footer={footer} />
+    </div>
+  ),
+};
+
