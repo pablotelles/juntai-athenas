@@ -139,7 +139,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           >
             {/* Close button inside drawer */}
-            <div className="relative">
+            <div className="relative h-full">
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
