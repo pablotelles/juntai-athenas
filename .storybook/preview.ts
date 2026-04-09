@@ -33,9 +33,12 @@ const preview: Preview = {
   },
   decorators: [
     (Story, context) => {
-      const theme = context.globals.theme ?? "light";
+      const theme = (context.globals.theme as string) ?? "light";
       if (typeof document !== "undefined") {
-        document.documentElement.setAttribute("data-theme", theme === "dark" ? "dark" : "");
+        document.documentElement.setAttribute(
+          "data-theme",
+          theme === "dark" ? "dark" : ""
+        );
         document.documentElement.style.backgroundColor =
           theme === "dark" ? "#0a0a0f" : "#fafafa";
       }
@@ -43,8 +46,5 @@ const preview: Preview = {
     },
   ],
 };
-
-export default preview;
-
 
 export default preview;
