@@ -63,6 +63,8 @@ export {
   SelectScrollUpButton,
   SelectScrollDownButton,
 } from "./select/Select";
+export { Combobox } from "./combobox/Combobox";
+export type { ComboboxOption, ComboboxProps } from "./combobox/Combobox";
 export {
   FormField,
   FormControl,

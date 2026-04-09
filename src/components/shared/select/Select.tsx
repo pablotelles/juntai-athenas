@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const Select = SelectPrimitive.Root;
@@ -13,8 +13,9 @@ const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & {
     error?: boolean;
+    loading?: boolean;
   }
->(({ className, children, error, ...props }, ref) => (
+>(({ className, children, error, loading, ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
@@ -30,7 +31,11 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+      {loading ? (
+        <Loader2 className="h-4 w-4 shrink-0 text-muted-foreground animate-spin" />
+      ) : (
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+      )}
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));

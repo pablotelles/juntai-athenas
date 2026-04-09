@@ -7,24 +7,24 @@
    ───────────────────────────────────────────────────────────── */
 
 :root {
-  /* BRAND — change these three to shift the entire primary palette */
-  --brand-h: 24;
-  --brand-s: 94%;
-  --brand-l: 50%;
+  /* BRAND — Dusk Indigo: change these three to shift the entire primary palette */
+  --brand-h: 250;
+  --brand-s: 60%;
+  --brand-l: 55%;
 
   /* PRIMARY */
   --color-primary: hsl(var(--brand-h) var(--brand-s) var(--brand-l));
-  --color-primary-hover: hsl(var(--brand-h) var(--brand-s) 42%);
+  --color-primary-hover: hsl(var(--brand-h) var(--brand-s) 47%);
   --color-primary-foreground: #ffffff;
 
   /* SECONDARY */
-  --color-secondary: #f1f5f9;
-  --color-secondary-hover: #e2e8f0;
-  --color-secondary-foreground: #334155;
+  --color-secondary: #eff0f7;
+  --color-secondary-hover: #e0e1ef;
+  --color-secondary-foreground: #3b3d5c;
 
   /* MUTED */
-  --color-muted: #f8fafc;
-  --color-muted-foreground: #64748b;
+  --color-muted: #f6f6fb;
+  --color-muted-foreground: #6b6d8a;
 
   /* SEMANTIC */
   --color-destructive: #ef4444;
@@ -34,23 +34,23 @@
   --color-warning: #f59e0b;
   --color-info: #3b82f6;
 
-  /* SURFACE */
-  --color-background: #fafafa;
-  --color-foreground: #0f172a;
+  /* SURFACE — slightly warm-cool tint */
+  --color-background: #f8f8fc;
+  --color-foreground: #16172b;
   --color-surface: #ffffff;
   --color-surface-raised: #ffffff;
-  --color-border: #e2e8f0;
-  --color-border-strong: #cbd5e1;
-  --color-ring: hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.35);
+  --color-border: #e2e2ef;
+  --color-border-strong: #c8c9e0;
+  --color-ring: hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.3);
 
-  /* SIDEBAR */
-  --color-sidebar-bg: #0f172a;
-  --color-sidebar-fg: #94a3b8;
+  /* SIDEBAR — deep indigo-navy */
+  --color-sidebar-bg: #131329;
+  --color-sidebar-fg: #8b8db8;
   --color-sidebar-fg-active: #ffffff;
   --color-sidebar-active: hsl(
-    var(--brand-h) var(--brand-s) var(--brand-l) / 0.18
+    var(--brand-h) var(--brand-s) var(--brand-l) / 0.2
   );
-  --color-sidebar-border: #1e293b;
+  --color-sidebar-border: #1f1f3a;
 
   /* TYPOGRAPHY */
   --font-sans:
@@ -91,19 +91,19 @@
    ───────────────────────────────────────────────────────────── */
 
 [data-theme="dark"] {
-  --color-background: #0a0a0f;
-  --color-foreground: #f1f5f9;
-  --color-surface: #141420;
-  --color-surface-raised: #1c1c2a;
-  --color-secondary: #1e293b;
-  --color-secondary-hover: #334155;
-  --color-secondary-foreground: #cbd5e1;
-  --color-muted: #0f172a;
-  --color-muted-foreground: #64748b;
-  --color-border: #1e293b;
-  --color-border-strong: #334155;
-  --color-sidebar-bg: #09090d;
-  --color-sidebar-border: #141420;
+  --color-background: #0b0b18;
+  --color-foreground: #e8e8f5;
+  --color-surface: #13132a;
+  --color-surface-raised: #1a1a35;
+  --color-secondary: #1e1e3a;
+  --color-secondary-hover: #2a2a4a;
+  --color-secondary-foreground: #b8b8d8;
+  --color-muted: #0f0f22;
+  --color-muted-foreground: #6b6d8a;
+  --color-border: #23234a;
+  --color-border-strong: #30306a;
+  --color-sidebar-bg: #07070f;
+  --color-sidebar-border: #13132a;
 }
 
 /* ─────────────────────────────────────────────────────────────

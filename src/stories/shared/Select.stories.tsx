@@ -93,3 +93,18 @@ export const Disabled: Story = {
     </div>
   ),
 };
+
+export const Loading: Story = {
+  render: () => (
+    <div className="w-56">
+      <Select disabled>
+        <SelectTrigger loading>
+          <SelectValue placeholder="Carregando opções..." />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="a">Opção A</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  ),
+};
