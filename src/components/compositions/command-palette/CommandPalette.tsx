@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   Search,
   Globe,
-  Building2,
   UtensilsCrossed,
   ArrowRight,
 } from "lucide-react";
@@ -14,7 +13,6 @@ import {
   useActiveContext,
   type ActiveContextValue,
 } from "@/contexts/active-context/ActiveContextProvider";
-import { MOCK_GROUPS, ALL_RESTAURANTS } from "@/config/mock-data";
 import { NAV_ITEMS } from "@/config/navigation";
 
 // ─────────────────────────────────────────────────────────────
@@ -37,7 +35,7 @@ interface PaletteItem {
 export function CommandPalette() {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
-  const { context, setContext } = useActiveContext();
+  const { context, setContext, restaurants } = useActiveContext();
   const router = useRouter();
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -96,23 +94,8 @@ export function CommandPalette() {
       },
     });
 
-    // Context: groups
-    for (const group of MOCK_GROUPS) {
-      items.push({
-        id: `ctx:group:${group.id}`,
-        label: group.name,
-        description: "Trocar para este grupo",
-        group: "Trocar contexto",
-        icon: <Building2 size={14} />,
-        action: () => {
-          setContext({ type: "group", groupId: group.id });
-          setOpen(false);
-        },
-      });
-    }
-
     // Context: restaurants
-    for (const r of ALL_RESTAURANTS) {
+    for (const r of restaurants) {
       items.push({
         id: `ctx:restaurant:${r.id}`,
         label: r.name,
@@ -127,7 +110,7 @@ export function CommandPalette() {
     }
 
     return items;
-  }, [context.type, router, setContext]);
+  }, [context.type, router, setContext, restaurants]);
 
   const filtered = query.trim()
     ? allItems.filter(

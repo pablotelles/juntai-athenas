@@ -1,18 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Globe, Building2, UtensilsCrossed } from "lucide-react";
+import { Globe, UtensilsCrossed } from "lucide-react";
 import { Badge } from "@/components/primitives/badge/Badge";
 import { Text } from "@/components/primitives/text/Text";
 import {
   useActiveContext,
   type ActiveContextValue,
 } from "@/contexts/active-context/ActiveContextProvider";
-import {
-  findGroup,
-  findRestaurant,
-  findGroupOfRestaurant,
-} from "@/config/mock-data";
 import { cn } from "@/lib/cn";
 
 // ─────────────────────────────────────────────────────────────
@@ -21,9 +16,9 @@ import { cn } from "@/lib/cn";
 // ─────────────────────────────────────────────────────────────
 
 export function ActiveContextBanner({ className }: { className?: string }) {
-  const { context } = useActiveContext();
+  const { context, restaurants } = useActiveContext();
 
-  const info = resolveContextInfo(context);
+  const info = resolveContextInfo(context, restaurants);
 
   return (
     <div
@@ -61,7 +56,10 @@ interface ContextInfo {
   variant: BadgeVariant;
 }
 
-function resolveContextInfo(ctx: ActiveContextValue): ContextInfo {
+function resolveContextInfo(
+  ctx: ActiveContextValue,
+  restaurants: { id: string; name: string }[],
+): ContextInfo {
   if (ctx.type === "platform") {
     return {
       icon: <Globe size={18} />,
@@ -71,27 +69,12 @@ function resolveContextInfo(ctx: ActiveContextValue): ContextInfo {
     };
   }
 
-  if (ctx.type === "group") {
-    const group = findGroup(ctx.groupId);
-    return {
-      icon: <Building2 size={18} />,
-      typeLabel: "group",
-      detail: group
-        ? `${group.name} · ${group.restaurants.length} restaurante(s)`
-        : ctx.groupId,
-      variant: "secondary",
-    };
-  }
-
   // restaurant
-  const restaurant = findRestaurant(ctx.restaurantId);
-  const group = findGroupOfRestaurant(ctx.restaurantId);
+  const restaurant = restaurants.find((r) => r.id === ctx.restaurantId);
   return {
     icon: <UtensilsCrossed size={18} />,
     typeLabel: "restaurant",
-    detail:
-      [restaurant?.name, group?.name].filter(Boolean).join(" · ") ||
-      ctx.restaurantId,
+    detail: restaurant?.name ?? ctx.restaurantId,
     variant: "success",
   };
 }

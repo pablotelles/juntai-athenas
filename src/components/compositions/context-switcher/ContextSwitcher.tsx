@@ -3,7 +3,6 @@
 import * as React from "react";
 import {
   Globe,
-  Building2,
   UtensilsCrossed,
   ChevronDown,
   Check,
@@ -18,16 +17,14 @@ import {
   useActiveContext,
   type ActiveContextValue,
 } from "@/contexts/active-context/ActiveContextProvider";
-import { MOCK_GROUPS, findRestaurant, findGroup } from "@/config/mock-data";
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────
 
-function resolveLabel(ctx: ActiveContextValue): string {
+function resolveLabel(ctx: ActiveContextValue, restaurants: { id: string; name: string }[]): string {
   if (ctx.type === "platform") return "Plataforma";
-  if (ctx.type === "group") return findGroup(ctx.groupId)?.name ?? ctx.groupId;
-  return findRestaurant(ctx.restaurantId)?.name ?? ctx.restaurantId;
+  return restaurants.find((r) => r.id === ctx.restaurantId)?.name ?? ctx.restaurantId;
 }
 
 function ContextIcon({
@@ -40,7 +37,6 @@ function ContextIcon({
   className?: string;
 }) {
   if (type === "platform") return <Globe size={size} className={className} />;
-  if (type === "group") return <Building2 size={size} className={className} />;
   return <UtensilsCrossed size={size} className={className} />;
 }
 
@@ -49,7 +45,7 @@ function ContextIcon({
 // ─────────────────────────────────────────────────────────────
 
 export function ContextSwitcher() {
-  const { context, setContext } = useActiveContext();
+  const { context, setContext, restaurants } = useActiveContext();
   const [open, setOpen] = React.useState(false);
 
   function select(ctx: ActiveContextValue) {
@@ -75,7 +71,7 @@ export function ContextSwitcher() {
             type={context.type}
             className="shrink-0 text-muted-foreground"
           />
-          <span className="truncate">{resolveLabel(context)}</span>
+          <span className="truncate">{resolveLabel(context, restaurants)}</span>
           <ChevronDown
             size={12}
             className={cn(
@@ -101,38 +97,22 @@ export function ContextSwitcher() {
           />
         </div>
 
-        {/* Groups + their restaurants */}
+        {/* Restaurants */}
         <div
           role="listbox"
           aria-label="Selecionar contexto"
           className="max-h-64 overflow-y-auto p-1"
         >
-          {MOCK_GROUPS.map((group) => (
-            <div key={group.id}>
-              <ContextOption
-                label={group.name}
-                icon={<Building2 size={14} />}
-                isActive={
-                  context.type === "group" && context.groupId === group.id
-                }
-                onClick={() => select({ type: "group", groupId: group.id })}
-              />
-              {group.restaurants.map((r) => (
-                <ContextOption
-                  key={r.id}
-                  label={r.name}
-                  icon={<UtensilsCrossed size={13} />}
-                  isActive={
-                    context.type === "restaurant" &&
-                    context.restaurantId === r.id
-                  }
-                  onClick={() =>
-                    select({ type: "restaurant", restaurantId: r.id })
-                  }
-                  indent
-                />
-              ))}
-            </div>
+          {restaurants.map((r) => (
+            <ContextOption
+              key={r.id}
+              label={r.name}
+              icon={<UtensilsCrossed size={14} />}
+              isActive={
+                context.type === "restaurant" && context.restaurantId === r.id
+              }
+              onClick={() => select({ type: "restaurant", restaurantId: r.id })}
+            />
           ))}
         </div>
       </PopoverContent>
@@ -149,13 +129,11 @@ function ContextOption({
   icon,
   isActive,
   onClick,
-  indent = false,
 }: {
   label: string;
   icon: React.ReactNode;
   isActive: boolean;
   onClick: () => void;
-  indent?: boolean;
 }) {
   return (
     <button
@@ -167,7 +145,6 @@ function ContextOption({
         "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm",
         "hover:bg-secondary focus-visible:bg-secondary outline-none",
         "transition-colors",
-        indent && "pl-6",
         isActive && "bg-secondary",
       )}
     >

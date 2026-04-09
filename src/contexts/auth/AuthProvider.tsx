@@ -43,6 +43,28 @@ const AuthCtx = React.createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<AuthState>(() => loadAuthState());
 
+  // Re-hydrate session on mount: re-fetch /auth/me to get fresh user + memberships.
+  // This handles stale localStorage (e.g. missing memberships from an older session).
+  // If the token is expired/invalid the BE returns 401 and we clear the session.
+  React.useEffect(() => {
+    const { sessionToken } = loadAuthState();
+    if (!sessionToken) return;
+
+    apiClient(sessionToken)
+      .get<{ user: AuthUser; memberships: Membership[] }>("/auth/me")
+      .then(({ user, memberships }) => {
+        const fresh: AuthState = { user, sessionToken, memberships };
+        setState(fresh);
+        saveAuthState(fresh);
+      })
+      .catch(() => {
+        // Token invalid or expired — clear session
+        clearAuthState();
+        setState({ user: null, sessionToken: null, memberships: [] });
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const isAuthenticated = state.user !== null;
   const isPlatformAdmin =
     isAuthenticated &&

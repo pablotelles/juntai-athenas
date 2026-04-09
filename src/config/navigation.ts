@@ -16,7 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type ContextType = "platform" | "group" | "restaurant";
+export type ContextType = "platform" | "restaurant";
 
 export interface NavConfigItem {
   /** Display label */
@@ -38,14 +38,14 @@ export const NAV_ITEMS: NavConfigItem[] = [
     label: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
-    contexts: ["platform", "group", "restaurant"],
+    contexts: ["platform", "restaurant"],
     exact: true,
   },
   {
     label: "Restaurantes",
     href: "/restaurants",
     icon: UtensilsCrossed,
-    contexts: ["platform", "group"],
+    contexts: ["platform"],
   },
   {
     label: "Pedidos",
@@ -69,18 +69,18 @@ export const NAV_ITEMS: NavConfigItem[] = [
     label: "Financeiro",
     href: "/finance",
     icon: CreditCard,
-    contexts: ["platform", "group", "restaurant"],
+    contexts: ["platform", "restaurant"],
   },
   {
     label: "Relatórios",
     href: "/reports",
     icon: BarChart2,
-    contexts: ["platform", "group", "restaurant"],
+    contexts: ["platform", "restaurant"],
   },
   {
     label: "Configurações",
     href: "/settings",
     icon: Settings,
-    contexts: ["platform", "group", "restaurant"],
+    contexts: ["platform", "restaurant"],
   },
 ];
