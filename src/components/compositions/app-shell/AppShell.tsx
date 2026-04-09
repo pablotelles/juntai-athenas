@@ -8,12 +8,23 @@ import { AppHeader } from "@/components/compositions/app-header/AppHeader";
 import { Avatar } from "@/components/shared/avatar/Avatar";
 import { cn } from "@/lib/cn";
 import { useActiveContext } from "@/contexts/active-context/ActiveContextProvider";
+import { useAuth } from "@/contexts/auth/AuthProvider";
 import { NAV_ITEMS } from "@/config/navigation";
 import type { NavSection } from "@/components/compositions/sidebar/Sidebar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = React.useState(false);
   const { context } = useActiveContext();
+  const { user } = useAuth();
+
+  const userInitials = user?.name
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "?";
 
   // ── Dynamic nav: filter by active context ──────────────────────────────────
   const filtered = NAV_ITEMS.filter((item) =>
@@ -54,14 +65,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   collapsed && "justify-center",
                 )}
               >
-                <Avatar fallback="JP" size="sm" />
+                <Avatar fallback={userInitials} size="sm" />
                 {!collapsed && (
                   <div className="flex flex-col min-w-0">
                     <span className="text-xs font-medium text-sidebar-fg-active truncate">
-                      João Paulo
+                      {user?.name ?? "Usuário"}
                     </span>
                     <span className="text-[10px] text-sidebar-fg truncate">
-                      admin@juntai.com
+                      {user?.email ?? ""}
                     </span>
                   </div>
                 )}

@@ -1,5 +1,8 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-export default function RootPage() {
-  redirect("/dashboard");
+export default async function RootPage() {
+  const cookieStore = await cookies();
+  const session = cookieStore.get("juntai_session");
+  redirect(session ? "/dashboard" : "/auth/login");
 }
