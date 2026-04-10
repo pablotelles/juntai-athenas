@@ -9,6 +9,7 @@ import type {
 } from "@juntai/types";
 import type {
   CreateMenuBody,
+  PatchMenuBody,
   CreateCategoryBody,
   PatchCategoryBody,
   CreateItemBody,
@@ -50,6 +51,22 @@ export function createMenu(
   token: string | null,
 ): Promise<Menu> {
   return client(token).createMenu(restaurantId, body);
+}
+
+export function patchMenu(
+  menuId: string,
+  body: PatchMenuBody,
+  token: string | null,
+): Promise<Menu> {
+  return client(token).patchMenu(menuId, body);
+}
+
+export function deleteMenu(
+  menuId: string,
+  restaurantId: string,
+  token: string | null,
+): Promise<void> {
+  return client(token).deleteMenu(menuId, restaurantId);
 }
 
 // ── Categories ────────────────────────────────────────────────────────────────
@@ -106,6 +123,14 @@ export function deleteItem(
 }
 
 // ── Modifier Groups ───────────────────────────────────────────────────────────
+
+export function deleteModifierGroup(
+  groupId: string,
+  restaurantId: string,
+  token: string | null,
+): Promise<void> {
+  return client(token).deleteModifierGroup(groupId, restaurantId);
+}
 
 export function createModifierGroup(
   restaurantId: string,

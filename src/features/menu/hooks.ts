@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth/AuthProvider";
 import type {
   CreateMenuBody,
+  PatchMenuBody,
   CreateCategoryBody,
   PatchCategoryBody,
   CreateItemBody,
@@ -12,6 +13,8 @@ import type {
 import {
   getMenu,
   createMenu,
+  patchMenu,
+  deleteMenu,
   createCategory,
   patchCategory,
   deleteCategory,
@@ -19,6 +22,7 @@ import {
   patchItem,
   deleteItem,
   createModifierGroup,
+  deleteModifierGroup,
   createModifierOption,
   attachModifierGroup,
 } from "./api";
@@ -55,6 +59,29 @@ export function useCreateMenu(restaurantId: string) {
       void queryClient.invalidateQueries({
         queryKey: menuKeys.all(restaurantId),
       });
+    },
+  });
+}
+
+export function usePatchMenu(restaurantId: string) {
+  const { sessionToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ menuId, body }: { menuId: string; body: PatchMenuBody }) =>
+      patchMenu(menuId, body, sessionToken),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: menuKeys.all(restaurantId) });
+    },
+  });
+}
+
+export function useDeleteMenu(restaurantId: string) {
+  const { sessionToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (menuId: string) => deleteMenu(menuId, restaurantId, sessionToken),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: menuKeys.all(restaurantId) });
     },
   });
 }
@@ -158,6 +185,19 @@ export function useDeleteItem(restaurantId: string) {
 }
 
 // ── Modifier Groups ───────────────────────────────────────────────────────────
+
+export function useDeleteModifierGroup(restaurantId: string) {
+  const { sessionToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (groupId: string) =>
+      deleteModifierGroup(groupId, restaurantId, sessionToken),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: menuKeys.all(restaurantId) });
+    },
+  });
+}
+
 
 export function useCreateModifierGroup(restaurantId: string) {
   const { sessionToken } = useAuth();

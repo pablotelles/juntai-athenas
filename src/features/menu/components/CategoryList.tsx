@@ -27,7 +27,8 @@ import { useMenu, useCreateCategory, usePatchCategory } from "../hooks";
 import { CategoryItem } from "./CategoryItem";
 import { CreateCategoryModal } from "./CreateCategoryModal";
 import type { CategoryFormValues } from "../schemas";
-import type { Category, MenuWithCategories } from "@juntai/types";
+import type { MenuWithCategories } from "@juntai/types";
+import type { CategoryWithItems } from "./CategoryItem";
 
 interface CategoryListProps {
   menuId: string;
@@ -50,7 +51,7 @@ export function CategoryList({
 
   // Derivar categorias do menu correto
   const menu: MenuWithCategories | undefined = menus?.find((m) => m.id === menuId);
-  const [orderedCategories, setOrderedCategories] = React.useState<Category[]>([]);
+  const [orderedCategories, setOrderedCategories] = React.useState<CategoryWithItems[]>([]);
 
   React.useEffect(() => {
     if (menu) {
@@ -95,12 +96,12 @@ export function CategoryList({
     toast.success("Categoria criada!", { description: `"${values.name}" adicionada.` });
   };
 
-  const handleNavigate = (category: Category) => {
+  const handleNavigate = (category: CategoryWithItems) => {
     const loc = locationId ?? "";
     router.push(`/menu/${menuId}/${category.id}?locationId=${loc}`);
   };
 
-  const handleToggleActive = (category: Category, active: boolean) => {
+  const handleToggleActive = (category: CategoryWithItems, active: boolean) => {
     patchCategory.mutate(
       { categoryId: category.id, body: { restaurantId, isActive: active } },
       {

@@ -8,12 +8,14 @@ import { Switch } from "@/components/shared/switch/Switch";
 import { Badge } from "@/components/primitives/badge/Badge";
 import { Text } from "@/components/primitives/text/Text";
 import { cn } from "@/lib/cn";
-import type { Category } from "@juntai/types";
+import type { Category, MenuItem } from "@juntai/types";
+
+export type CategoryWithItems = Category & { items: MenuItem[] };
 
 interface CategoryItemProps {
-  category: Category;
-  onNavigate: (category: Category) => void;
-  onToggleActive: (category: Category, active: boolean) => void;
+  category: CategoryWithItems;
+  onNavigate: (category: CategoryWithItems) => void;
+  onToggleActive: (category: CategoryWithItems, active: boolean) => void;
 }
 
 export function CategoryItem({
