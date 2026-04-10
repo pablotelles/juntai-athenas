@@ -7,7 +7,9 @@ import type {
 } from "@juntai/types";
 import {
   createItem,
+  patchItem,
   createModifierGroup,
+  deleteModifierGroup,
   createModifierOption,
   attachModifierGroup,
 } from "./api";
@@ -261,6 +263,164 @@ export async function saveProduct(
   }
 
   return item;
+}
+
+// ─── Mapper: MenuItem → BuilderState (para edição) ───────────────────────────
+
+export function itemToBuilderState(item: MenuItem): BuilderState {
+  return {
+    type: item.type,
+    name: item.name,
+    description: item.description ?? "",
+    basePrice: item.basePrice,
+    imageUrl: item.imageUrl ?? "",
+    steps: item.modifierGroups.map((group) => ({
+      id: group.id,
+      name: group.name,
+      stepType: group.stepType,
+      isRequired: group.isRequired,
+      minSelections: group.minSelections,
+      maxSelections: group.maxSelections,
+      compositionConfig: group.compositionConfig,
+      pricingStrategy: group.pricingStrategy ?? undefined,
+      options: group.options
+        .filter((o) => o.parentOptionId === null)
+        .map((opt) => ({
+          id: opt.id,
+          linkedItemId: opt.linkedItemId ?? null,
+          name: opt.name,
+          imageUrl: opt.imageUrl ?? "",
+          description: opt.description ?? "",
+          priceDelta: opt.priceDelta,
+          unitPrice: opt.unitPrice ?? null,
+          minQuantity: opt.minQuantity,
+          maxQuantity: opt.maxQuantity,
+          parentOptionId: null,
+          childOptions: (opt.childOptions ?? []).map((child) => ({
+            id: child.id,
+            linkedItemId: child.linkedItemId ?? null,
+            name: child.name,
+            imageUrl: child.imageUrl ?? "",
+            description: child.description ?? "",
+            priceDelta: child.priceDelta,
+            unitPrice: child.unitPrice ?? null,
+            minQuantity: child.minQuantity,
+            maxQuantity: child.maxQuantity,
+            parentOptionId: opt.id,
+            childOptions: [],
+          })),
+        })),
+    })),
+  };
+}
+
+// ─── Orquestrador: atualizar produto completo ─────────────────────────────────
+//
+// Estratégia:
+//   1. PATCH campos básicos do item
+//   2. DELETE todos os modifier groups existentes (cascade options)
+//   3. Recriar todos os steps/groups/options do novo estado
+//
+// Motivo para delete-recreate em vez de diff: a API não tem PATCH para groups/options.
+// O custo de recriação é aceitável para o tamanho típico de cardápios.
+
+export async function updateProduct(
+  itemId: string,
+  state: BuilderState,
+  context: { restaurantId: string; existingGroupIds: string[] },
+  token: string | null,
+): Promise<MenuItem> {
+  const { restaurantId, existingGroupIds } = context;
+
+  // 1. Atualizar campos básicos
+  await patchItem(
+    itemId,
+    {
+      restaurantId,
+      name: state.name,
+      description: state.description || undefined,
+      basePrice: state.basePrice,
+      imageUrl: state.imageUrl || undefined,
+    },
+    token,
+  );
+
+  // 2. Deletar todos os grupos existentes (deleta opções + desvincula do item)
+  for (const groupId of existingGroupIds) {
+    await deleteModifierGroup(groupId, restaurantId, token);
+  }
+
+  // 3. Recriar steps (mesma lógica do saveProduct)
+  for (const step of state.steps) {
+    const { selectionType, pricingStrategy: defaultPricing } =
+      STEP_CONFIG[step.stepType];
+    const pricingStrategy = step.pricingStrategy ?? defaultPricing;
+
+    const minSelections =
+      selectionType === "SINGLE"
+        ? 1
+        : step.isRequired
+          ? Math.max(step.minSelections, 1)
+          : step.minSelections;
+    const maxSelections =
+      selectionType === "SINGLE" ? 1 : (step.maxSelections ?? undefined);
+
+    const group = await createModifierGroup(
+      restaurantId,
+      {
+        name: step.name,
+        selectionType,
+        stepType: step.stepType,
+        pricingStrategy,
+        compositionConfig: step.compositionConfig ?? undefined,
+        isRequired: step.isRequired,
+        minSelections,
+        maxSelections,
+      },
+      token,
+    );
+
+    for (let i = 0; i < step.options.length; i++) {
+      const opt = step.options[i];
+      const created = await createModifierOption(
+        group.id,
+        {
+          restaurantId,
+          linkedItemId: opt.linkedItemId ?? undefined,
+          name: opt.name,
+          imageUrl: opt.imageUrl || undefined,
+          description: opt.description || undefined,
+          priceDelta: opt.priceDelta,
+          unitPrice: opt.unitPrice ?? undefined,
+          minQuantity: opt.minQuantity,
+          maxQuantity: opt.maxQuantity ?? undefined,
+          displayOrder: i,
+        },
+        token,
+      );
+
+      for (let j = 0; j < opt.childOptions.length; j++) {
+        const child = opt.childOptions[j];
+        await createModifierOption(
+          group.id,
+          {
+            restaurantId,
+            name: child.name,
+            priceDelta: child.priceDelta,
+            parentOptionId: created.id,
+            displayOrder: j,
+          },
+          token,
+        );
+      }
+    }
+
+    await attachModifierGroup(itemId, group.id, restaurantId, token);
+  }
+
+  // Retorna item via patchItem — o caller invalida o cache
+  const updated = await patchItem(itemId, { restaurantId }, token);
+  return updated;
 }
 
 // ─── Estado inicial vazio ─────────────────────────────────────────────────────

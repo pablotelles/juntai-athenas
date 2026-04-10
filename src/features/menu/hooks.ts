@@ -26,7 +26,7 @@ import {
   createModifierOption,
   attachModifierGroup,
 } from "./api";
-import { saveProduct, type BuilderState } from "./builder";
+import { saveProduct, updateProduct, type BuilderState } from "./builder";
 
 // ── Query keys ────────────────────────────────────────────────────────────────
 
@@ -245,7 +245,7 @@ export function useAttachModifierGroup(restaurantId: string) {
   });
 }
 
-// ── Orquestrador: salvar produto completo ─────────────────────────────────────
+// ── Orquestradores: salvar / atualizar produto completo ───────────────────────
 
 export function useCreateProduct(
   categoryId: string,
@@ -257,6 +257,31 @@ export function useCreateProduct(
   return useMutation({
     mutationFn: (state: BuilderState) =>
       saveProduct(state, { categoryId, restaurantId }, sessionToken),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: menuKeys.byLocation(restaurantId, locationId),
+      });
+    },
+  });
+}
+
+export function useUpdateProduct(
+  restaurantId: string,
+  locationId: string | null,
+) {
+  const { sessionToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      itemId,
+      state,
+      existingGroupIds,
+    }: {
+      itemId: string;
+      state: BuilderState;
+      existingGroupIds: string[];
+    }) =>
+      updateProduct(itemId, state, { restaurantId, existingGroupIds }, sessionToken),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: menuKeys.byLocation(restaurantId, locationId),
