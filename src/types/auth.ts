@@ -1,37 +1,27 @@
-// Roles do BE (actor roles)
-export type UserRole =
-  | "PLATFORM_ADMIN"
-  | "OWNER"
-  | "MANAGER"
-  | "WAITER"
-  | "SESSION_USER"
-  | "AUTHENTICATED"
-  | "GUEST";
+import type {
+  User,
+  Membership,
+  MembershipRole,
+  MembershipEntityType,
+  UserRole,
+} from "@juntai/types";
 
-// Tipos de entidade para memberships
-export type EntityType = "platform" | "restaurant" | "location";
+// Re-exportados de @juntai/types — fonte canônica
+export type {
+  User,
+  Membership,
+  MembershipRole,
+  MembershipEntityType,
+  UserRole,
+};
 
-// Papel dentro de uma membership
-export type MembershipRole = "admin" | "owner" | "manager" | "waiter";
+// Aliases de compatibilidade — preferir os nomes acima em código novo
+export type AuthUser = User;
+export type EntityType = MembershipEntityType;
 
-export interface AuthUser {
-  id: string;
-  type: "guest" | "user";
-  name: string | null;
-  email: string | null;
-  createdAt: string;
-}
-
-export interface Membership {
-  id: string;
-  userId: string;
-  entityType: EntityType;
-  entityId: string;
-  role: MembershipRole;
-}
-
+// Athenas-specific: estado da sessão no cliente
 export interface AuthState {
-  user: AuthUser | null;
+  user: User | null;
   sessionToken: string | null;
   memberships: Membership[];
 }

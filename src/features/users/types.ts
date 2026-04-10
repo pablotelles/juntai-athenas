@@ -1,22 +1,14 @@
-export type MembershipRole = "admin" | "owner" | "manager" | "waiter";
-export type MembershipEntityType = "platform" | "restaurant" | "location";
+import type {
+  User,
+  Membership,
+  MembershipRole,
+  MembershipEntityType,
+} from "@juntai/types";
 
-export interface Membership {
-  id: string;
-  userId: string;
-  entityType: MembershipEntityType;
-  entityId: string;
-  role: MembershipRole;
-}
+// Re-exportados de @juntai/types — fonte canônica
+export type { User, Membership, MembershipRole, MembershipEntityType };
 
-export interface User {
-  id: string;
-  type: "guest" | "user";
-  name: string | null;
-  email: string | null;
-  createdAt: string;
-}
-
+// Athenas-specific
 export interface UserWithMemberships extends User {
   memberships: Membership[];
 }

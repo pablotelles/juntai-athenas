@@ -1,44 +1,17 @@
-export type OrderStatus = "PENDING" | "PREPARING" | "DELIVERED" | "CANCELLED";
+import type { Order } from "@juntai/types";
 
-export interface SnapshotModifier {
-  groupId: string;
-  groupName: string;
-  optionId: string;
-  optionName: string;
-  priceDelta: number;
-}
+// Re-exportados de @juntai/types — fonte canônica
+export type {
+  OrderStatus,
+  SnapshotModifier,
+  SnapshotStepSelection,
+  SnapshotStep,
+  OrderItemSnapshot,
+  OrderItem,
+  Order,
+} from "@juntai/types";
 
-export interface OrderItemSnapshot {
-  menuItemId: string;
-  name: string;
-  description: string | null;
-  basePrice: number;
-  modifiers: SnapshotModifier[];
-}
-
-export interface OrderItem {
-  id: string;
-  orderId: string;
-  menuItemId: string | null;
-  snapshot: OrderItemSnapshot;
-  quantity: number;
-  unitPrice: number;
-  notes: string | null;
-}
-
-export interface Order {
-  id: string;
-  sessionId: string;
-  memberId: string | null;
-  restaurantId: string;
-  locationId: string;
-  status: OrderStatus;
-  notes: string | null;
-  createdAt: string;
-  updatedAt: string;
-  items: OrderItem[];
-}
-
+// Athenas-specific: paginação de pedidos
 export interface OrdersPage {
   data: Order[];
   total: number;

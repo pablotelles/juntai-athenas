@@ -1,9 +1,2 @@
-export interface Table {
-  id: string;
-  restaurantId: string;
-  locationId: string;
-  label: string;
-  qrCodeToken: string;
-  capacity: number | null;
-  isActive: boolean;
-}
+// Todos os tipos vêm de @juntai/types — fonte canônica
+export type { Table } from "@juntai/types";
