@@ -4,8 +4,9 @@ import * as React from "react";
 import { useFormik, FormikProvider } from "formik";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CircleHelp } from "lucide-react";
 import { Button } from "@/components/primitives/button/Button";
+import { Tooltip } from "@/components/shared/tooltip/Tooltip";
 import { useToast } from "@/contexts/toast/ToastProvider";
 import { useCreateProduct, useMenu } from "../../hooks";
 import { emptyBuilderState, type BuilderState } from "../../builder";
@@ -36,6 +37,22 @@ const WIZARD_STEPS_COMPOSABLE = [
   { label: "Personalização" },
 ];
 
+const PRODUCT_ASSEMBLY_HELP = (
+  <div className="max-w-sm space-y-2 text-left leading-relaxed">
+    <p className="font-semibold">Como pensar a montagem do produto</p>
+    <p>
+      Um produto não é só um item solto. Ele pode ter uma jornada de escolhas,
+      como base, tamanho, proteína, sabores, extras e quantidades.
+    </p>
+    <ul className="list-disc pl-4 space-y-1">
+      <li>Crie etapas obrigatórias ou opcionais.</li>
+      <li>Defina se o cliente escolhe 1, várias, partes ou quantidades.</li>
+      <li>Reaproveite produtos e categorias do catálogo para ganhar velocidade.</li>
+      <li>Controle limites, preço extra e acompanhe tudo no preview.</li>
+    </ul>
+  </div>
+);
+
 export function ProductBuilderPage({
   categoryId,
   restaurantId,
@@ -55,6 +72,18 @@ export function ProductBuilderPage({
     () =>
       menus?.flatMap((menu) =>
         menu.categories.flatMap((category) => category.items),
+      ) ?? [],
+    [menus],
+  );
+
+  const catalogCategories = React.useMemo(
+    () =>
+      menus?.flatMap((menu) =>
+        menu.categories.map((category) => ({
+          id: category.id,
+          label: `${category.name} · ${menu.name}`,
+          items: category.items,
+        })),
       ) ?? [],
     [menus],
   );
@@ -258,7 +287,18 @@ export function ProductBuilderPage({
         {step === 3 && state.type === "composable" && (
           <div className="flex flex-col gap-4">
             <div>
-              <h2 className="text-lg font-semibold">Montagem do produto</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold">Montagem do produto</h2>
+                <Tooltip side="right" content={PRODUCT_ASSEMBLY_HELP}>
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Ajuda sobre a montagem do produto"
+                  >
+                    <CircleHelp className="h-4 w-4" />
+                  </button>
+                </Tooltip>
+              </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Adicione etapas de escolha que o cliente vai percorrer ao montar
                 o pedido.
@@ -267,6 +307,7 @@ export function ProductBuilderPage({
             <StepsBuilder
               steps={state.steps}
               allItems={allItems}
+              catalogCategories={catalogCategories}
               onStepsChange={(steps) => patch("steps", steps)}
             />
           </div>

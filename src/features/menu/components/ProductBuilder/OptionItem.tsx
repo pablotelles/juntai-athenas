@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/primitives/input/Input";
 import { Button } from "@/components/primitives/button/Button";
 import { Combobox } from "@/components/shared/combobox/Combobox";
+import { Tooltip } from "@/components/shared/tooltip/Tooltip";
 import { cn } from "@/lib/cn";
 import type { BuilderOption } from "../../builder";
 import type { StepType, MenuItem } from "@juntai/types";
@@ -63,6 +64,24 @@ export function OptionItem({
   const handleUnlink = () => {
     onChange(option.id, { linkedItemId: null });
   };
+
+  const linkHelpContent = (
+    <div className="max-w-xs space-y-2 text-left leading-relaxed">
+      <p className="font-semibold">Como funciona a vinculação</p>
+      <p>
+        <strong>Vinculação:</strong> esta opção reaproveita um produto já
+        cadastrado no catálogo.
+      </p>
+      <p>
+        <strong>Relação:</strong> nome, imagem e descrição acompanham o produto
+        vinculado.
+      </p>
+      <p>
+        <strong>Limites e preço:</strong> acréscimo, mínimo e máximo continuam
+        sendo configurados aqui nesta etapa.
+      </p>
+    </div>
+  );
 
   // ── Child options: compact, sem picker ─────────────────────────────────────
   if (isChild) {
@@ -195,18 +214,22 @@ export function OptionItem({
       {/* Row 2: vínculo */}
       {isLinked ? (
         <div className="flex items-center gap-3 pl-0.5">
-          <span className="text-xs text-primary flex items-center gap-1">
-            <Link className="h-3 w-3" />
-            Vinculado ao produto
-          </span>
-          <button
-            type="button"
-            onClick={handleUnlink}
-            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-          >
-            <Link2Off className="h-3 w-3" />
-            Desvincular
-          </button>
+          <Tooltip content={linkHelpContent}>
+            <span className="text-xs text-primary flex items-center gap-1 cursor-help">
+              <Link className="h-3 w-3" />
+              Vinculado ao produto
+            </span>
+          </Tooltip>
+          <Tooltip content="Remove a relação com o catálogo e mantém os dados atuais desta opção como cópia local.">
+            <button
+              type="button"
+              onClick={handleUnlink}
+              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+            >
+              <Link2Off className="h-3 w-3" />
+              Desvincular
+            </button>
+          </Tooltip>
         </div>
       ) : (
         <Combobox

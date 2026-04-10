@@ -101,12 +101,18 @@ function removeOptionFromTree(
 interface StepsBuilderProps {
   steps: BuilderStep[];
   allItems: MenuItem[];
+  catalogCategories: Array<{
+    id: string;
+    label: string;
+    items: MenuItem[];
+  }>;
   onStepsChange: (steps: BuilderStep[]) => void;
 }
 
 export function StepsBuilder({
   steps,
   allItems,
+  catalogCategories,
   onStepsChange,
 }: StepsBuilderProps) {
   const [templateSelected, setTemplateSelected] = React.useState(
@@ -144,6 +150,41 @@ export function StepsBuilder({
       steps.map((s) =>
         s.id === stepId ? { ...s, options: [...s.options, emptyOption()] } : s,
       ),
+    );
+
+  const importCategoryOptions = (stepId: string, categoryId: string) =>
+    onStepsChange(
+      steps.map((s) => {
+        if (s.id !== stepId) return s;
+
+        const category = catalogCategories.find((c) => c.id === categoryId);
+        if (!category) return s;
+
+        const existingLinkedIds = new Set(
+          s.options
+            .map((opt) => opt.linkedItemId)
+            .filter((id): id is string => !!id),
+        );
+
+        const importedOptions = category.items
+          .filter((item) => !existingLinkedIds.has(item.id))
+          .map((item) => ({
+            ...emptyOption(),
+            linkedItemId: item.id,
+            name: item.name,
+            imageUrl: item.imageUrl ?? "",
+            description: item.description ?? "",
+            priceDelta: s.stepType === "quantity" ? 0 : item.basePrice,
+            unitPrice: s.stepType === "quantity" ? item.basePrice : null,
+          }));
+
+        if (importedOptions.length === 0) return s;
+
+        return {
+          ...s,
+          options: [...s.options, ...importedOptions],
+        };
+      }),
     );
 
   const updateOption = (
@@ -215,9 +256,11 @@ export function StepsBuilder({
                 key={step.id}
                 step={step}
                 allItems={allItems}
+                catalogCategories={catalogCategories}
                 onUpdate={updateStep}
                 onRemove={removeStep}
                 onAddOption={addOption}
+                onImportCategory={importCategoryOptions}
                 onUpdateOption={updateOption}
                 onRemoveOption={removeOption}
                 onAddChildOption={addChildOption}

@@ -48,9 +48,15 @@ interface StepCardProps {
   step: BuilderStep;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
   allItems: MenuItem[];
+  catalogCategories: Array<{
+    id: string;
+    label: string;
+    items: MenuItem[];
+  }>;
   onUpdate: (stepId: string, patch: Partial<BuilderStep>) => void;
   onRemove: (stepId: string) => void;
   onAddOption: (stepId: string) => void;
+  onImportCategory: (stepId: string, categoryId: string) => void;
   onUpdateOption: (
     stepId: string,
     optId: string,
@@ -64,9 +70,11 @@ export function StepCard({
   step,
   dragHandleProps,
   allItems,
+  catalogCategories,
   onUpdate,
   onRemove,
   onAddOption,
+  onImportCategory,
   onUpdateOption,
   onRemoveOption,
   onAddChildOption,
@@ -94,6 +102,10 @@ export function StepCard({
   };
 
   const pricing = step.pricingStrategy ?? "max";
+  const importableCategories = catalogCategories.filter(
+    (category) => category.items.length > 0,
+  );
+  const [categoryImportKey, setCategoryImportKey] = React.useState(0);
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
@@ -194,17 +206,17 @@ export function StepCard({
         )}
 
         {step.stepType === "multi" && (
-          <div className="flex flex-wrap items-center gap-4">
-            <label className="flex items-center gap-2 cursor-pointer select-none text-sm">
+          <div className="flex flex-wrap items-end gap-4">
+            <label className="flex items-center gap-2 cursor-pointer select-none text-sm h-8">
               <Checkbox
                 checked={step.isRequired}
                 onCheckedChange={(checked) =>
                   onUpdate(step.id, { isRequired: !!checked })
                 }
               />
-              Obrigatório
+              <span className="leading-none">Obrigatório</span>
             </label>
-            <div className="flex items-center gap-3">
+            <div className="flex items-end gap-3">
               <div className="flex flex-col gap-1">
                 <span className="text-xs text-muted-foreground">
                   Mínimo de opções
@@ -268,7 +280,7 @@ export function StepCard({
               <label className="text-sm font-medium">
                 Como calcular o preço?
               </label>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
                 {(
                   [
                     { value: "max", label: "Cobrar o mais caro" },
@@ -306,19 +318,49 @@ export function StepCard({
 
         {/* ── Options list ── */}
         <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Opções
             </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onAddOption(step.id)}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Adicionar opção
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Tooltip
+                content="Traga todos os produtos de uma categoria de uma vez, como Refrigerantes, Sobremesas ou Molhos."
+              >
+                <div>
+                  <Select
+                    key={categoryImportKey}
+                    onValueChange={(categoryId) => {
+                      onImportCategory(step.id, categoryId);
+                      setCategoryImportKey((current) => current + 1);
+                    }}
+                  >
+                    <SelectTrigger
+                      className="w-[240px] max-w-full"
+                      disabled={importableCategories.length === 0}
+                    >
+                      <SelectValue placeholder="Trazer categoria inteira..." />
+                    </SelectTrigger>
+                    <SelectContent className="w-[300px]">
+                      {importableCategories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.label} ({category.items.length})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </Tooltip>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onAddOption(step.id)}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Adicionar opção
+              </Button>
+            </div>
           </div>
 
           {step.options.length === 0 && (
