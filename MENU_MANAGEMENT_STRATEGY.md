@@ -15,63 +15,210 @@ O frontend precisa expor isso de forma guiada, sem revelar os termos técnicos a
 
 ## Princípio 1 — Fonte canônica de tipos: `@juntai/types`
 
-Todos os tipos de domínio vêm de `@juntai/types` (mapeado via `tsconfig.paths` para `../juntai-hermes/lib/index.ts`).  
+`@juntai/types` é resolvido via **npm workspace** (`juntai-hermes/lib`), compilado para `dist/`.  
 **Nunca declarar tipos localmente** se o tipo já existe na lib.
 
-### Padrão correto (seguir `features/orders/types.ts`)
+### Estado atual de `features/menu/types.ts`
 
 ```ts
-// features/menu/types.ts
+// ✅ já existe — parcialmente correto
 export type {
-  Menu,
-  Category,
+  MenuWithCategories,
   MenuItem,
+  Category,
   ModifierGroup,
   ModifierOption,
-  MenuWithCategories,
-  MenuItemType,
-  StepType,
-  PricingStrategy,
-  CompositionConfig,
 } from "@juntai/types";
 
-// Apenas tipos Athenas-específicos ficam aqui
-export interface MenusPage { ... }
+// ❌ ainda faltam — adicionar no Step 1:
+// Menu, MenuItemType, StepType, PricingStrategy, CompositionConfig
 ```
 
-### Ação imediata
+### Tipos já disponíveis em `@juntai/types` (menu.entity.ts)
 
-`features/menu/types.ts` duplica os tipos localmente — **deve ser substituído** pelo padrão acima antes de qualquer nova feature.
+```ts
+// Tipos enum
+type MenuItemType = "simple" | "composable";
+type StepType     = "choice" | "multi" | "composition" | "quantity";
+type PricingStrategy = "sum" | "max" | "average";
+
+// Tipo composto
+type CompositionConfig = { maxParts: number };
+
+// Entidades
+type Menu = {
+  id: string; restaurantId: string; locationId: string | null;
+  name: string; isActive: boolean; displayOrder: number; createdAt: string;
+};
+type Category = {
+  id: string; menuId: string; restaurantId: string;
+  name: string; displayOrder: number; isActive: boolean;
+};
+type ModifierGroup = {
+  id: string; restaurantId: string; name: string;
+  selectionType: "SINGLE" | "MULTIPLE";
+  stepType: StepType;                        // ← Composition Engine
+  pricingStrategy: PricingStrategy | null;   // ← Composition Engine
+  compositionConfig: CompositionConfig | null; // ← Composition Engine
+  isRequired: boolean; minSelections: number; maxSelections: number | null;
+  options: ModifierOption[];
+};
+type ModifierOption = {
+  id: string; modifierGroupId: string;
+  parentOptionId: string | null;   // ← sub-opções (composition)
+  name: string; priceDelta: number;
+  minQuantity: number;             // ← quantity step
+  maxQuantity: number | null;      // ← quantity step
+  unitPrice: number | null;        // ← quantity step
+  isAvailable: boolean; displayOrder: number;
+  childOptions?: ModifierOption[];
+};
+type MenuItem = {
+  id: string; type: MenuItemType;  // ← "simple" | "composable"
+  categoryId: string; restaurantId: string;
+  name: string; description: string | null; basePrice: number;
+  imageUrl: string | null; mediaUrls: string[] | null;
+  isAvailable: boolean; displayOrder: number; createdAt: string;
+  modifierGroups: ModifierGroup[];
+};
+type MenuWithCategories = Menu & {
+  categories: Array<Category & { items: MenuItem[] }>;
+};
+```
 
 ---
 
-## Princípio 2 — A API suporta o Composition Engine completo
+## Princípio 2 — SDK: `createJuntaiClient` via `@juntai/types`
 
-O `API_REFERENCE.md` está desatualizado. Os schemas reais do backend (`menu.schema.ts`) confirmam:
+`@juntai/types` exporta o SDK completo. **Toda função em `api.ts` usa `createJuntaiClient`**, não o `apiClient` raw.
 
-| Campo                  | Endpoint                                    | Tipo real                          |
-|------------------------|---------------------------------------------|------------------------------------|
-| `type`                 | `POST /categories/:id/items`                | `"simple" \| "composable"`         |
-| `stepType`             | `POST /restaurants/:id/modifier-groups`     | `"choice" \| "multi" \| "composition" \| "quantity"` |
-| `pricingStrategy`      | `POST /restaurants/:id/modifier-groups`     | `"sum" \| "max" \| "average"`      |
-| `compositionConfig`    | `POST /restaurants/:id/modifier-groups`     | `{ maxParts: number }`             |
-| `parentOptionId`       | `POST /modifier-groups/:id/options`         | `string (uuid)`                    |
-| `minQuantity`          | `POST /modifier-groups/:id/options`         | `number`                           |
-| `maxQuantity`          | `POST /modifier-groups/:id/options`         | `number \| null`                   |
-| `unitPrice`            | `POST /modifier-groups/:id/options`         | `number \| null`                   |
+### Módulo `menu` atual (já existente em `lib/modules/menu.ts`)
 
-O builder deve usar esses campos diretamente — sem gambiarras de mapeamento.
+```ts
+createJuntaiClient({ baseUrl, token }).menu.get(restaurantId, locationId)
+// → Promise<MenuWithCategories[]>
+// GET /restaurants/:restaurantId/locations/:locationId/menu
+```
+
+### Métodos a adicionar no SDK (`lib/modules/menu.ts`) — Step 2
+
+O SDK precisa ser estendido com os métodos de escrita. Cada método abaixo define a assinatura esperada:
+
+```ts
+// ── Menus ────────────────────────────────────────────────────────────────────
+menu.createMenu(restaurantId: string, body: {
+  name: string;
+  locationId: string;
+  displayOrder?: number;
+}): Promise<Menu>
+// POST /restaurants/:restaurantId/menus
+
+// ── Categorias ───────────────────────────────────────────────────────────────
+menu.createCategory(menuId: string, body: {
+  restaurantId: string;
+  name: string;
+  displayOrder?: number;
+}): Promise<Category>
+// POST /menus/:menuId/categories
+
+menu.patchCategory(categoryId: string, body: {
+  restaurantId: string;
+  name?: string;
+  isActive?: boolean;
+  displayOrder?: number;
+}): Promise<Category>
+// PATCH /categories/:categoryId
+
+menu.deleteCategory(categoryId: string, restaurantId: string): Promise<void>
+// DELETE /categories/:categoryId  — body: { restaurantId }
+
+// ── Itens ────────────────────────────────────────────────────────────────────
+menu.createItem(categoryId: string, body: {
+  restaurantId: string;
+  name: string;
+  description?: string;
+  basePrice: number;
+  imageUrl?: string;
+  mediaUrls?: string[];
+  type?: MenuItemType;       // "simple" | "composable"  (default: "simple")
+  displayOrder?: number;
+}): Promise<MenuItem>
+// POST /categories/:categoryId/items
+
+menu.patchItem(itemId: string, body: {
+  restaurantId: string;
+  name?: string;
+  description?: string;
+  basePrice?: number;
+  imageUrl?: string;
+  isAvailable?: boolean;
+  displayOrder?: number;
+}): Promise<MenuItem>
+// PATCH /items/:itemId
+
+menu.deleteItem(itemId: string, restaurantId: string): Promise<void>
+// DELETE /items/:itemId  — body: { restaurantId }
+
+// ── Modifier Groups ──────────────────────────────────────────────────────────
+menu.createModifierGroup(restaurantId: string, body: {
+  name: string;
+  selectionType: "SINGLE" | "MULTIPLE";
+  stepType: StepType;                           // Composition Engine
+  pricingStrategy?: PricingStrategy;            // Composition Engine
+  compositionConfig?: CompositionConfig;        // Composition Engine — obrig. se stepType="composition"
+  isRequired?: boolean;
+  minSelections?: number;
+  maxSelections?: number;
+}): Promise<ModifierGroup>
+// POST /restaurants/:restaurantId/modifier-groups
+
+// ── Modifier Options ─────────────────────────────────────────────────────────
+menu.createModifierOption(groupId: string, body: {
+  restaurantId: string;
+  name: string;
+  priceDelta?: number;
+  parentOptionId?: string;        // sub-opção (composition)
+  minQuantity?: number;           // quantity step
+  maxQuantity?: number | null;    // quantity step
+  unitPrice?: number | null;      // quantity step
+  displayOrder?: number;
+}): Promise<ModifierOption>
+// POST /modifier-groups/:groupId/options
+
+// ── Attach ───────────────────────────────────────────────────────────────────
+menu.attachModifierGroup(itemId: string, groupId: string, restaurantId: string): Promise<void>
+// POST /items/:itemId/modifier-groups/:groupId  — body: { restaurantId }
+```
+
+### Padrão `api.ts` (seguir `features/orders/api.ts` e `features/users/api.ts`)
+
+```ts
+import { createJuntaiClient } from "@juntai/types";
+import type { Menu, Category, MenuItem, ModifierGroup, ModifierOption } from "@juntai/types";
+import type { MenuItemType, StepType, PricingStrategy, CompositionConfig } from "@juntai/types";
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+
+// Cada função cria um cliente com o token da chamada:
+export function createMenu(restaurantId: string, body: { name: string; locationId: string }, token: string | null) {
+  return createJuntaiClient({ baseUrl: BASE_URL, token }).menu.createMenu(restaurantId, body);
+}
+// ... demais funções no mesmo padrão
+```
 
 ---
 
-## Mapeamento UX → API (StepType)
+## Mapeamento UX → SDK (StepType)
 
-| Label na UI                      | `stepType`    | `selectionType` | `pricingStrategy` | Notas                              |
-|----------------------------------|---------------|-----------------|-------------------|------------------------------------|
-| Escolha única                    | `choice`      | `SINGLE`        | `sum`             | max = 1                            |
-| Múltiplas escolhas               | `multi`       | `MULTIPLE`      | `sum`             | min/max configurável               |
-| Dividir em partes (pizza/combo)  | `composition` | `MULTIPLE`      | `max`             | `compositionConfig.maxParts` obrig |
-| Quantidade                       | `quantity`    | `MULTIPLE`      | `sum`             | opções usam `unitPrice`/`maxQty`   |
+| Label na UI                      | `stepType`    | `selectionType` | `pricingStrategy` | `compositionConfig`       |
+|----------------------------------|---------------|-----------------|-------------------|---------------------------|
+| Escolha única                    | `choice`      | `SINGLE`        | `sum`             | `null`                    |
+| Múltiplas escolhas               | `multi`       | `MULTIPLE`      | `sum`             | `null`                    |
+| Dividir em partes (pizza/combo)  | `composition` | `MULTIPLE`      | `max`             | `{ maxParts: N }` obrigatório |
+| Quantidade                       | `quantity`    | `MULTIPLE`      | `sum`             | `null`                    |
+
+> Esses valores são passados diretamente para `menu.createModifierGroup(restaurantId, body, token)`.  
+> A UI nunca expõe esses termos técnicos — usa os labels da coluna "Label na UI".
 
 ---
 
@@ -131,50 +278,92 @@ Necessário para reordenação de categorias.
 
 ---
 
-### Step 1 — Corrigir `features/menu/types.ts`
+### Step 1 — Completar `features/menu/types.ts`
 
-- Remover declarações locais duplicadas
-- Re-exportar tudo de `@juntai/types`
-- Adicionar apenas tipos Athenas-específicos (ex: `MenusPage`)
+`types.ts` já re-exporta `MenuWithCategories`, `MenuItem`, `Category`, `ModifierGroup`, `ModifierOption`.  
+Adicionar os tipos que faltam:
+
+```ts
+export type {
+  Menu,
+  MenuWithCategories,
+  MenuItem,
+  Category,
+  ModifierGroup,
+  ModifierOption,
+  MenuItemType,
+  StepType,
+  PricingStrategy,
+  CompositionConfig,
+} from "@juntai/types";
+```
 
 ---
 
-### Step 2 — Estender `features/menu/api.ts`
+### Step 2 — Estender SDK em `lib/modules/menu.ts` (Hermes) + `features/menu/api.ts` (Athenas)
 
-Adicionar funções puras (sem hooks):
+**Primeiro**: estender `juntai-hermes/lib/modules/menu.ts` com todos os métodos de escrita descritos no Princípio 2.  
+**Depois**: rodar `npm run build` em `juntai-hermes/lib/` para gerar o novo `dist/`.  
+**Por último**: criar as funções em `features/menu/api.ts` usando `createJuntaiClient`:
 
 ```ts
-// Menus
-createMenu(restaurantId, payload, token)
+// Estado atual (já existe):
+export function getMenu(restaurantId, locationId, token)
 
-// Categorias
-createCategory(menuId, payload, token)
-patchCategory(categoryId, payload, token)   // name, isActive, displayOrder
-deleteCategory(categoryId, restaurantId, token)
-
-// Itens
-createItem(categoryId, payload, token)      // inclui type: "simple" | "composable"
-patchItem(itemId, payload, token)
-deleteItem(itemId, restaurantId, token)
-
-// Modifier Groups
-createModifierGroup(restaurantId, payload, token)   // inclui stepType, pricingStrategy, compositionConfig
-createModifierOption(groupId, payload, token)        // inclui parentOptionId, unitPrice, minQuantity, maxQuantity
-attachModifierGroup(itemId, groupId, restaurantId, token)
+// A adicionar:
+export function createMenu(restaurantId, body, token)
+export function createCategory(menuId, body, token)
+export function patchCategory(categoryId, body, token)
+export function deleteCategory(categoryId, restaurantId, token)
+export function createItem(categoryId, body, token)
+export function patchItem(itemId, body, token)
+export function deleteItem(itemId, restaurantId, token)
+export function createModifierGroup(restaurantId, body, token)
+export function createModifierOption(groupId, body, token)
+export function attachModifierGroup(itemId, groupId, restaurantId, token)
 ```
 
 ---
 
 ### Step 3 — `features/menu/schemas.ts` (NOVO)
 
-Schemas Zod para os formulários da UI (podem ser subsets do schema do backend):
+Schemas Zod para os formulários da UI. Os campos mapeiam diretamente para os bodies do SDK:
 
 ```ts
-export const menuFormSchema      // name, locationId
-export const categoryFormSchema  // name
-export const itemFormSchema      // name, description, basePrice, imageUrl, type
-export const stepFormSchema      // name, stepType, isRequired, min, max, compositionConfig
-export const optionFormSchema    // name, priceDelta, unitPrice, minQuantity, maxQuantity
+export const menuFormSchema = z.object({
+  name: z.string().min(1).max(200),
+  locationId: z.string().uuid(),
+})
+
+export const categoryFormSchema = z.object({
+  name: z.string().min(1).max(200),
+})
+
+export const itemFormSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
+  basePrice: z.number().positive(),
+  imageUrl: z.string().url().optional(),
+  type: z.enum(["simple", "composable"]).default("simple"),
+})
+
+// Inclui campos de todas as variantes de StepType:
+export const stepFormSchema = z.object({
+  name: z.string().min(1),
+  stepType: z.enum(["choice", "multi", "composition", "quantity"]),
+  isRequired: z.boolean().default(false),
+  minSelections: z.number().int().min(0).default(0),
+  maxSelections: z.number().int().positive().nullable().optional(),
+  compositionConfig: z.object({ maxParts: z.number().int().positive() }).nullable().optional(),
+})
+
+export const optionFormSchema = z.object({
+  name: z.string().min(1),
+  priceDelta: z.number().default(0),
+  unitPrice: z.number().positive().nullable().optional(),    // quantity step
+  minQuantity: z.number().int().min(0).default(1),           // quantity step
+  maxQuantity: z.number().int().positive().nullable().optional(), // quantity step
+})
 ```
 
 ---
@@ -253,20 +442,27 @@ Sequência interna:
 ### Step 5 — Estender `features/menu/hooks.ts`
 
 ```ts
-// Mutations atômicas
-useCreateMenu(restaurantId)
-useCreateCategory(menuId, restaurantId)
-usePatchCategory(restaurantId)
-useCreateItem(categoryId, restaurantId)
-usePatchItem(restaurantId)
-useCreateModifierGroup(restaurantId)
-useCreateModifierOption(groupId, restaurantId)
-useAttachModifierGroup(restaurantId)
+// Estado atual (já existe):
+export function useMenu(restaurantId, locationId)   // useQuery → getMenu
 
-// Hook orquestrador (usa saveProduct internamente)
-useCreateProduct(categoryId, restaurantId)
-  → onSuccess: invalida ["menu", restaurantId, locationId]
+// Mutations atômicas (useAuth().sessionToken → token):
+export function useCreateMenu(restaurantId)
+export function useCreateCategory(menuId, restaurantId)
+export function usePatchCategory(restaurantId)
+export function useDeleteCategory(restaurantId)
+export function useCreateItem(categoryId, restaurantId)
+export function usePatchItem(restaurantId)
+export function useDeleteItem(restaurantId)
+export function useCreateModifierGroup(restaurantId)
+export function useCreateModifierOption(groupId, restaurantId)
+export function useAttachModifierGroup(restaurantId)
+
+// Hook orquestrador (usa saveProduct de builder.ts):
+// onSuccess → invalida ["menu", restaurantId, locationId]
+export function useCreateProduct(categoryId, restaurantId)
 ```
+
+Todas as mutations usam `useMutation` do `@tanstack/react-query` e chamam as funções de `api.ts`.
 
 ---
 
@@ -358,10 +554,14 @@ Com `LocationPicker` para selecionar a filial (reutilizar o componente existente
 ```
 Step 0  (instalar dnd-kit)
   ↓
-Step 1  (corrigir types.ts)
+Step 1  (completar types.ts — adicionar Menu, MenuItemType, StepType, PricingStrategy, CompositionConfig)
   ↓
-Step 2  (api.ts)   Step 3 (schemas.ts)   Step 4 (builder.ts)
-  ↓                      ↓                     ↓
+Step 2  ← BIFURCAÇÃO:
+   ├── 2a. Estender lib/modules/menu.ts (Hermes) + npm run build na lib/
+   └── 2b. Estender api.ts (Athenas) — depende de 2a
+              ↓
+Step 3 (schemas.ts)   Step 4 (builder.ts — depende de tipos do Step 1)
+     ↓                       ↓
 Step 5  (hooks.ts — depende de api.ts + builder.ts)
   ↓
 Steps 6, 7, 8  (componentes — podem rodar em paralelo)
@@ -370,6 +570,8 @@ Step 9  (ProductBuilder — depende de schemas + hooks + builder.ts)
   ↓
 Step 10 (páginas — depende de todos os componentes)
 ```
+
+> **Lembrete**: após cada mudança em `juntai-hermes/lib/`, executar `npm run build` na pasta `lib/` antes de usar nos componentes do Athenas.
 
 ---
 

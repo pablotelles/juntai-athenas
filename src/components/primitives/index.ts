@@ -15,3 +15,5 @@ export type { IconProps } from "./icon/Icon";
 
 export { Badge } from "./badge/Badge";
 export type { BadgeProps, BadgeVariant } from "./badge/Badge";
+
+export { Toaster } from "./toast/Toast";
