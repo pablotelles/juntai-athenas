@@ -37,20 +37,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         .toUpperCase()
     : "?";
 
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
+
   // ── Dynamic nav: filter by active context ──────────────────────────────────
-  const filtered = NAV_ITEMS.filter((item) =>
-    item.contexts.includes(context.type),
-  );
-
-  const mainItems = filtered.filter((i) => i.href !== "/settings");
-  const systemItems = filtered.filter((i) => i.href === "/settings");
-
-  const sections: NavSection[] = [
-    { items: mainItems },
-    ...(systemItems.length > 0
-      ? [{ title: "Sistema", items: systemItems }]
-      : []),
-  ].filter((s) => s.items.length > 0);
+  // Deferred to post-mount to avoid server/client hydration mismatch,
+  // since context.type is client-only state (localStorage/session).
+  const sections: NavSection[] = React.useMemo(() => {
+    if (!mounted) return [];
+    const filtered = NAV_ITEMS.filter((item) =>
+      item.contexts.includes(context.type),
+    );
+    const mainItems = filtered.filter((i) => i.href !== "/settings");
+    const systemItems = filtered.filter((i) => i.href === "/settings");
+    return [
+      { items: mainItems },
+      ...(systemItems.length > 0
+        ? [{ title: "Sistema", items: systemItems }]
+        : []),
+    ].filter((s) => s.items.length > 0);
+  }, [mounted, context.type]);
 
   const sidebarNode = (
     <Sidebar
@@ -72,14 +78,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             collapsed && !isMobile && "justify-center",
           )}
         >
-          <Avatar fallback={userInitials} size="sm" />
+          <Avatar fallback={mounted ? userInitials : "?"} size="sm" />
           {(!collapsed || isMobile) && (
             <div className="flex flex-col min-w-0">
               <span className="text-xs font-medium text-sidebar-fg-active truncate">
-                {user?.name ?? "Usuário"}
+                {mounted ? (user?.name ?? "Usuário") : "Usuário"}
               </span>
               <span className="text-[10px] text-sidebar-fg truncate">
-                {user?.email ?? ""}
+                {mounted ? (user?.email ?? "") : ""}
               </span>
             </div>
           )}

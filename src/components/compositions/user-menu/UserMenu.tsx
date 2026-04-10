@@ -17,19 +17,25 @@ import { useAuth } from "@/contexts/auth/AuthProvider";
 export function UserMenu() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
 
   function handleLogout() {
     logout();
     router.push("/auth/login");
   }
 
-  const displayName = user?.name ?? user?.email ?? "Usuário";
-  const initials = displayName
-    .split(" ")
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const displayName = mounted
+    ? (user?.name ?? user?.email ?? "Usuário")
+    : "Usuário";
+  const initials = mounted
+    ? displayName
+        .split(" ")
+        .map((w) => w[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "?";
 
   return (
     <DropdownMenu>
@@ -47,7 +53,7 @@ export function UserMenu() {
         <DropdownMenuLabel>
           <div className="flex flex-col gap-0.5">
             <span className="font-medium text-foreground">{displayName}</span>
-            {user?.email && (
+            {mounted && user?.email && (
               <span className="text-xs font-normal text-muted-foreground">
                 {user.email}
               </span>

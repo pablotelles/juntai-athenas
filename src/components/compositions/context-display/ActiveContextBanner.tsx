@@ -17,8 +17,13 @@ import { cn } from "@/lib/cn";
 
 export function ActiveContextBanner({ className }: { className?: string }) {
   const { context, restaurants } = useActiveContext();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
 
-  const info = resolveContextInfo(context, restaurants);
+  const info = resolveContextInfo(
+    mounted ? context : { type: "platform" },
+    restaurants,
+  );
 
   return (
     <div

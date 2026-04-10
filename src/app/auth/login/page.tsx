@@ -48,7 +48,7 @@ export default function LoginPage() {
           Juntai Console
         </h1>
         <p className="text-sm text-muted-foreground">
-          Plataforma de gestÃ£o de restaurantes
+          Plataforma de gestão de restaurantes
         </p>
       </div>
 
@@ -93,7 +93,7 @@ export default function LoginPage() {
                 {formState === "loading" ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    Enviandoâ€¦
+                    Enviando…
                   </>
                 ) : (
                   <>

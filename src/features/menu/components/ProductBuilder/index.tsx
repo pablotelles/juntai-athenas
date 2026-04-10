@@ -232,7 +232,7 @@ export function ProductBuilderPage({
   const content = (
     <div className="flex flex-col h-full">
       {/* Top bar */}
-      <div className="flex items-center gap-4 px-8 py-4 border-b border-border bg-background/80 backdrop-blur sticky top-0 z-10">
+      <div className="flex items-center gap-4 px-4 sm:px-6 lg:px-8 py-4 border-b border-border bg-background/80 backdrop-blur sticky top-0 z-10">
         <button
           type="button"
           onClick={handleBack}
@@ -245,12 +245,12 @@ export function ProductBuilderPage({
       </div>
 
       {/* Wizard progress */}
-      <div className="px-8 py-5 border-b border-border">
+      <div className="px-4 sm:px-6 lg:px-8 py-5 border-b border-border">
         <WizardProgress steps={wizardSteps} currentStep={step} />
       </div>
 
       {/* Step content */}
-      <div className="flex-1 px-8 py-8 flex flex-col gap-8">
+      <div className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 flex flex-col gap-6 lg:gap-8">
         {step === 1 && (
           <div className="flex flex-col gap-4 max-w-xl">
             <div>
@@ -318,7 +318,7 @@ export function ProductBuilderPage({
       </div>
 
       {/* Footer nav */}
-      <div className="sticky bottom-0 bg-background/90 backdrop-blur border-t border-border px-8 py-4 flex items-center justify-between gap-3">
+      <div className="sticky bottom-0 bg-background/90 backdrop-blur border-t border-border px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-3">
         <Button type="button" variant="ghost" onClick={handleBack}>
           {step === 1 ? "Cancelar" : "Voltar"}
         </Button>

@@ -47,6 +47,8 @@ function ContextIcon({
 export function ContextSwitcher() {
   const { context, setContext, restaurants } = useActiveContext();
   const [open, setOpen] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
 
   function select(ctx: ActiveContextValue) {
     setContext(ctx);
@@ -68,10 +70,12 @@ export function ContextSwitcher() {
           )}
         >
           <ContextIcon
-            type={context.type}
+            type={mounted ? context.type : "platform"}
             className="shrink-0 text-muted-foreground"
           />
-          <span className="truncate">{resolveLabel(context, restaurants)}</span>
+          <span className="truncate">
+            {mounted ? resolveLabel(context, restaurants) : "Plataforma"}
+          </span>
           <ChevronDown
             size={12}
             className={cn(
