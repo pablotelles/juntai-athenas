@@ -1,24 +1,19 @@
-import { apiClient } from "@/lib/api";
-import type { OrdersPage, OrderStatus } from "./types";
+import { createJuntaiClient } from "@juntai/types";
+import type { OrderStatus } from "@juntai/types";
+import type { OrdersPage, ListOrdersParams } from "@juntai/types";
 
-export interface ListOrdersParams {
-  status?: OrderStatus;
-  page?: number;
-  limit?: number;
-}
+export type { OrdersPage, ListOrdersParams, OrderStatus };
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 export function listOrders(
   restaurantId: string,
   token: string | null,
   params: ListOrdersParams = {},
 ) {
-  const search = new URLSearchParams();
-  if (params.status) search.set("status", params.status);
-  if (params.page) search.set("page", String(params.page));
-  if (params.limit) search.set("limit", String(params.limit));
-  const qs = search.toString();
-  return apiClient(token).get<OrdersPage>(
-    `/restaurants/${restaurantId}/orders${qs ? `?${qs}` : ""}`,
+  return createJuntaiClient({ baseUrl: BASE_URL, token }).orders.list(
+    restaurantId,
+    params,
   );
 }
 
@@ -28,8 +23,9 @@ export function updateOrderStatus(
   status: OrderStatus,
   token: string | null,
 ) {
-  return apiClient(token).put<void>(`/orders/${orderId}/status`, {
-    status,
+  return createJuntaiClient({ baseUrl: BASE_URL, token }).orders.updateStatus(
+    orderId,
     restaurantId,
-  });
+    status,
+  );
 }

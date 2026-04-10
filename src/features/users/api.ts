@@ -1,38 +1,22 @@
-import { apiClient } from "@/lib/api";
-import type { MembershipRole, UsersPage } from "./types";
+import { createJuntaiClient } from "@juntai/types";
+import type { MembershipRole } from "@juntai/types";
+import type {
+  UsersPage,
+  ListUsersParams,
+  UserContextHeaders,
+} from "@juntai/types";
 
-export interface ListUsersParams {
-  name?: string;
-  email?: string;
-  role?: MembershipRole;
-  page?: number;
-  limit?: number;
-}
+export type { UsersPage, ListUsersParams, UserContextHeaders, MembershipRole };
 
-export interface UserContextHeaders {
-  restaurantId?: string;
-  locationId?: string;
-}
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 export function listUsers(
   token: string | null,
   params: ListUsersParams = {},
   ctx: UserContextHeaders = {},
 ) {
-  const search = new URLSearchParams();
-  if (params.name) search.set("name", params.name);
-  if (params.email) search.set("email", params.email);
-  if (params.role) search.set("role", params.role);
-  if (params.page) search.set("page", String(params.page));
-  if (params.limit) search.set("limit", String(params.limit));
-  const qs = search.toString();
-
-  const contextHeaders: Record<string, string> = {};
-  if (ctx.restaurantId) contextHeaders["X-Restaurant-Id"] = ctx.restaurantId;
-  if (ctx.locationId) contextHeaders["X-Location-Id"] = ctx.locationId;
-
-  return apiClient(token).get<UsersPage>(
-    `/users${qs ? `?${qs}` : ""}`,
-    Object.keys(contextHeaders).length > 0 ? contextHeaders : undefined,
+  return createJuntaiClient({ baseUrl: BASE_URL, token }).users.list(
+    params,
+    ctx,
   );
 }
