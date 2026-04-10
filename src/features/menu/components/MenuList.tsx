@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { BookOpen, Plus } from "lucide-react";
 import { Text } from "@/components/primitives/text/Text";
 import { Button } from "@/components/primitives/button/Button";
+import { FAB } from "@/components/primitives/fab/FAB";
 import { useToast } from "@/contexts/toast/ToastProvider";
 import { useMenu, useCreateMenu } from "../hooks";
 import { MenuCard } from "./MenuCard";
@@ -50,10 +51,12 @@ export function MenuList({ restaurantId, locationId }: MenuListProps) {
             ? `${menus?.length ?? 0} cardápio${(menus?.length ?? 0) !== 1 ? "s" : ""}`
             : "Selecione uma filial"}
         </Text>
+        {/* Desktop: inline button. Mobile: replaced by FAB below */}
         <Button
           size="sm"
           onClick={() => setCreateOpen(true)}
           disabled={!locationId}
+          className="hidden lg:inline-flex"
         >
           <Plus className="h-4 w-4" />
           Novo cardápio
@@ -103,6 +106,14 @@ export function MenuList({ restaurantId, locationId }: MenuListProps) {
         restaurantId={restaurantId}
         onSubmit={handleCreate}
       />
+
+      {/* Mobile FAB — only when a location is selected */}
+      {locationId && (
+        <FAB
+          label="Novo cardápio"
+          onClick={() => setCreateOpen(true)}
+        />
+      )}
     </div>
   );
 }

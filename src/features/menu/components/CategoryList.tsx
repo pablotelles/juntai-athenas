@@ -7,6 +7,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -20,6 +21,7 @@ import {
 import { FolderOpen, Plus } from "lucide-react";
 import { Text } from "@/components/primitives/text/Text";
 import { Button } from "@/components/primitives/button/Button";
+import { FAB } from "@/components/primitives/fab/FAB";
 import { useToast } from "@/contexts/toast/ToastProvider";
 import { useMenu, useCreateCategory, usePatchCategory } from "../hooks";
 import { CategoryItem } from "./CategoryItem";
@@ -56,9 +58,13 @@ export function CategoryList({
     }
   }, [menu]);
 
-  // dnd-kit sensors
+  // dnd-kit sensors — TouchSensor enables drag on mobile touch screens
   const sensors = useSensors(
     useSensor(PointerSensor),
+    useSensor(TouchSensor, {
+      // Require 8px movement before activating to allow tap-to-navigate
+      activationConstraint: { distance: 8 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
@@ -126,7 +132,8 @@ export function CategoryList({
         <Text variant="sm" muted>
           {orderedCategories.length} categoria{orderedCategories.length !== 1 ? "s" : ""}
         </Text>
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
+        {/* Desktop: inline button. Mobile: replaced by FAB below */}
+        <Button size="sm" onClick={() => setCreateOpen(true)} className="hidden lg:inline-flex">
           <Plus className="h-4 w-4" />
           Nova categoria
         </Button>
@@ -169,6 +176,8 @@ export function CategoryList({
         onOpenChange={setCreateOpen}
         onSubmit={handleCreate}
       />
+
+      <FAB label="Nova categoria" onClick={() => setCreateOpen(true)} />
     </div>
   );
 }

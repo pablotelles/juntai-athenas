@@ -5,6 +5,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, ChevronRight } from "lucide-react";
 import { Switch } from "@/components/shared/switch/Switch";
+import { Badge } from "@/components/primitives/badge/Badge";
 import { Text } from "@/components/primitives/text/Text";
 import { cn } from "@/lib/cn";
 import type { Category } from "@juntai/types";
@@ -44,25 +45,39 @@ export function CategoryItem({
         isDragging && "opacity-50 shadow-lg z-10",
       )}
     >
-      {/* Drag handle */}
+      {/* Drag handle — larger touch target on mobile */}
       <button
         {...attributes}
         {...listeners}
-        className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
+        className="flex items-center justify-center h-10 w-8 -ml-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none shrink-0"
         aria-label="Arrastar para reordenar"
         tabIndex={0}
       >
         <GripVertical className="h-4 w-4" />
       </button>
 
-      {/* Name — clicável para navegar */}
+      {/* Name + product count — clicável para navegar */}
       <button
-        className="flex-1 min-w-0 text-left flex items-center gap-1 group"
+        className="flex-1 min-w-0 text-left flex items-center gap-2 group py-1 cursor-pointer"
         onClick={() => onNavigate(category)}
       >
-        <Text variant="sm" className="font-medium truncate group-hover:text-primary transition-colors">
-          {category.name}
-        </Text>
+        <div className="min-w-0 flex-1">
+          <Text variant="sm" className="font-medium truncate group-hover:text-primary transition-colors">
+            {category.name}
+          </Text>
+          {/* Product count badge on mobile */}
+          {category.items !== undefined && (
+            <span className="lg:hidden text-xs text-muted-foreground">
+              {category.items.length} {category.items.length === 1 ? "produto" : "produtos"}
+            </span>
+          )}
+        </div>
+        {/* Product count badge on desktop */}
+        {category.items !== undefined && (
+          <Badge variant="secondary" className="hidden lg:inline-flex tabular-nums shrink-0">
+            {category.items.length}
+          </Badge>
+        )}
         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
       </button>
 

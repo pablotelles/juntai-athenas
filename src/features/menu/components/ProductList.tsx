@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Package, Plus } from "lucide-react";
 import { Text } from "@/components/primitives/text/Text";
 import { Button } from "@/components/primitives/button/Button";
+import { FAB } from "@/components/primitives/fab/FAB";
 import { useToast } from "@/contexts/toast/ToastProvider";
 import { useMenu, usePatchItem, useDeleteItem } from "../hooks";
 import { ProductCard } from "./ProductCard";
@@ -94,7 +95,8 @@ export function ProductList({
         <Text variant="sm" muted>
           {items.length} produto{items.length !== 1 ? "s" : ""}
         </Text>
-        <Button size="sm" onClick={navigateToBuilder}>
+        {/* Desktop: inline button. Mobile: replaced by FAB below */}
+        <Button size="sm" onClick={navigateToBuilder} className="hidden lg:inline-flex">
           <Plus className="h-4 w-4" />
           Novo produto
         </Button>
@@ -121,6 +123,8 @@ export function ProductList({
           ))}
         </div>
       )}
+
+      <FAB label="Novo produto" onClick={navigateToBuilder} />
     </div>
   );
 }
