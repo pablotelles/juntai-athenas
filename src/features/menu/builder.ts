@@ -179,6 +179,17 @@ export async function saveProduct(
     const { selectionType, pricingStrategy: defaultPricing } = STEP_CONFIG[step.stepType];
     const pricingStrategy = step.pricingStrategy ?? defaultPricing;
 
+    // SINGLE selection type always requires exactly minSelections=1, maxSelections=1.
+    // For MULTIPLE, if the step is required, minSelections must be at least 1.
+    const minSelections =
+      selectionType === "SINGLE"
+        ? 1
+        : step.isRequired
+        ? Math.max(step.minSelections, 1)
+        : step.minSelections;
+    const maxSelections =
+      selectionType === "SINGLE" ? 1 : (step.maxSelections ?? undefined);
+
     const group = await createModifierGroup(
       restaurantId,
       {
@@ -188,8 +199,8 @@ export async function saveProduct(
         pricingStrategy,
         compositionConfig: step.compositionConfig ?? undefined,
         isRequired: step.isRequired,
-        minSelections: step.minSelections,
-        maxSelections: step.maxSelections ?? undefined,
+        minSelections,
+        maxSelections,
       },
       token,
     );
