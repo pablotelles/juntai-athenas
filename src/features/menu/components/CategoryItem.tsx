@@ -3,10 +3,18 @@
 import * as React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, ChevronRight } from "lucide-react";
+import { GripVertical, ChevronRight, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Switch } from "@/components/shared/switch/Switch";
 import { Badge } from "@/components/primitives/badge/Badge";
 import { Text } from "@/components/primitives/text/Text";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/shared/dropdown-menu/DropdownMenu";
+import { Button } from "@/components/primitives/button/Button";
 import { cn } from "@/lib/cn";
 import type { Category, MenuItem } from "@juntai/types";
 
@@ -16,12 +24,16 @@ interface CategoryItemProps {
   category: CategoryWithItems;
   onNavigate: (category: CategoryWithItems) => void;
   onToggleActive: (category: CategoryWithItems, active: boolean) => void;
+  onEdit: (category: CategoryWithItems) => void;
+  onDelete: (category: CategoryWithItems) => void;
 }
 
 export function CategoryItem({
   category,
   onNavigate,
   onToggleActive,
+  onEdit,
+  onDelete,
 }: CategoryItemProps) {
   const {
     attributes,
@@ -47,7 +59,7 @@ export function CategoryItem({
         isDragging && "opacity-50 shadow-lg z-10",
       )}
     >
-      {/* Drag handle — larger touch target on mobile */}
+      {/* Drag handle */}
       <button
         {...attributes}
         {...listeners}
@@ -67,19 +79,13 @@ export function CategoryItem({
           <Text variant="sm" className="font-medium truncate group-hover:text-primary transition-colors">
             {category.name}
           </Text>
-          {/* Product count badge on mobile */}
-          {category.items !== undefined && (
-            <span className="lg:hidden text-xs text-muted-foreground">
-              {category.items.length} {category.items.length === 1 ? "produto" : "produtos"}
-            </span>
-          )}
+          <span className="lg:hidden text-xs text-muted-foreground">
+            {category.items.length} {category.items.length === 1 ? "produto" : "produtos"}
+          </span>
         </div>
-        {/* Product count badge on desktop */}
-        {category.items !== undefined && (
-          <Badge variant="secondary" className="hidden lg:inline-flex tabular-nums shrink-0">
-            {category.items.length}
-          </Badge>
-        )}
+        <Badge variant="secondary" className="hidden lg:inline-flex tabular-nums shrink-0">
+          {category.items.length}
+        </Badge>
         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
       </button>
 
@@ -89,6 +95,34 @@ export function CategoryItem({
         onCheckedChange={(checked) => onToggleActive(category, checked)}
         aria-label={`${category.isActive ? "Desativar" : "Ativar"} categoria`}
       />
+
+      {/* Actions menu */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Mais ações da categoria"
+            className="h-10 w-10 shrink-0"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onEdit(category)}>
+            <Pencil className="h-4 w-4 mr-2" />
+            Renomear
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onClick={() => onDelete(category)}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Excluir
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
