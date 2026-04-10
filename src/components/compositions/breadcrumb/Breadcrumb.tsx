@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb/BreadcrumbProvider";
 
 // ─────────────────────────────────────────────────────────────
 // Route segment → human label map
@@ -29,12 +30,13 @@ const ROUTE_LABELS: Record<string, string> = {
 
 export function Breadcrumb({ className }: { className?: string }) {
   const pathname = usePathname() ?? "";
+  const { labels } = useBreadcrumbContext();
 
   const segments = pathname
     .split("/")
     .filter(Boolean)
     .map((seg, index, arr) => ({
-      label: ROUTE_LABELS[seg] ?? seg,
+      label: labels.get(seg) ?? ROUTE_LABELS[seg] ?? seg,
       href: "/" + arr.slice(0, index + 1).join("/"),
       isLast: index === arr.length - 1,
     }));

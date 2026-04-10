@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/auth/AuthProvider";
 import { ActiveContextProvider } from "@/contexts/active-context/ActiveContextProvider";
 import { ToastProvider } from "@/contexts/toast/ToastProvider";
 import { Toaster } from "@/components/primitives/toast/Toast";
+import { BreadcrumbProvider } from "@/contexts/breadcrumb/BreadcrumbProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = React.useState(
@@ -25,7 +26,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ActiveContextProvider>
         <QueryClientProvider client={queryClient}>
           <ToastProvider>
-            {children}
+            <BreadcrumbProvider>
+              {children}
+            </BreadcrumbProvider>
             <Toaster />
           </ToastProvider>
         </QueryClientProvider>

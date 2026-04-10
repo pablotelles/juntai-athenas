@@ -5,12 +5,19 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Text } from "@/components/primitives/text/Text";
 import { useActiveContext } from "@/contexts/active-context/ActiveContextProvider";
 import { CategoryList } from "@/features/menu/components/CategoryList";
+import { useMenu } from "@/features/menu/hooks";
+import { useBreadcrumbLabel } from "@/contexts/breadcrumb/BreadcrumbProvider";
 
 export default function MenuCategoriesPage() {
   const { context } = useActiveContext();
   const params = useParams<{ menuId: string }>();
   const searchParams = useSearchParams();
   const locationId = searchParams.get("locationId");
+
+  const restaurantId = context.type === "restaurant" ? context.restaurantId : null;
+  const { data: menus } = useMenu(restaurantId ?? "", locationId);
+  const menu = menus?.find((m) => m.id === params.menuId);
+  useBreadcrumbLabel(params.menuId, menu?.name);
 
   if (context.type !== "restaurant") {
     return <Text variant="sm" muted>Selecione um restaurante.</Text>;
