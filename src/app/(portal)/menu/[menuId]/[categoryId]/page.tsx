@@ -1,8 +1,8 @@
 "use client";
 
-import * as React from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Text } from "@/components/primitives/text/Text";
+import { BackButton } from "@/components/primitives/back-button/BackButton";
 import { useActiveContext } from "@/contexts/active-context/ActiveContextProvider";
 import { ProductList } from "@/features/menu/components/ProductList";
 import { useMenu } from "@/features/menu/hooks";
@@ -28,11 +28,14 @@ export default function CategoryProductsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <Text variant="h2">Produtos</Text>
-        <Text variant="sm" muted className="mt-1">
-          Crie e gerencie os produtos desta categoria.
-        </Text>
+      <div className="flex items-start gap-3">
+        <BackButton href={`/menu/${params.menuId}`} className="mt-1" />
+        <div>
+          <Text variant="h2">Produtos</Text>
+          <Text variant="sm" muted className="mt-1">
+            Crie e gerencie os produtos desta categoria.
+          </Text>
+        </div>
       </div>
 
       <ProductList
