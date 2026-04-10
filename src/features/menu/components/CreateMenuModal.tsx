@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useFormik } from "formik";
+import { useFormik, FormikProvider } from "formik";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import {
   Modal,
@@ -50,6 +50,7 @@ export function CreateMenuModal({
           </ModalDescription>
         </ModalHeader>
 
+        <FormikProvider value={formik}>
         <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4">
           <FormField name="name" label="Nome do cardápio" required>
             {({ field, hasError }) => (
@@ -89,6 +90,7 @@ export function CreateMenuModal({
             <FormSubmitButton>Criar cardápio</FormSubmitButton>
           </ModalFooter>
         </form>
+        </FormikProvider>
       </ModalContent>
     </Modal>
   );

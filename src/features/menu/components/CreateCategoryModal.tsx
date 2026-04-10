@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useFormik } from "formik";
+import { useFormik, FormikProvider } from "formik";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import {
   Modal,
@@ -43,6 +43,7 @@ export function CreateCategoryModal({
           <ModalTitle>Nova categoria</ModalTitle>
         </ModalHeader>
 
+        <FormikProvider value={formik}>
         <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4">
           <FormField name="name" label="Nome da categoria" required>
             {({ field, hasError }) => (
@@ -67,6 +68,7 @@ export function CreateCategoryModal({
             <FormSubmitButton>Criar categoria</FormSubmitButton>
           </ModalFooter>
         </form>
+        </FormikProvider>
       </ModalContent>
     </Modal>
   );
