@@ -12,8 +12,12 @@ import {
 } from "@/components/primitives/mobile-bottom-bar/MobileBottomBar";
 import { Tooltip } from "@/components/shared/tooltip/Tooltip";
 import { useToast } from "@/contexts/toast/ToastProvider";
-import { useCreateProduct, useMenu } from "../../hooks";
-import { emptyBuilderState, type BuilderState } from "../../builder";
+import { useCreateProduct, useUpdateProduct, useMenu } from "../../hooks";
+import {
+  emptyBuilderState,
+  itemToBuilderState,
+  type BuilderState,
+} from "../../builder";
 import { itemFormSchema, type ItemFormValues } from "../../schemas";
 import { getItemInitialValues } from "./basic-info.initial-values";
 import { BuilderLayout } from "./BuilderLayout";
@@ -27,21 +31,27 @@ import {
   MobileSubheader,
   useMobileSubheaderOffset,
 } from "@/components/primitives/mobile-subheader/MobileSubheader";
-import type { MenuItemType } from "@juntai/types";
+import type { MenuItem, MenuItemType } from "@juntai/types";
 
 interface ProductBuilderPageProps {
   categoryId: string;
   menuId: string;
   restaurantId: string;
   locationId: string | null;
-  /** href to navigate back to (e.g. category page) */
   backHref: string;
+  /** When provided, builder runs in edit mode */
+  initialItem?: MenuItem;
 }
 
 const WIZARD_STEPS_SIMPLE = [{ label: "Tipo" }, { label: "Informações" }];
+const WIZARD_STEPS_SIMPLE_EDIT = [{ label: "Informações" }];
 
 const WIZARD_STEPS_COMPOSABLE = [
   { label: "Tipo" },
+  { label: "Informações" },
+  { label: "Personalização" },
+];
+const WIZARD_STEPS_COMPOSABLE_EDIT = [
   { label: "Informações" },
   { label: "Personalização" },
 ];
@@ -69,17 +79,24 @@ export function ProductBuilderPage({
   restaurantId,
   locationId,
   backHref,
+  initialItem,
 }: ProductBuilderPageProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [state, setState] = React.useState<BuilderState>(emptyBuilderState);
+
+  const isEditMode = !!initialItem;
+
+  const [state, setState] = React.useState<BuilderState>(() =>
+    initialItem ? itemToBuilderState(initialItem) : emptyBuilderState(),
+  );
+  // Edit mode starts at step 1 of its own wizard (which maps to "Informações")
   const [step, setStep] = React.useState(1);
   const [previewOpen, setPreviewOpen] = React.useState(false);
 
   const createProduct = useCreateProduct(categoryId, restaurantId, locationId);
+  const updateProduct = useUpdateProduct(restaurantId, locationId);
   const { data: menus } = useMenu(restaurantId, locationId);
 
-  // Lista achatada de itens existentes para reutilização nas opções
   const allItems = React.useMemo(
     () =>
       menus?.flatMap((menu) =>
@@ -101,7 +118,7 @@ export function ProductBuilderPage({
   );
 
   const infoFormik = useFormik<ItemFormValues>({
-    initialValues: getItemInitialValues(),
+    initialValues: getItemInitialValues(initialItem),
     validationSchema: toFormikValidationSchema(itemFormSchema),
     validateOnBlur: true,
     validateOnChange: false,
@@ -112,13 +129,12 @@ export function ProductBuilderPage({
         description: values.description ?? "",
         basePrice: values.basePrice,
         imageUrl: values.imageUrl ?? "",
-        type: state.type, // preserve o tipo escolhido no step 1
+        type: state.type,
       }));
       setStep((s) => s + 1);
     },
   });
 
-  // Botão "Próximo" no step 2: valida explicitamente antes de avançar
   const handleStep2Next = React.useCallback(async () => {
     const errors = await infoFormik.validateForm();
     await infoFormik.setTouched(
@@ -137,9 +153,20 @@ export function ProductBuilderPage({
     }
   }, [infoFormik, state.type]);
 
-  const wizardSteps =
-    state.type === "composable" ? WIZARD_STEPS_COMPOSABLE : WIZARD_STEPS_SIMPLE;
+  // In edit mode: step 1 = Informações, step 2 = Personalização (composable)
+  // In create mode: step 1 = Tipo, step 2 = Informações, step 3 = Personalização
+  const wizardSteps = isEditMode
+    ? state.type === "composable"
+      ? WIZARD_STEPS_COMPOSABLE_EDIT
+      : WIZARD_STEPS_SIMPLE_EDIT
+    : state.type === "composable"
+      ? WIZARD_STEPS_COMPOSABLE
+      : WIZARD_STEPS_SIMPLE;
+
   const totalSteps = wizardSteps.length;
+
+  // Map local step to content step (create mode: 1=type, 2=info, 3=steps; edit: 1=info, 2=steps)
+  const contentStep = isEditMode ? step + 1 : step;
 
   const patch = <K extends keyof BuilderState>(
     field: K,
@@ -155,9 +182,8 @@ export function ProductBuilderPage({
     else router.push(backHref);
   };
 
-  // Estado de preview: quando no step 2 usa os valores live do formik
   const previewState: BuilderState = React.useMemo(() => {
-    if (step === 2) {
+    if (contentStep === 2) {
       return {
         ...state,
         name: infoFormik.values.name,
@@ -167,12 +193,13 @@ export function ProductBuilderPage({
       };
     }
     return state;
-  }, [step, state, infoFormik.values]);
+  }, [contentStep, state, infoFormik.values]);
 
   const handleSave = async () => {
-    // Produto simples: step 2 é o último — valida infoFormik antes de salvar.
     let saveState = state;
-    if (step === 2) {
+
+    // Validate info form if on that step
+    if (contentStep === 2) {
       const errors = await infoFormik.validateForm();
       await infoFormik.setTouched(
         Object.fromEntries(
@@ -190,8 +217,6 @@ export function ProductBuilderPage({
       };
     }
 
-    // Produto personalizável: step 3 — valida que há pelo menos 1 etapa
-    // com nome e pelo menos 1 opção com nome.
     if (saveState.type === "composable") {
       if (saveState.steps.length === 0) {
         toast.warning("Adicione pelo menos uma etapa ao produto.");
@@ -225,15 +250,28 @@ export function ProductBuilderPage({
     toast.info(msg, { duration: 10_000 });
 
     try {
-      await createProduct.mutateAsync(saveState);
-      toast.success("Produto criado!", {
-        description: `"${saveState.name}" adicionado ao cardápio.`,
-      });
+      if (isEditMode && initialItem) {
+        const existingGroupIds = initialItem.modifierGroups.map((g) => g.id);
+        await updateProduct.mutateAsync({
+          itemId: initialItem.id,
+          state: saveState,
+          existingGroupIds,
+        });
+        toast.success("Produto atualizado!", {
+          description: `"${saveState.name}" salvo.`,
+        });
+      } else {
+        await createProduct.mutateAsync(saveState);
+        toast.success("Produto criado!", {
+          description: `"${saveState.name}" adicionado ao cardápio.`,
+        });
+      }
       router.push(backHref);
     } catch {
-      toast.error("Erro ao salvar produto.", {
-        description: "Verifique os dados e tente novamente.",
-      });
+      toast.error(
+        isEditMode ? "Erro ao atualizar produto." : "Erro ao salvar produto.",
+        { description: "Verifique os dados e tente novamente." },
+      );
     }
   };
 
@@ -241,18 +279,25 @@ export function ProductBuilderPage({
   const bottomBarOffset = useMobileBottomBarOffset();
   const subheaderOffset = useMobileSubheaderOffset();
 
-  // Primary action handler (shared between desktop footer and mobile bar)
+  const isPending = createProduct.isPending || updateProduct.isPending;
+
   const handlePrimaryAction = isLastStep
     ? handleSave
-    : step === 2
+    : contentStep === 2
       ? handleStep2Next
       : handleNext;
 
-  const primaryLabel = isLastStep ? "Criar produto" : "Próximo";
+  const primaryLabel = isLastStep
+    ? isEditMode
+      ? "Salvar"
+      : "Criar produto"
+    : "Próximo";
+
+  const pageTitle = isEditMode ? "Editar produto" : "Novo produto";
 
   const content = (
     <div className="flex flex-col lg:h-full">
-      {/* ── Desktop-only sticky header (mobile uses MobileSubheader rendered outside BuilderLayout) ── */}
+      {/* Desktop sticky header */}
       <div className="hidden lg:block sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
         <div className="flex items-center gap-3 px-8 py-4">
           <button
@@ -263,18 +308,18 @@ export function ProductBuilderPage({
           >
             <ArrowLeft size={18} />
           </button>
-          <h1 className="text-base font-semibold flex-1">Novo produto</h1>
+          <h1 className="text-base font-semibold flex-1">{pageTitle}</h1>
         </div>
         <div className="px-8 py-5 border-t border-border">
           <WizardProgress steps={wizardSteps} currentStep={step} />
         </div>
       </div>
 
-      {/* Step content — subheaderOffset clears fixed mobile subheader; bottomBarOffset clears fixed bottom bar */}
       <div
         className={`flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 flex flex-col gap-6 lg:gap-8 ${subheaderOffset} ${bottomBarOffset}`}
       >
-        {step === 1 && (
+        {/* Step 1 in create mode = type selector */}
+        {!isEditMode && contentStep === 1 && (
           <div className="flex flex-col gap-4 max-w-xl">
             <div>
               <h2 className="text-lg font-semibold">
@@ -295,7 +340,8 @@ export function ProductBuilderPage({
           </div>
         )}
 
-        {step === 2 && (
+        {/* Info form (step 2 in create, step 1 in edit) */}
+        {contentStep === 2 && (
           <div className="flex flex-col gap-4 w-full">
             <div>
               <h2 className="text-lg font-semibold">Informações do produto</h2>
@@ -310,7 +356,8 @@ export function ProductBuilderPage({
           </div>
         )}
 
-        {step === 3 && state.type === "composable" && (
+        {/* Steps builder (step 3 in create, step 2 in edit) */}
+        {contentStep === 3 && state.type === "composable" && (
           <div className="flex flex-col gap-4">
             <div>
               <div className="flex items-center gap-2">
@@ -340,18 +387,15 @@ export function ProductBuilderPage({
         )}
       </div>
 
-      {/* Footer nav — desktop only (mobile uses MobileBottomBar below) */}
+      {/* Desktop footer */}
       <div className="hidden lg:flex sticky bottom-0 bg-background/90 backdrop-blur border-t border-border px-4 sm:px-6 lg:px-8 py-4 items-center justify-between gap-3">
         <Button type="button" variant="ghost" onClick={handleBack}>
           {step === 1 ? "Cancelar" : "Voltar"}
         </Button>
-
         <Button
           type="button"
           onClick={handlePrimaryAction}
-          loading={
-            createProduct.isPending || (step === 2 && infoFormik.isSubmitting)
-          }
+          loading={isPending || (contentStep === 2 && infoFormik.isSubmitting)}
         >
           {primaryLabel}
         </Button>
@@ -366,7 +410,7 @@ export function ProductBuilderPage({
         preview={<PreviewPanel state={previewState} />}
       />
 
-      {/* ── Mobile subheader: fixed below site header ── */}
+      {/* Mobile subheader */}
       <MobileSubheader>
         <div className="flex items-center gap-2 mb-2">
           <button
@@ -378,7 +422,7 @@ export function ProductBuilderPage({
             <ArrowLeft size={18} />
           </button>
           <h1 className="text-[18px] font-semibold flex-1 leading-tight">
-            Novo produto
+            {pageTitle}
           </h1>
           <span className="text-xs text-muted-foreground font-medium tabular-nums shrink-0">
             {step} / {totalSteps}
@@ -387,7 +431,7 @@ export function ProductBuilderPage({
         <MobileStepBar steps={wizardSteps} currentStep={step} />
       </MobileSubheader>
 
-      {/* ── Mobile floating preview button — above the bottom bar ── */}
+      {/* Mobile floating preview button */}
       <button
         type="button"
         onClick={() => setPreviewOpen(true)}
@@ -398,7 +442,7 @@ export function ProductBuilderPage({
         Preview
       </button>
 
-      {/* ── Mobile bottom bar ── */}
+      {/* Mobile bottom bar */}
       <MobileBottomBar>
         <Button type="button" variant="outline" onClick={handleBack}>
           {step === 1 ? "Cancelar" : "Voltar"}
@@ -406,15 +450,13 @@ export function ProductBuilderPage({
         <Button
           type="button"
           onClick={handlePrimaryAction}
-          loading={
-            createProduct.isPending || (step === 2 && infoFormik.isSubmitting)
-          }
+          loading={isPending || (contentStep === 2 && infoFormik.isSubmitting)}
         >
           {primaryLabel}
         </Button>
       </MobileBottomBar>
 
-      {/* ── Mobile preview modal (hidden on lg+) ── */}
+      {/* Mobile preview modal */}
       {previewOpen && (
         <div
           role="dialog"
