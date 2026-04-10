@@ -39,7 +39,7 @@ export type {
 ```ts
 // Tipos enum
 type MenuItemType = "simple" | "composable";
-type StepType     = "choice" | "multi" | "composition" | "quantity";
+type StepType = "choice" | "multi" | "composition" | "quantity";
 type PricingStrategy = "sum" | "max" | "average";
 
 // Tipo composto
@@ -47,38 +47,61 @@ type CompositionConfig = { maxParts: number };
 
 // Entidades
 type Menu = {
-  id: string; restaurantId: string; locationId: string | null;
-  name: string; isActive: boolean; displayOrder: number; createdAt: string;
+  id: string;
+  restaurantId: string;
+  locationId: string | null;
+  name: string;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
 };
 type Category = {
-  id: string; menuId: string; restaurantId: string;
-  name: string; displayOrder: number; isActive: boolean;
+  id: string;
+  menuId: string;
+  restaurantId: string;
+  name: string;
+  displayOrder: number;
+  isActive: boolean;
 };
 type ModifierGroup = {
-  id: string; restaurantId: string; name: string;
+  id: string;
+  restaurantId: string;
+  name: string;
   selectionType: "SINGLE" | "MULTIPLE";
-  stepType: StepType;                        // ← Composition Engine
-  pricingStrategy: PricingStrategy | null;   // ← Composition Engine
+  stepType: StepType; // ← Composition Engine
+  pricingStrategy: PricingStrategy | null; // ← Composition Engine
   compositionConfig: CompositionConfig | null; // ← Composition Engine
-  isRequired: boolean; minSelections: number; maxSelections: number | null;
+  isRequired: boolean;
+  minSelections: number;
+  maxSelections: number | null;
   options: ModifierOption[];
 };
 type ModifierOption = {
-  id: string; modifierGroupId: string;
-  parentOptionId: string | null;   // ← sub-opções (composition)
-  name: string; priceDelta: number;
-  minQuantity: number;             // ← quantity step
-  maxQuantity: number | null;      // ← quantity step
-  unitPrice: number | null;        // ← quantity step
-  isAvailable: boolean; displayOrder: number;
+  id: string;
+  modifierGroupId: string;
+  parentOptionId: string | null; // ← sub-opções (composition)
+  name: string;
+  priceDelta: number;
+  minQuantity: number; // ← quantity step
+  maxQuantity: number | null; // ← quantity step
+  unitPrice: number | null; // ← quantity step
+  isAvailable: boolean;
+  displayOrder: number;
   childOptions?: ModifierOption[];
 };
 type MenuItem = {
-  id: string; type: MenuItemType;  // ← "simple" | "composable"
-  categoryId: string; restaurantId: string;
-  name: string; description: string | null; basePrice: number;
-  imageUrl: string | null; mediaUrls: string[] | null;
-  isAvailable: boolean; displayOrder: number; createdAt: string;
+  id: string;
+  type: MenuItemType; // ← "simple" | "composable"
+  categoryId: string;
+  restaurantId: string;
+  name: string;
+  description: string | null;
+  basePrice: number;
+  imageUrl: string | null;
+  mediaUrls: string[] | null;
+  isAvailable: boolean;
+  displayOrder: number;
+  createdAt: string;
   modifierGroups: ModifierGroup[];
 };
 type MenuWithCategories = Menu & {
@@ -95,7 +118,7 @@ type MenuWithCategories = Menu & {
 ### Módulo `menu` atual (já existente em `lib/modules/menu.ts`)
 
 ```ts
-createJuntaiClient({ baseUrl, token }).menu.get(restaurantId, locationId)
+createJuntaiClient({ baseUrl, token }).menu.get(restaurantId, locationId);
 // → Promise<MenuWithCategories[]>
 // GET /restaurants/:restaurantId/locations/:locationId/menu
 ```
@@ -194,14 +217,32 @@ menu.attachModifierGroup(itemId: string, groupId: string, restaurantId: string):
 
 ```ts
 import { createJuntaiClient } from "@juntai/types";
-import type { Menu, Category, MenuItem, ModifierGroup, ModifierOption } from "@juntai/types";
-import type { MenuItemType, StepType, PricingStrategy, CompositionConfig } from "@juntai/types";
+import type {
+  Menu,
+  Category,
+  MenuItem,
+  ModifierGroup,
+  ModifierOption,
+} from "@juntai/types";
+import type {
+  MenuItemType,
+  StepType,
+  PricingStrategy,
+  CompositionConfig,
+} from "@juntai/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 // Cada função cria um cliente com o token da chamada:
-export function createMenu(restaurantId: string, body: { name: string; locationId: string }, token: string | null) {
-  return createJuntaiClient({ baseUrl: BASE_URL, token }).menu.createMenu(restaurantId, body);
+export function createMenu(
+  restaurantId: string,
+  body: { name: string; locationId: string },
+  token: string | null,
+) {
+  return createJuntaiClient({ baseUrl: BASE_URL, token }).menu.createMenu(
+    restaurantId,
+    body,
+  );
 }
 // ... demais funções no mesmo padrão
 ```
@@ -210,12 +251,12 @@ export function createMenu(restaurantId: string, body: { name: string; locationI
 
 ## Mapeamento UX → SDK (StepType)
 
-| Label na UI                      | `stepType`    | `selectionType` | `pricingStrategy` | `compositionConfig`       |
-|----------------------------------|---------------|-----------------|-------------------|---------------------------|
-| Escolha única                    | `choice`      | `SINGLE`        | `sum`             | `null`                    |
-| Múltiplas escolhas               | `multi`       | `MULTIPLE`      | `sum`             | `null`                    |
-| Dividir em partes (pizza/combo)  | `composition` | `MULTIPLE`      | `max`             | `{ maxParts: N }` obrigatório |
-| Quantidade                       | `quantity`    | `MULTIPLE`      | `sum`             | `null`                    |
+| Label na UI                     | `stepType`    | `selectionType` | `pricingStrategy` | `compositionConfig`           |
+| ------------------------------- | ------------- | --------------- | ----------------- | ----------------------------- |
+| Escolha única                   | `choice`      | `SINGLE`        | `sum`             | `null`                        |
+| Múltiplas escolhas              | `multi`       | `MULTIPLE`      | `sum`             | `null`                        |
+| Dividir em partes (pizza/combo) | `composition` | `MULTIPLE`      | `max`             | `{ maxParts: N }` obrigatório |
+| Quantidade                      | `quantity`    | `MULTIPLE`      | `sum`             | `null`                        |
 
 > Esses valores são passados diretamente para `menu.createModifierGroup(restaurantId, body, token)`.  
 > A UI nunca expõe esses termos técnicos — usa os labels da coluna "Label na UI".
@@ -308,19 +349,19 @@ export type {
 
 ```ts
 // Estado atual (já existe):
-export function getMenu(restaurantId, locationId, token)
+export function getMenu(restaurantId, locationId, token);
 
 // A adicionar:
-export function createMenu(restaurantId, body, token)
-export function createCategory(menuId, body, token)
-export function patchCategory(categoryId, body, token)
-export function deleteCategory(categoryId, restaurantId, token)
-export function createItem(categoryId, body, token)
-export function patchItem(itemId, body, token)
-export function deleteItem(itemId, restaurantId, token)
-export function createModifierGroup(restaurantId, body, token)
-export function createModifierOption(groupId, body, token)
-export function attachModifierGroup(itemId, groupId, restaurantId, token)
+export function createMenu(restaurantId, body, token);
+export function createCategory(menuId, body, token);
+export function patchCategory(categoryId, body, token);
+export function deleteCategory(categoryId, restaurantId, token);
+export function createItem(categoryId, body, token);
+export function patchItem(itemId, body, token);
+export function deleteItem(itemId, restaurantId, token);
+export function createModifierGroup(restaurantId, body, token);
+export function createModifierOption(groupId, body, token);
+export function attachModifierGroup(itemId, groupId, restaurantId, token);
 ```
 
 ---
@@ -333,11 +374,11 @@ Schemas Zod para os formulários da UI. Os campos mapeiam diretamente para os bo
 export const menuFormSchema = z.object({
   name: z.string().min(1).max(200),
   locationId: z.string().uuid(),
-})
+});
 
 export const categoryFormSchema = z.object({
   name: z.string().min(1).max(200),
-})
+});
 
 export const itemFormSchema = z.object({
   name: z.string().min(1).max(200),
@@ -345,7 +386,7 @@ export const itemFormSchema = z.object({
   basePrice: z.number().positive(),
   imageUrl: z.string().url().optional(),
   type: z.enum(["simple", "composable"]).default("simple"),
-})
+});
 
 // Inclui campos de todas as variantes de StepType:
 export const stepFormSchema = z.object({
@@ -354,16 +395,19 @@ export const stepFormSchema = z.object({
   isRequired: z.boolean().default(false),
   minSelections: z.number().int().min(0).default(0),
   maxSelections: z.number().int().positive().nullable().optional(),
-  compositionConfig: z.object({ maxParts: z.number().int().positive() }).nullable().optional(),
-})
+  compositionConfig: z
+    .object({ maxParts: z.number().int().positive() })
+    .nullable()
+    .optional(),
+});
 
 export const optionFormSchema = z.object({
   name: z.string().min(1),
   priceDelta: z.number().default(0),
-  unitPrice: z.number().positive().nullable().optional(),    // quantity step
-  minQuantity: z.number().int().min(0).default(1),           // quantity step
+  unitPrice: z.number().positive().nullable().optional(), // quantity step
+  minQuantity: z.number().int().min(0).default(1), // quantity step
   maxQuantity: z.number().int().positive().nullable().optional(), // quantity step
-})
+});
 ```
 
 ---
@@ -373,49 +417,49 @@ export const optionFormSchema = z.object({
 ```ts
 // Tipo local do estado do builder (não é o tipo de API)
 export type BuilderOption = {
-  id: string  // temporário, frontend-only
-  name: string
-  priceDelta: number
-  unitPrice: number | null
-  minQuantity: number
-  maxQuantity: number | null
-  parentOptionId: string | null
-  childOptions: BuilderOption[]
-}
+  id: string; // temporário, frontend-only
+  name: string;
+  priceDelta: number;
+  unitPrice: number | null;
+  minQuantity: number;
+  maxQuantity: number | null;
+  parentOptionId: string | null;
+  childOptions: BuilderOption[];
+};
 
 export type BuilderStep = {
-  id: string  // temporário, frontend-only
-  name: string
-  stepType: StepType
-  isRequired: boolean
-  minSelections: number
-  maxSelections: number | null
-  compositionConfig: CompositionConfig | null
-  options: BuilderOption[]
-}
+  id: string; // temporário, frontend-only
+  name: string;
+  stepType: StepType;
+  isRequired: boolean;
+  minSelections: number;
+  maxSelections: number | null;
+  compositionConfig: CompositionConfig | null;
+  options: BuilderOption[];
+};
 
 export type BuilderState = {
-  type: MenuItemType
-  name: string
-  description: string
-  basePrice: number
-  imageUrl: string
-  steps: BuilderStep[]
-}
+  type: MenuItemType;
+  name: string;
+  description: string;
+  basePrice: number;
+  imageUrl: string;
+  steps: BuilderStep[];
+};
 ```
 
 **Templates:**
 
 ```ts
 export function getProductTemplate(
-  type: "pizza" | "burger" | "poke"
-): BuilderStep[]
+  type: "pizza" | "burger" | "poke",
+): BuilderStep[];
 ```
 
-| Template | Steps gerados                                                    |
-|----------|------------------------------------------------------------------|
-| pizza    | Tamanho (choice) + Sabores (composition, maxParts:2) + Borda (choice) |
-| burger   | Ponto (choice) + Adicionais (multi)                              |
+| Template | Steps gerados                                                            |
+| -------- | ------------------------------------------------------------------------ |
+| pizza    | Tamanho (choice) + Sabores (composition, maxParts:2) + Borda (choice)    |
+| burger   | Ponto (choice) + Adicionais (multi)                                      |
 | poke     | Base (choice) + Proteína (choice) + Toppings (multi) + Extras (quantity) |
 
 **Mapper:**
@@ -426,10 +470,11 @@ export async function saveProduct(
   state: BuilderState,
   context: { categoryId: string; restaurantId: string },
   token: string | null,
-): Promise<MenuItem>
+): Promise<MenuItem>;
 ```
 
 Sequência interna:
+
 1. `createItem(categoryId, { name, description, basePrice, imageUrl, type }, token)`
 2. Para cada step:
    a. `createModifierGroup(restaurantId, { stepType, pricingStrategy, compositionConfig, ... }, token)`
@@ -443,23 +488,23 @@ Sequência interna:
 
 ```ts
 // Estado atual (já existe):
-export function useMenu(restaurantId, locationId)   // useQuery → getMenu
+export function useMenu(restaurantId, locationId); // useQuery → getMenu
 
 // Mutations atômicas (useAuth().sessionToken → token):
-export function useCreateMenu(restaurantId)
-export function useCreateCategory(menuId, restaurantId)
-export function usePatchCategory(restaurantId)
-export function useDeleteCategory(restaurantId)
-export function useCreateItem(categoryId, restaurantId)
-export function usePatchItem(restaurantId)
-export function useDeleteItem(restaurantId)
-export function useCreateModifierGroup(restaurantId)
-export function useCreateModifierOption(groupId, restaurantId)
-export function useAttachModifierGroup(restaurantId)
+export function useCreateMenu(restaurantId);
+export function useCreateCategory(menuId, restaurantId);
+export function usePatchCategory(restaurantId);
+export function useDeleteCategory(restaurantId);
+export function useCreateItem(categoryId, restaurantId);
+export function usePatchItem(restaurantId);
+export function useDeleteItem(restaurantId);
+export function useCreateModifierGroup(restaurantId);
+export function useCreateModifierOption(groupId, restaurantId);
+export function useAttachModifierGroup(restaurantId);
 
 // Hook orquestrador (usa saveProduct de builder.ts):
 // onSuccess → invalida ["menu", restaurantId, locationId]
-export function useCreateProduct(categoryId, restaurantId)
+export function useCreateProduct(categoryId, restaurantId);
 ```
 
 Todas as mutations usam `useMutation` do `@tanstack/react-query` e chamam as funções de `api.ts`.
@@ -494,18 +539,22 @@ Todas as mutations usam `useMutation` do `@tanstack/react-query` e chamam as fun
 Gerencia estado local com `useReducer`. Dividido em abas ou seções progressivas.
 
 #### `ProductTypeSelector`
+
 Cards clicáveis: **Simples** / **Personalizável**.  
 Ao selecionar "Simples", esconde `StepsBuilder`.
 
 #### `BasicInfoForm`
+
 Campos Formik: `name`, `description`, `basePrice`, `imageUrl`.  
 Usa `FormField` + `Input` + `FormSubmitButton` existentes.
 
 #### `StepsBuilder`
+
 Lista de `StepCard`. Botões: "Adicionar Etapa" + "Usar Template" (pizza/burger/poke).  
 Ao usar template: popula steps via `getProductTemplate`.
 
 #### `StepCard`
+
 - Input: nome do step
 - Select: tipo (labels de negócio → `StepType`)
 - Checkbox: obrigatório
@@ -514,12 +563,15 @@ Ao usar template: popula steps via `getProductTemplate`.
 - Lista dinâmica de `OptionItem`
 
 #### `OptionItem`
+
 - Campos base: nome + priceDelta
 - Se `quantity`: mostra `unitPrice`, `minQuantity`, `maxQuantity`
 - Botão "+" para criar sub-opção (indentada, vinculada via `parentOptionId`)
 
 #### `PreviewPanel`
+
 Renderiza em tempo real como o cliente verá, traduzindo `stepType` para frases:
+
 - `choice` → "Escolha 1 opção"
 - `multi` → "Escolha até N opções"
 - `composition` → "Escolha N sabores"
@@ -530,18 +582,22 @@ Renderiza em tempo real como o cliente verá, traduzindo `stepType` para frases:
 ### Step 10 — Páginas
 
 #### `/menu/page.tsx` (substituir)
+
 ```tsx
 <MenuList restaurantId={...} locationId={...} />
 ```
+
 Com `LocationPicker` para selecionar a filial (reutilizar o componente existente).
 
 #### `/menu/[menuId]/page.tsx` (novo)
+
 ```tsx
 // Breadcrumb: Cardápio > {menuName}
 <CategoryList menuId={params.menuId} restaurantId={...} />
 ```
 
 #### `/menu/[menuId]/[categoryId]/page.tsx` (novo)
+
 ```tsx
 // Breadcrumb: Cardápio > {menuName} > {categoryName}
 <ProductList categoryId={params.categoryId} restaurantId={...} />
@@ -577,12 +633,12 @@ Step 10 (páginas — depende de todos os componentes)
 
 ## O que não mudar
 
-| Arquivo                          | Motivo                              |
-|----------------------------------|-------------------------------------|
+| Arquivo                          | Motivo                                           |
+| -------------------------------- | ------------------------------------------------ |
 | `features/menu/MenuView.tsx`     | Usado na página de leitura — não é gerenciamento |
-| Qualquer feature fora de `menu/` | Zero impacto                        |
-| Componentes primitivos/shared    | Reusar, nunca modificar             |
-| `config/navigation.ts`           | `/menu` já está mapeado corretamente |
+| Qualquer feature fora de `menu/` | Zero impacto                                     |
+| Componentes primitivos/shared    | Reusar, nunca modificar                          |
+| `config/navigation.ts`           | `/menu` já está mapeado corretamente             |
 
 ---
 

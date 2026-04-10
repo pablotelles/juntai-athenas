@@ -1,12 +1,16 @@
 "use client";
 
 import * as React from "react";
+import { useFormik, FormikProvider } from "formik";
+import { toFormikValidationSchema } from "zod-formik-adapter";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/primitives/button/Button";
 import { useToast } from "@/contexts/toast/ToastProvider";
 import { useCreateProduct } from "../../hooks";
 import { emptyBuilderState, type BuilderState } from "../../builder";
+import { itemFormSchema, type ItemFormValues } from "../../schemas";
+import { getItemInitialValues } from "./basic-info.initial-values";
 import { BuilderLayout } from "./BuilderLayout";
 import { WizardProgress } from "./WizardProgress";
 import { ProductTypeSelector } from "./ProductTypeSelector";
@@ -24,10 +28,7 @@ interface ProductBuilderPageProps {
   backHref: string;
 }
 
-const WIZARD_STEPS_SIMPLE = [
-  { label: "Tipo" },
-  { label: "Informações" },
-];
+const WIZARD_STEPS_SIMPLE = [{ label: "Tipo" }, { label: "Informações" }];
 
 const WIZARD_STEPS_COMPOSABLE = [
   { label: "Tipo" },
@@ -48,22 +49,53 @@ export function ProductBuilderPage({
 
   const createProduct = useCreateProduct(categoryId, restaurantId, locationId);
 
+  const infoFormik = useFormik<ItemFormValues>({
+    initialValues: getItemInitialValues(),
+    validationSchema: toFormikValidationSchema(itemFormSchema),
+    validateOnBlur: true,
+    validateOnChange: false,
+    onSubmit: (values) => {
+      setState((prev) => ({
+        ...prev,
+        name: values.name,
+        description: values.description ?? "",
+        basePrice: values.basePrice,
+        imageUrl: values.imageUrl ?? "",
+        type: state.type, // preserve o tipo escolhido no step 1
+      }));
+      setStep((s) => s + 1);
+    },
+  });
+
+  // Botão "Próximo" no step 2: valida explicitamente antes de avançar
+  const handleStep2Next = React.useCallback(async () => {
+    const errors = await infoFormik.validateForm();
+    await infoFormik.setTouched(
+      Object.fromEntries(Object.keys(infoFormik.values).map((k) => [k, true])),
+    );
+    if (Object.keys(errors).length === 0) {
+      setState((prev) => ({
+        ...prev,
+        name: infoFormik.values.name,
+        description: infoFormik.values.description ?? "",
+        basePrice: infoFormik.values.basePrice,
+        imageUrl: infoFormik.values.imageUrl ?? "",
+        type: state.type,
+      }));
+      setStep((s) => s + 1);
+    }
+  }, [infoFormik, state.type]);
+
   const wizardSteps =
     state.type === "composable" ? WIZARD_STEPS_COMPOSABLE : WIZARD_STEPS_SIMPLE;
   const totalSteps = wizardSteps.length;
 
-  const patch = <K extends keyof BuilderState>(field: K, value: BuilderState[K]) =>
-    setState((prev) => ({ ...prev, [field]: value }));
-
-  const canAdvance = () => {
-    if (step === 1) return true;
-    if (step === 2) return !!state.name && state.basePrice > 0;
-    return true;
-  };
+  const patch = <K extends keyof BuilderState>(
+    field: K,
+    value: BuilderState[K],
+  ) => setState((prev) => ({ ...prev, [field]: value }));
 
   const handleNext = () => {
-    if (step === 2 && !state.name) { toast.warning("Informe o nome do produto."); return; }
-    if (step === 2 && state.basePrice <= 0) { toast.warning("Informe um preço válido."); return; }
     if (step < totalSteps) setStep((s) => s + 1);
   };
 
@@ -72,22 +104,81 @@ export function ProductBuilderPage({
     else router.push(backHref);
   };
 
+  // Estado de preview: quando no step 2 usa os valores live do formik
+  const previewState: BuilderState = React.useMemo(() => {
+    if (step === 2) {
+      return {
+        ...state,
+        name: infoFormik.values.name,
+        description: infoFormik.values.description ?? "",
+        basePrice: infoFormik.values.basePrice,
+        imageUrl: infoFormik.values.imageUrl ?? "",
+      };
+    }
+    return state;
+  }, [step, state, infoFormik.values]);
+
   const handleSave = async () => {
-    if (!state.name) { toast.warning("Informe o nome do produto."); return; }
-    if (state.basePrice <= 0) { toast.warning("Informe um preço válido."); return; }
+    // Produto simples: step 2 é o último — valida infoFormik antes de salvar.
+    let saveState = state;
+    if (step === 2) {
+      const errors = await infoFormik.validateForm();
+      await infoFormik.setTouched(
+        Object.fromEntries(Object.keys(infoFormik.values).map((k) => [k, true])),
+      );
+      if (Object.keys(errors).length > 0) return;
+      saveState = {
+        ...state,
+        name: infoFormik.values.name,
+        description: infoFormik.values.description ?? "",
+        basePrice: infoFormik.values.basePrice,
+        imageUrl: infoFormik.values.imageUrl ?? "",
+        type: state.type,
+      };
+    }
+
+    // Produto personalizável: step 3 — valida que há pelo menos 1 etapa
+    // com nome e pelo menos 1 opção com nome.
+    if (saveState.type === "composable") {
+      if (saveState.steps.length === 0) {
+        toast.warning("Adicione pelo menos uma etapa ao produto.");
+        return;
+      }
+      const stepSemNome = saveState.steps.find((s) => !s.name.trim());
+      if (stepSemNome) {
+        toast.warning("Todas as etapas precisam ter um nome.");
+        return;
+      }
+      const stepSemOpcao = saveState.steps.find((s) => s.options.length === 0);
+      if (stepSemOpcao) {
+        toast.warning(`A etapa "${stepSemOpcao.name}" precisa ter pelo menos uma opção.`);
+        return;
+      }
+      const opcaoSemNome = saveState.steps
+        .flatMap((s) => s.options)
+        .find((o) => !o.name.trim());
+      if (opcaoSemNome) {
+        toast.warning("Todas as opções precisam ter um nome.");
+        return;
+      }
+    }
 
     const msg =
-      state.type === "composable" && state.steps.length > 0
-        ? `Salvando produto e ${state.steps.length} etapa${state.steps.length !== 1 ? "s" : ""}…`
+      saveState.type === "composable" && saveState.steps.length > 0
+        ? `Salvando produto e ${saveState.steps.length} etapa${saveState.steps.length !== 1 ? "s" : ""}…`
         : "Salvando produto…";
     toast.info(msg, { duration: 10_000 });
 
     try {
-      await createProduct.mutateAsync(state);
-      toast.success("Produto criado!", { description: `"${state.name}" adicionado ao cardápio.` });
+      await createProduct.mutateAsync(saveState);
+      toast.success("Produto criado!", {
+        description: `"${saveState.name}" adicionado ao cardápio.`,
+      });
       router.push(backHref);
     } catch {
-      toast.error("Erro ao salvar produto.", { description: "Verifique os dados e tente novamente." });
+      toast.error("Erro ao salvar produto.", {
+        description: "Verifique os dados e tente novamente.",
+      });
     }
   };
 
@@ -118,9 +209,12 @@ export function ProductBuilderPage({
         {step === 1 && (
           <div className="flex flex-col gap-4 max-w-xl">
             <div>
-              <h2 className="text-lg font-semibold">Que tipo de produto é este?</h2>
+              <h2 className="text-lg font-semibold">
+                Que tipo de produto é este?
+              </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Produtos simples têm preço fixo. Personalizáveis têm etapas de escolha.
+                Produtos simples têm preço fixo. Personalizáveis têm etapas de
+                escolha.
               </p>
             </div>
             <ProductTypeSelector
@@ -141,12 +235,9 @@ export function ProductBuilderPage({
                 Nome, descrição, preço e imagem.
               </p>
             </div>
-            <BasicInfoForm
-              state={state}
-              onChange={(field, value) =>
-                patch(field as keyof BuilderState, value as BuilderState[typeof field])
-              }
-            />
+            <FormikProvider value={infoFormik}>
+              <BasicInfoForm />
+            </FormikProvider>
           </div>
         )}
 
@@ -155,7 +246,8 @@ export function ProductBuilderPage({
             <div>
               <h2 className="text-lg font-semibold">Montagem do produto</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Adicione etapas de escolha que o cliente vai percorrer ao montar o pedido.
+                Adicione etapas de escolha que o cliente vai percorrer ao montar
+                o pedido.
               </p>
             </div>
             <StepsBuilder
@@ -178,13 +270,15 @@ export function ProductBuilderPage({
             onClick={handleSave}
             loading={createProduct.isPending}
           >
-            {state.type === "composable" ? "Criar produto personalizado" : "Criar produto"}
+            {state.type === "composable"
+              ? "Criar produto personalizado"
+              : "Criar produto"}
           </Button>
         ) : (
           <Button
             type="button"
-            onClick={handleNext}
-            disabled={!canAdvance()}
+            onClick={step === 2 ? handleStep2Next : handleNext}
+            loading={step === 2 ? infoFormik.isSubmitting : false}
           >
             Próximo
           </Button>
@@ -194,9 +288,6 @@ export function ProductBuilderPage({
   );
 
   return (
-    <BuilderLayout
-      content={content}
-      preview={<PreviewPanel state={state} />}
-    />
+    <BuilderLayout content={content} preview={<PreviewPanel state={previewState} />} />
   );
 }
