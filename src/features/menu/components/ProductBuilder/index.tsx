@@ -4,8 +4,12 @@ import * as React from "react";
 import { useFormik, FormikProvider } from "formik";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CircleHelp } from "lucide-react";
+import { ArrowLeft, CircleHelp, Eye, X } from "lucide-react";
 import { Button } from "@/components/primitives/button/Button";
+import {
+  MobileBottomBar,
+  useMobileBottomBarOffset,
+} from "@/components/primitives/mobile-bottom-bar/MobileBottomBar";
 import { Tooltip } from "@/components/shared/tooltip/Tooltip";
 import { useToast } from "@/contexts/toast/ToastProvider";
 import { useCreateProduct, useMenu } from "../../hooks";
@@ -18,6 +22,11 @@ import { ProductTypeSelector } from "./ProductTypeSelector";
 import { BasicInfoForm } from "./BasicInfoForm";
 import { StepsBuilder } from "./StepsBuilder";
 import { PreviewPanel } from "./PreviewPanel";
+import { MobileStepBar } from "./MobileStepBar";
+import {
+  MobileSubheader,
+  useMobileSubheaderOffset,
+} from "@/components/primitives/mobile-subheader/MobileSubheader";
 import type { MenuItemType } from "@juntai/types";
 
 interface ProductBuilderPageProps {
@@ -65,6 +74,7 @@ export function ProductBuilderPage({
   const { toast } = useToast();
   const [state, setState] = React.useState<BuilderState>(emptyBuilderState);
   const [step, setStep] = React.useState(1);
+  const [previewOpen, setPreviewOpen] = React.useState(false);
 
   const createProduct = useCreateProduct(categoryId, restaurantId, locationId);
   const { data: menus } = useMenu(restaurantId, locationId);
@@ -228,29 +238,42 @@ export function ProductBuilderPage({
   };
 
   const isLastStep = step === totalSteps;
+  const bottomBarOffset = useMobileBottomBarOffset();
+  const subheaderOffset = useMobileSubheaderOffset();
+
+  // Primary action handler (shared between desktop footer and mobile bar)
+  const handlePrimaryAction = isLastStep
+    ? handleSave
+    : step === 2
+      ? handleStep2Next
+      : handleNext;
+
+  const primaryLabel = isLastStep ? "Criar produto" : "Próximo";
 
   const content = (
     <div className="flex flex-col lg:h-full">
-      {/* Top bar */}
-      <div className="flex items-center gap-4 px-4 sm:px-6 lg:px-8 py-4 border-b border-border bg-background/80 backdrop-blur sticky top-0 z-10">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Voltar"
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <h1 className="text-base font-semibold flex-1">Novo produto</h1>
+      {/* ── Desktop-only sticky header (mobile uses MobileSubheader rendered outside BuilderLayout) ── */}
+      <div className="hidden lg:block sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
+        <div className="flex items-center gap-3 px-8 py-4">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="h-9 w-9 -ml-1 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            aria-label="Voltar"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <h1 className="text-base font-semibold flex-1">Novo produto</h1>
+        </div>
+        <div className="px-8 py-5 border-t border-border">
+          <WizardProgress steps={wizardSteps} currentStep={step} />
+        </div>
       </div>
 
-      {/* Wizard progress */}
-      <div className="px-4 sm:px-6 lg:px-8 py-5 border-b border-border">
-        <WizardProgress steps={wizardSteps} currentStep={step} />
-      </div>
-
-      {/* Step content */}
-      <div className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 flex flex-col gap-6 lg:gap-8">
+      {/* Step content — subheaderOffset clears fixed mobile subheader; bottomBarOffset clears fixed bottom bar */}
+      <div
+        className={`flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 flex flex-col gap-6 lg:gap-8 ${subheaderOffset} ${bottomBarOffset}`}
+      >
         {step === 1 && (
           <div className="flex flex-col gap-4 max-w-xl">
             <div>
@@ -317,39 +340,107 @@ export function ProductBuilderPage({
         )}
       </div>
 
-      {/* Footer nav */}
-      <div className="sticky bottom-0 bg-background/90 backdrop-blur border-t border-border px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-3">
+      {/* Footer nav — desktop only (mobile uses MobileBottomBar below) */}
+      <div className="hidden lg:flex sticky bottom-0 bg-background/90 backdrop-blur border-t border-border px-4 sm:px-6 lg:px-8 py-4 items-center justify-between gap-3">
         <Button type="button" variant="ghost" onClick={handleBack}>
           {step === 1 ? "Cancelar" : "Voltar"}
         </Button>
 
-        {isLastStep ? (
-          <Button
-            type="button"
-            onClick={handleSave}
-            loading={createProduct.isPending}
-          >
-            {state.type === "composable"
-              ? "Criar produto personalizado"
-              : "Criar produto"}
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            onClick={step === 2 ? handleStep2Next : handleNext}
-            loading={step === 2 ? infoFormik.isSubmitting : false}
-          >
-            Próximo
-          </Button>
-        )}
+        <Button
+          type="button"
+          onClick={handlePrimaryAction}
+          loading={
+            createProduct.isPending || (step === 2 && infoFormik.isSubmitting)
+          }
+        >
+          {primaryLabel}
+        </Button>
       </div>
     </div>
   );
 
   return (
-    <BuilderLayout
-      content={content}
-      preview={<PreviewPanel state={previewState} />}
-    />
+    <>
+      <BuilderLayout
+        content={content}
+        preview={<PreviewPanel state={previewState} />}
+      />
+
+      {/* ── Mobile subheader: fixed below site header ── */}
+      <MobileSubheader>
+        <div className="flex items-center gap-2 mb-2">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="h-11 w-11 -ml-2 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            aria-label="Voltar"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <h1 className="text-[18px] font-semibold flex-1 leading-tight">
+            Novo produto
+          </h1>
+          <span className="text-xs text-muted-foreground font-medium tabular-nums shrink-0">
+            {step} / {totalSteps}
+          </span>
+        </div>
+        <MobileStepBar steps={wizardSteps} currentStep={step} />
+      </MobileSubheader>
+
+      {/* ── Mobile floating preview button — above the bottom bar ── */}
+      <button
+        type="button"
+        onClick={() => setPreviewOpen(true)}
+        aria-label="Ver preview do produto"
+        className="lg:hidden fixed bottom-24 right-4 z-30 flex items-center gap-2 rounded-full bg-primary text-primary-foreground shadow-lg px-4 h-11 text-sm font-medium"
+      >
+        <Eye size={16} aria-hidden="true" />
+        Preview
+      </button>
+
+      {/* ── Mobile bottom bar ── */}
+      <MobileBottomBar>
+        <Button type="button" variant="outline" onClick={handleBack}>
+          {step === 1 ? "Cancelar" : "Voltar"}
+        </Button>
+        <Button
+          type="button"
+          onClick={handlePrimaryAction}
+          loading={
+            createProduct.isPending || (step === 2 && infoFormik.isSubmitting)
+          }
+        >
+          {primaryLabel}
+        </Button>
+      </MobileBottomBar>
+
+      {/* ── Mobile preview modal (hidden on lg+) ── */}
+      {previewOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Preview do produto"
+          className="lg:hidden fixed inset-0 z-30 flex flex-col bg-background"
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-background/80 backdrop-blur shrink-0">
+            <p className="text-sm font-semibold">Preview do produto</p>
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(false)}
+              aria-label="Fechar preview"
+              className="text-muted-foreground hover:text-foreground transition-colors p-1"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <PreviewPanel
+              state={previewState}
+              className="border-0 lg:border-l"
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 }

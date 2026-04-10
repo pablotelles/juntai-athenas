@@ -1,9 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { Trash2, Plus, GripVertical, CircleHelp } from "lucide-react";
+import {
+  Trash2,
+  Plus,
+  GripVertical,
+  CircleHelp,
+  ChevronDown,
+} from "lucide-react";
 import { Input } from "@/components/primitives/input/Input";
 import { Button } from "@/components/primitives/button/Button";
+import { cn } from "@/lib/cn";
 import { Checkbox } from "@/components/shared/checkbox/Checkbox";
 import { Tooltip } from "@/components/shared/tooltip/Tooltip";
 import {
@@ -106,11 +113,64 @@ export function StepCard({
     (category) => category.items.length > 0,
   );
   const [categoryImportKey, setCategoryImportKey] = React.useState(0);
+  const [open, setOpen] = React.useState(true);
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-      {/* ── Header ── */}
-      <div className="flex flex-wrap items-start gap-3 px-4 py-3 sm:px-5 sm:py-4 bg-secondary/30 border-b border-border">
+      {/* ── Mobile collapsible header (< lg) ── */}
+      <div className="lg:hidden flex items-center gap-2 px-4 py-3 bg-secondary/30 border-b border-border">
+        <div
+          {...dragHandleProps}
+          className="text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing shrink-0 touch-none"
+          aria-label="Arrastar para reordenar"
+        >
+          <GripVertical size={16} />
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="flex-1 flex items-center gap-2 min-w-0 text-left py-1"
+        >
+          <span className="text-base leading-none shrink-0" aria-hidden="true">
+            {STEP_TYPE_ICONS[step.stepType]}
+          </span>
+          <span className="flex-1 text-sm font-medium truncate">
+            {step.name || "Nova etapa"}
+          </span>
+          <span className="text-xs text-muted-foreground shrink-0">
+            {step.options.length}{" "}
+            {step.options.length === 1 ? "opção" : "opções"}
+          </span>
+          {step.isRequired && (
+            <span className="text-xs font-medium text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full shrink-0">
+              Obr.
+            </span>
+          )}
+          <ChevronDown
+            size={16}
+            className={cn(
+              "shrink-0 text-muted-foreground transition-transform duration-200",
+              open && "rotate-180",
+            )}
+          />
+        </button>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => onRemove(step.id)}
+          className="text-muted-foreground hover:text-destructive shrink-0 h-9 w-9 min-w-9"
+          aria-label="Remover etapa"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* ── Desktop header (lg+) ── */}
+      <div className="hidden lg:flex flex-wrap items-start gap-3 px-4 py-3 sm:px-5 sm:py-4 bg-secondary/30 border-b border-border">
         <div
           {...dragHandleProps}
           className="mt-2 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing shrink-0"
@@ -185,8 +245,13 @@ export function StepCard({
         </div>
       </div>
 
-      {/* ── Body ── */}
-      <div className="flex flex-col gap-5 px-4 py-4 sm:px-5 sm:py-5">
+      {/* ── Body — hidden on mobile when collapsed ── */}
+      <div
+        className={cn(
+          "flex flex-col gap-5 px-4 py-4 sm:px-5 sm:py-5",
+          !open && "lg:flex hidden",
+        )}
+      >
         {/* ── Rules per type ── */}
         {step.stepType === "choice" && (
           <div className="flex flex-wrap items-center gap-2">

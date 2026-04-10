@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { cn } from "@/lib/cn";
 import { getStepPreviewLabel, type BuilderState } from "../../builder";
 
 function fmt(value: number) {
@@ -9,13 +10,14 @@ function fmt(value: number) {
 
 interface PreviewPanelProps {
   state: BuilderState;
+  className?: string;
 }
 
-export function PreviewPanel({ state }: PreviewPanelProps) {
+export function PreviewPanel({ state, className }: PreviewPanelProps) {
   const hasInfo = !!state.name || state.basePrice > 0;
 
   return (
-    <aside className="flex flex-col bg-muted/30 border-t border-border lg:h-full lg:border-t-0 lg:border-l">
+    <aside className={cn("flex flex-col bg-muted/30 border-t border-border lg:h-full lg:border-t-0 lg:border-l", className)}>
       {/* Title bar */}
       <div className="px-4 py-4 sm:px-5 border-b border-border">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
