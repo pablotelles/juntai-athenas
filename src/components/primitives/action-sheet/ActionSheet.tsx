@@ -66,7 +66,9 @@ export function ActionSheet({
                 <span
                   className={cn(
                     "block text-sm font-medium",
-                    item.tone === "destructive" ? "text-destructive" : "text-foreground",
+                    item.tone === "destructive"
+                      ? "text-destructive"
+                      : "text-foreground",
                   )}
                 >
                   {item.label}
@@ -77,7 +79,10 @@ export function ActionSheet({
                   </span>
                 ) : null}
               </span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <ChevronRight
+                className="h-4 w-4 text-muted-foreground"
+                aria-hidden="true"
+              />
             </button>
           ))}
         </div>

@@ -5,11 +5,13 @@ import {
   ArrowRightLeft,
   CalendarClock,
   LayoutGrid,
+  Pencil,
   Plus,
   QrCode,
   ReceiptText,
   SlidersHorizontal,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import {
   Subheader,
@@ -18,8 +20,8 @@ import {
 import { ActionSheet } from "@/components/primitives/action-sheet/ActionSheet";
 import { Button } from "@/components/primitives/button/Button";
 import { FAB } from "@/components/primitives/fab/FAB";
-import { cn } from "@/lib/cn";
 import { FilterChip } from "@/components/primitives/filter-chip/FilterChip";
+import { cn } from "@/lib/cn";
 import {
   MobileSubheader,
   useMobileSubheaderOffset,
@@ -34,7 +36,10 @@ import { useLocations } from "@/features/restaurants/hooks";
 import {
   useCloseTableSession,
   useConnectTable,
+  useCreateTable,
+  useDeleteTable,
   useTables,
+  useUpdateTable,
 } from "@/features/tables/hooks";
 import {
   getMesaStatusCounts,
@@ -43,8 +48,10 @@ import {
   type Mesa,
   type MesaFilterValue,
 } from "@/features/tables/model";
+import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 import { MesaCard } from "./MesaCard";
 import { MesaFilterSheet } from "./MesaFilterSheet";
+import { MesaFormModal } from "./MesaFormModal";
 import { MesaGrid } from "./MesaGrid";
 import { MesaQrModal } from "./MesaQrModal";
 
@@ -65,15 +72,30 @@ function mergeMesas(previous: Mesa[], next: Mesa[]) {
     const current = previous.find((item) => item.id === mesa.id);
     if (!current) return mesa;
 
-    return {
-      ...mesa,
-      status: current.status,
-      pessoasConectadas: current.pessoasConectadas,
-      reserva: current.reserva,
-      ocupacaoInicio: current.ocupacaoInicio,
-      sessionId: current.sessionId ?? mesa.sessionId,
-    };
+    if (current.status === "reservada" && current.reserva && mesa.status === "livre") {
+      return {
+        ...mesa,
+        status: "reservada" as const,
+        reserva: current.reserva,
+      };
+    }
+
+    return mesa;
   });
+}
+
+function getFriendlyErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    if (error.message.includes("TABLE_LABEL_ALREADY_EXISTS")) {
+      return "Já existe uma mesa com esse nome nesta filial.";
+    }
+    if (error.message.includes("LOCATION_REQUIRED")) {
+      return "Selecione uma filial antes de continuar.";
+    }
+    return error.message;
+  }
+
+  return "Tente novamente em instantes.";
 }
 
 export function TablesView({ restaurantId }: TablesViewProps) {
@@ -91,7 +113,11 @@ export function TablesView({ restaurantId }: TablesViewProps) {
   const [mesas, setMesas] = React.useState<Mesa[]>([]);
   const [qrMesa, setQrMesa] = React.useState<Mesa | null>(null);
   const [actionMesa, setActionMesa] = React.useState<Mesa | null>(null);
+  const [editingMesa, setEditingMesa] = React.useState<Mesa | null>(null);
+  const [deleteMesa, setDeleteMesa] = React.useState<Mesa | null>(null);
   const [isFilterSheetOpen, setFilterSheetOpen] = React.useState(false);
+  const [isFormOpen, setFormOpen] = React.useState(false);
+  const [formMode, setFormMode] = React.useState<"create" | "edit">("create");
 
   React.useEffect(() => {
     if (!locations?.length) return;
@@ -113,11 +139,14 @@ export function TablesView({ restaurantId }: TablesViewProps) {
   }, [context, locationId, locations, persistLocationId]);
 
   const { data: tables, isLoading } = useTables(restaurantId, locationId);
+  const createTable = useCreateTable(restaurantId, locationId);
+  const updateTable = useUpdateTable(restaurantId, locationId);
+  const deleteTable = useDeleteTable(restaurantId, locationId);
   const connectTable = useConnectTable();
   const closeTableSession = useCloseTableSession();
 
   React.useEffect(() => {
-    const nextMesas = (tables ?? []).map((table, index) => mapTableToMesa(table, index));
+    const nextMesas = (tables ?? []).map((table) => mapTableToMesa(table));
     setMesas((current) => mergeMesas(current, nextMesas));
   }, [tables]);
 
@@ -137,6 +166,23 @@ export function TablesView({ restaurantId }: TablesViewProps) {
     },
     [persistLocationId],
   );
+
+  const handleOpenCreate = React.useCallback(() => {
+    if (!locationId) {
+      toast.warning("Selecione uma filial antes de criar uma mesa.");
+      return;
+    }
+    setFormMode("create");
+    setEditingMesa(null);
+    setFormOpen(true);
+  }, [locationId, toast]);
+
+  const handleOpenEdit = React.useCallback((mesa: Mesa) => {
+    setFormMode("edit");
+    setEditingMesa(mesa);
+    setActionMesa(null);
+    setFormOpen(true);
+  }, []);
 
   const handleViewOrder = React.useCallback(
     (mesa: Mesa) => {
@@ -180,69 +226,8 @@ export function TablesView({ restaurantId }: TablesViewProps) {
     [toast, updateMesa, user?.email, user?.name],
   );
 
-  const handleToggleOccupancy = React.useCallback(
-    (mesa: Mesa) => {
-      if (mesa.status === "ocupada") {
-        const releaseMesa = (description: string) => {
-          updateMesa(mesa.id, (current) => ({
-            ...current,
-            status: "livre",
-            pessoasConectadas: 0,
-            ocupacaoInicio: null,
-            reserva: undefined,
-            sessionId: null,
-          }));
-          toast.success(`Mesa liberada: ${mesa.nome}`, { description });
-        };
-
-        if (mesa.sessionId) {
-          closeTableSession.mutate(
-            { sessionId: mesa.sessionId, restaurantId },
-            {
-              onSuccess: () =>
-                releaseMesa("A sessão foi encerrada e a mesa voltou a ficar livre."),
-              onError: () =>
-                releaseMesa("Sessão finalizada localmente para continuar o fluxo."),
-            },
-          );
-          return;
-        }
-
-        releaseMesa("A mesa voltou a ficar disponível para novos clientes.");
-        return;
-      }
-
-      updateMesa(mesa.id, (current) => ({
-        ...current,
-        status: "ocupada",
-        pessoasConectadas: Math.max(1, current.pessoasConectadas),
-        ocupacaoInicio: current.ocupacaoInicio ?? new Date().toISOString(),
-        reserva: undefined,
-      }));
-
-      toast.success(`Mesa ocupada: ${mesa.nome}`, {
-        description: "Atendimento iniciado com sucesso.",
-      });
-    },
-    [closeTableSession, restaurantId, toast, updateMesa],
-  );
-
   const handleConnect = React.useCallback(
     (mesa: Mesa) => {
-      const applyConnectionState = (sessionId: string | null) => {
-        updateMesa(mesa.id, (current) => ({
-          ...current,
-          status: "ocupada",
-          pessoasConectadas: Math.min(
-            current.capacidade,
-            Math.max(1, current.pessoasConectadas + 1),
-          ),
-          ocupacaoInicio: current.ocupacaoInicio ?? new Date().toISOString(),
-          reserva: undefined,
-          sessionId: sessionId ?? current.sessionId ?? null,
-        }));
-      };
-
       connectTable.mutate(
         {
           qrCodeToken: mesa.qrCodeToken,
@@ -250,13 +235,22 @@ export function TablesView({ restaurantId }: TablesViewProps) {
         },
         {
           onSuccess: ({ session }) => {
-            applyConnectionState(session.id);
+            updateMesa(mesa.id, (current) => ({
+              ...current,
+              status: "ocupada",
+              pessoasConectadas: Math.min(
+                current.capacidade,
+                Math.max(1, current.pessoasConectadas + 1),
+              ),
+              ocupacaoInicio: current.ocupacaoInicio ?? new Date().toISOString(),
+              reserva: undefined,
+              sessionId: session.id,
+            }));
             toast.success(`Usuário conectado à mesa ${mesa.nome}`);
           },
-          onError: () => {
-            applyConnectionState(mesa.sessionId ?? null);
-            toast.info(`Usuário conectado à mesa ${mesa.nome}`, {
-              description: "Conexão simulada localmente para o fluxo de QR.",
+          onError: (error) => {
+            toast.error(`Não foi possível conectar à ${mesa.nome}`, {
+              description: getFriendlyErrorMessage(error),
             });
           },
         },
@@ -265,35 +259,130 @@ export function TablesView({ restaurantId }: TablesViewProps) {
     [connectTable, toast, updateMesa, user?.email, user?.name],
   );
 
-  const handleCloseBill = React.useCallback(
+  const handleToggleOccupancy = React.useCallback(
     (mesa: Mesa) => {
-      const finish = (description: string) => {
-        updateMesa(mesa.id, (current) => ({
-          ...current,
-          status: "livre",
-          pessoasConectadas: 0,
-          ocupacaoInicio: null,
-          reserva: undefined,
-          sessionId: null,
-        }));
-        toast.success(`Conta fechada: ${mesa.nome}`, { description });
-      };
+      if (mesa.status === "ocupada") {
+        if (!mesa.sessionId) {
+          toast.warning(`A ${mesa.nome} não possui uma sessão ativa para encerrar.`);
+          return;
+        }
 
-      if (mesa.sessionId) {
         closeTableSession.mutate(
           { sessionId: mesa.sessionId, restaurantId },
           {
-            onSuccess: () => finish("Atendimento encerrado e mesa pronta para o próximo giro."),
-            onError: () => finish("Fechamento concluído localmente para manter a operação fluindo."),
+            onSuccess: () => {
+              updateMesa(mesa.id, (current) => ({
+                ...current,
+                status: "livre",
+                pessoasConectadas: 0,
+                ocupacaoInicio: null,
+                reserva: undefined,
+                sessionId: null,
+              }));
+              toast.success(`Mesa liberada: ${mesa.nome}`, {
+                description: "A sessão foi encerrada e a mesa voltou a ficar livre.",
+              });
+            },
+            onError: (error) => {
+              toast.error(`Não foi possível liberar ${mesa.nome}`, {
+                description: getFriendlyErrorMessage(error),
+              });
+            },
           },
         );
         return;
       }
 
-      finish("Atendimento encerrado e mesa pronta para o próximo giro.");
+      handleConnect(mesa);
+    },
+    [closeTableSession, handleConnect, restaurantId, toast, updateMesa],
+  );
+
+  const handleCloseBill = React.useCallback(
+    (mesa: Mesa) => {
+      if (!mesa.sessionId) {
+        toast.warning(`A ${mesa.nome} ainda não possui uma sessão aberta.`);
+        return;
+      }
+
+      closeTableSession.mutate(
+        { sessionId: mesa.sessionId, restaurantId },
+        {
+          onSuccess: () => {
+            updateMesa(mesa.id, (current) => ({
+              ...current,
+              status: "livre",
+              pessoasConectadas: 0,
+              ocupacaoInicio: null,
+              reserva: undefined,
+              sessionId: null,
+            }));
+            toast.success(`Conta fechada: ${mesa.nome}`, {
+              description: "Atendimento encerrado e mesa pronta para o próximo giro.",
+            });
+          },
+          onError: (error) => {
+            toast.error(`Não foi possível fechar a conta da ${mesa.nome}`, {
+              description: getFriendlyErrorMessage(error),
+            });
+          },
+        },
+      );
     },
     [closeTableSession, restaurantId, toast, updateMesa],
   );
+
+  const handleFormSubmit = React.useCallback(
+    async (payload: {
+      label: string;
+      capacity?: number | null;
+      area?: string | null;
+      isActive?: boolean;
+    }) => {
+      try {
+        if (formMode === "create") {
+          const created = await createTable.mutateAsync(payload);
+          setMesas((current) => [...current, mapTableToMesa(created)]);
+          toast.success(`Mesa criada: ${payload.label}`);
+        } else if (editingMesa) {
+          const updated = await updateTable.mutateAsync({
+            tableId: editingMesa.id,
+            body: payload,
+          });
+          setMesas((current) =>
+            current.map((mesa) =>
+              mesa.id === editingMesa.id ? mapTableToMesa(updated) : mesa,
+            ),
+          );
+          toast.success(`Mesa atualizada: ${payload.label}`);
+        }
+
+        setFormOpen(false);
+        setEditingMesa(null);
+      } catch (error) {
+        toast.error("Não foi possível salvar a mesa", {
+          description: getFriendlyErrorMessage(error),
+        });
+      }
+    },
+    [createTable, editingMesa, formMode, toast, updateTable],
+  );
+
+  const handleConfirmDelete = React.useCallback(async () => {
+    if (!deleteMesa) return;
+
+    try {
+      await deleteTable.mutateAsync(deleteMesa.id);
+      setMesas((current) => current.filter((mesa) => mesa.id !== deleteMesa.id));
+      toast.success(`Mesa excluída: ${deleteMesa.nome}`);
+      setDeleteMesa(null);
+      setActionMesa(null);
+    } catch (error) {
+      toast.error(`Não foi possível excluir ${deleteMesa.nome}`, {
+        description: getFriendlyErrorMessage(error),
+      });
+    }
+  }, [deleteMesa, deleteTable, toast]);
 
   const currentLocationName =
     locations?.find((location) => location.id === locationId)?.name ?? "Filial";
@@ -304,7 +393,8 @@ export function TablesView({ restaurantId }: TablesViewProps) {
       const matchesFilter = filter === "todas" || mesa.status === filter;
       const matchesSearch =
         normalizedSearch.length === 0 ||
-        mesa.nome.toLowerCase().includes(normalizedSearch);
+        mesa.nome.toLowerCase().includes(normalizedSearch) ||
+        (mesa.area ?? "").toLowerCase().includes(normalizedSearch);
       return matchesFilter && matchesSearch;
     });
   }, [filter, mesas, search]);
@@ -321,6 +411,13 @@ export function TablesView({ restaurantId }: TablesViewProps) {
         description: "Atualize rapidamente o status operacional.",
         icon: <Sparkles className="h-4 w-4" />,
         onSelect: () => handleToggleOccupancy(actionMesa),
+      },
+      {
+        key: "edit",
+        label: "Editar mesa",
+        description: "Renomear, ajustar capacidade, área e status.",
+        icon: <Pencil className="h-4 w-4" />,
+        onSelect: () => handleOpenEdit(actionMesa),
       },
       {
         key: "order",
@@ -357,8 +454,24 @@ export function TablesView({ restaurantId }: TablesViewProps) {
         icon: <QrCode className="h-4 w-4" />,
         onSelect: () => setQrMesa(actionMesa),
       },
+      {
+        key: "delete",
+        label: "Excluir mesa",
+        description: "Remove a mesa da listagem desta filial.",
+        icon: <Trash2 className="h-4 w-4" />,
+        tone: "destructive" as const,
+        onSelect: () => setDeleteMesa(actionMesa),
+      },
     ];
-  }, [actionMesa, handleCloseBill, handleReserve, handleToggleOccupancy, handleTransfer, handleViewOrder]);
+  }, [
+    actionMesa,
+    handleCloseBill,
+    handleOpenEdit,
+    handleReserve,
+    handleToggleOccupancy,
+    handleTransfer,
+    handleViewOrder,
+  ]);
 
   return (
     <div className={cn("flex flex-col gap-4 lg:gap-6", subheaderOffset)}>
@@ -390,12 +503,13 @@ export function TablesView({ restaurantId }: TablesViewProps) {
               value={locationId}
               onChange={handleLocationChange}
             />
-            <Button
-              variant="outline"
-              onClick={() => setFilterSheetOpen(true)}
-            >
+            <Button variant="outline" onClick={() => setFilterSheetOpen(true)}>
               <SlidersHorizontal className="h-4 w-4" />
               Filtros
+            </Button>
+            <Button onClick={handleOpenCreate}>
+              <Plus className="h-4 w-4" />
+              Nova mesa
             </Button>
           </div>
         </Subheader>
@@ -489,6 +603,7 @@ export function TablesView({ restaurantId }: TablesViewProps) {
               onToggleOccupancy={handleToggleOccupancy}
               onOpenQr={setQrMesa}
               onConnect={handleConnect}
+              onEdit={handleOpenEdit}
               onViewOrder={handleViewOrder}
               onMore={setActionMesa}
             />
@@ -511,6 +626,30 @@ export function TablesView({ restaurantId }: TablesViewProps) {
         items={actionItems}
       />
 
+      <MesaFormModal
+        open={isFormOpen}
+        mode={formMode}
+        mesa={editingMesa}
+        existingMesas={mesas}
+        currentLocationName={currentLocationName}
+        isSubmitting={createTable.isPending || updateTable.isPending}
+        onOpenChange={(open) => {
+          setFormOpen(open);
+          if (!open) setEditingMesa(null);
+        }}
+        onSubmit={handleFormSubmit}
+      />
+
+      <ConfirmDeleteModal
+        open={!!deleteMesa}
+        mesa={deleteMesa}
+        isDeleting={deleteTable.isPending}
+        onOpenChange={(open) => {
+          if (!open) setDeleteMesa(null);
+        }}
+        onConfirm={handleConfirmDelete}
+      />
+
       <MesaQrModal
         mesa={qrMesa}
         open={!!qrMesa}
@@ -523,11 +662,7 @@ export function TablesView({ restaurantId }: TablesViewProps) {
       <FAB
         label="Nova mesa"
         icon={<Plus className="h-5 w-5" />}
-        onClick={() => {
-          toast.info("Cadastro rápido de mesa", {
-            description: "O botão já está pronto para conectar com o fluxo de criação.",
-          });
-        }}
+        onClick={handleOpenCreate}
       />
     </div>
   );

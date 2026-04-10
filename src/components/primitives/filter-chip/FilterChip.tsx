@@ -1,8 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/cn";
 
-export interface FilterChipProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface FilterChipProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   active?: boolean;
   count?: number;
   icon?: React.ReactNode;
@@ -36,7 +35,9 @@ export function FilterChip({
         <span
           className={cn(
             "rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
-            active ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground",
+            active
+              ? "bg-primary text-primary-foreground"
+              : "bg-secondary text-secondary-foreground",
           )}
         >
           {count}

@@ -1,8 +1,10 @@
 import * as React from "react";
 import { cn } from "@/lib/cn";
 
-export interface IconButtonProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
+export interface IconButtonProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "children"
+> {
   label: string;
   icon: React.ReactNode;
   variant?: "ghost" | "outline" | "secondary" | "destructive";
@@ -12,7 +14,8 @@ export interface IconButtonProps
 const variantClasses = {
   ghost: "border-transparent bg-transparent text-foreground hover:bg-secondary",
   outline: "border-border bg-background text-foreground hover:bg-secondary",
-  secondary: "border-transparent bg-secondary text-secondary-foreground hover:opacity-90",
+  secondary:
+    "border-transparent bg-secondary text-secondary-foreground hover:opacity-90",
   destructive:
     "border-transparent bg-destructive/10 text-destructive hover:bg-destructive/15",
 } as const;

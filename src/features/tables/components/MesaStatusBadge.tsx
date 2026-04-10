@@ -16,7 +16,11 @@ export interface MesaStatusBadgeProps {
 
 export function MesaStatusBadge({ status, className }: MesaStatusBadgeProps) {
   return (
-    <Badge variant={STATUS_VARIANTS[status]} dot className={cn("capitalize", className)}>
+    <Badge
+      variant={STATUS_VARIANTS[status]}
+      dot
+      className={cn("capitalize", className)}
+    >
       {MESA_STATUS_LABELS[status]}
     </Badge>
   );

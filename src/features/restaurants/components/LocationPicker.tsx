@@ -28,7 +28,10 @@ export function LocationPicker({
 
   return (
     <Select value={value ?? ""} onValueChange={onChange}>
-      <SelectTrigger className={cn("w-56", triggerClassName)} loading={isLoading}>
+      <SelectTrigger
+        className={cn("w-56", triggerClassName)}
+        loading={isLoading}
+      >
         <SelectValue placeholder="Selecionar filial…" />
       </SelectTrigger>
       <SelectContent>

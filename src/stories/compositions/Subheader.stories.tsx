@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { SlidersHorizontal } from "lucide-react";
-import { Subheader, SubheaderGroup } from "@/components/compositions/subheader/Subheader";
+import {
+  Subheader,
+  SubheaderGroup,
+} from "@/components/compositions/subheader/Subheader";
 import { SearchInput } from "@/components/primitives/search-input/SearchInput";
 import { FilterChip } from "@/components/primitives/filter-chip/FilterChip";
 import { Button } from "@/components/primitives/button/Button";
@@ -19,7 +22,11 @@ export const Default: Story = {
     <Subheader>
       <SubheaderGroup>
         <div className="min-w-60 flex-1">
-          <SearchInput value="" onChange={() => undefined} placeholder="Buscar mesas" />
+          <SearchInput
+            value=""
+            onChange={() => undefined}
+            placeholder="Buscar mesas"
+          />
         </div>
         <FilterChip active>Todas</FilterChip>
         <FilterChip>Livres</FilterChip>

@@ -11,6 +11,8 @@ const mesa: Mesa = {
   label: "Mesa 01",
   nome: "Mesa 01",
   qrCodeToken: "demo-token-01",
+  area: "Salão",
+  serviceMode: "shared_tab",
   capacity: 4,
   capacidade: 4,
   isActive: true,

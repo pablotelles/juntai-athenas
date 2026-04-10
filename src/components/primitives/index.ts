@@ -26,6 +26,9 @@ export { IconButton } from "./icon-button/IconButton";
 export type { IconButtonProps } from "./icon-button/IconButton";
 
 export { ActionSheet } from "./action-sheet/ActionSheet";
-export type { ActionSheetProps, ActionSheetItem } from "./action-sheet/ActionSheet";
+export type {
+  ActionSheetProps,
+  ActionSheetItem,
+} from "./action-sheet/ActionSheet";
 
 export { Toaster } from "./toast/Toast";

@@ -1,17 +1,11 @@
 "use client";
 
 import * as React from "react";
-import {
-  Armchair,
-  CalendarClock,
-  Clock3,
-  MoveLeft,
-  Users,
-} from "lucide-react";
+import { Armchair, CalendarClock, Clock3, MoveLeft, Users } from "lucide-react";
 import { Avatar } from "@/components/shared/avatar/Avatar";
 import { Text } from "@/components/primitives/text/Text";
 import { cn } from "@/lib/cn";
-import type { Mesa } from "../model";
+import { MESA_SERVICE_MODE_LABELS, type Mesa } from "../model";
 import { MesaQuickActions } from "./MesaQuickActions";
 import { MesaStatusBadge } from "./MesaStatusBadge";
 
@@ -20,6 +14,7 @@ export interface MesaCardProps {
   onToggleOccupancy: (mesa: Mesa) => void;
   onOpenQr: (mesa: Mesa) => void;
   onConnect: (mesa: Mesa) => void;
+  onEdit: (mesa: Mesa) => void;
   onViewOrder: (mesa: Mesa) => void;
   onMore: (mesa: Mesa) => void;
 }
@@ -43,6 +38,10 @@ function formatElapsed(value?: string | null) {
   const hours = Math.floor(diffMinutes / 60);
   const minutes = diffMinutes % 60;
   return minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
+}
+
+function formatServiceMode(mesa: Mesa) {
+  return MESA_SERVICE_MODE_LABELS[mesa.serviceMode] ?? "Comanda compartilhada";
 }
 
 function InfoTile({
@@ -74,6 +73,7 @@ export function MesaCard({
   onToggleOccupancy,
   onOpenQr,
   onConnect,
+  onEdit,
   onViewOrder,
   onMore,
 }: MesaCardProps) {
@@ -91,7 +91,7 @@ export function MesaCard({
           : "Disponível agora";
 
   return (
-    <div className="relative overflow-hidden rounded-[24px] border border-border bg-surface shadow-sm">
+    <div className="relative overflow-hidden rounded-3xl border border-border bg-surface shadow-sm">
       <div
         className={cn(
           "absolute inset-y-0 right-0 flex items-center gap-2 bg-secondary/80 px-3 md:hidden",
@@ -105,6 +105,7 @@ export function MesaCard({
           onToggleOccupancy={onToggleOccupancy}
           onOpenQr={onOpenQr}
           onConnect={onConnect}
+          onEdit={onEdit}
           onViewOrder={onViewOrder}
           onMore={onMore}
         />
@@ -112,10 +113,12 @@ export function MesaCard({
 
       <div
         className={cn(
-          "relative rounded-[24px] bg-surface p-4 transition-transform duration-200 sm:p-5",
+          "relative rounded-3xl bg-surface p-4 transition-transform duration-200 sm:p-5",
           trayOpen ? "-translate-x-28" : "translate-x-0",
         )}
-        onTouchStart={(event) => setTouchStartX(event.changedTouches[0]?.clientX ?? null)}
+        onTouchStart={(event) =>
+          setTouchStartX(event.changedTouches[0]?.clientX ?? null)
+        }
         onTouchEnd={(event) => {
           const endX = event.changedTouches[0]?.clientX ?? null;
           if (touchStartX === null || endX === null) return;
@@ -131,6 +134,8 @@ export function MesaCard({
               {mesa.nome}
             </Text>
             <Text variant="sm" muted className="mt-1">
+              {mesa.area ? `${mesa.area} · ` : ""}
+              {formatServiceMode(mesa)} ·{" "}
               {mesa.status === "reservada"
                 ? "Mesa preparada para chegada iminente."
                 : mesa.status === "ocupada"
@@ -162,7 +167,11 @@ export function MesaCard({
           <InfoTile
             icon={<CalendarClock className="h-4 w-4" />}
             label="Operação"
-            value={mesa.status === "inativa" ? "Pausada" : "Em salão"}
+            value={
+              mesa.area
+                ? `${mesa.area} · ${formatServiceMode(mesa)}`
+                : formatServiceMode(mesa)
+            }
           />
         </div>
 
@@ -187,6 +196,7 @@ export function MesaCard({
             onToggleOccupancy={onToggleOccupancy}
             onOpenQr={onOpenQr}
             onConnect={onConnect}
+            onEdit={onEdit}
             onViewOrder={onViewOrder}
             onMore={onMore}
           />

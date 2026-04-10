@@ -15,7 +15,9 @@ type Story = StoryObj<typeof MesaFilterSheet>;
 export const Default: Story = {
   render: () => {
     const [open, setOpen] = React.useState(false);
-    const [value, setValue] = React.useState<"todas" | "livre" | "ocupada" | "reservada" | "inativa">("todas");
+    const [value, setValue] = React.useState<
+      "todas" | "livre" | "ocupada" | "reservada" | "inativa"
+    >("todas");
 
     return (
       <div>

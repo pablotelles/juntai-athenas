@@ -11,6 +11,8 @@ const mesas: Mesa[] = [
     label: "Mesa 01",
     nome: "Mesa 01",
     qrCodeToken: "token-1",
+    area: "Salão",
+    serviceMode: "shared_tab",
     capacity: 4,
     capacidade: 4,
     isActive: true,
@@ -26,6 +28,8 @@ const mesas: Mesa[] = [
     label: "Varanda 02",
     nome: "Varanda 02",
     qrCodeToken: "token-2",
+    area: "Varanda",
+    serviceMode: "individual_tabs",
     capacity: 6,
     capacidade: 6,
     isActive: true,
@@ -56,6 +60,7 @@ export const Default: Story = {
           onToggleOccupancy={() => undefined}
           onOpenQr={() => undefined}
           onConnect={() => undefined}
+          onEdit={() => undefined}
           onViewOrder={() => undefined}
           onMore={() => undefined}
         />

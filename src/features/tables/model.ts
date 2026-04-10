@@ -28,50 +28,21 @@ export const MESA_STATUS_LABELS: Record<MesaFilterValue, string> = {
   inativa: "Inativa",
 };
 
-const RESERVATION_NAMES = [
-  "Marina Costa",
-  "Rafael Souza",
-  "Juliana Lima",
-  "Grupo Aniversário",
-];
+export const MESA_SERVICE_MODE_LABELS: Record<Mesa["serviceMode"], string> = {
+  shared_tab: "Comanda compartilhada",
+  individual_tabs: "Comandas individuais",
+};
 
-function hashString(value: string) {
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(index);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
+export function mapTableToMesa(table: Table): Mesa {
+  const capacidade = table.capacity ?? 4;
+  const sessionId = table.activeSessionId ?? null;
+  const pessoasConectadas = table.connectedUsersCount ?? 0;
 
-export function mapTableToMesa(table: Table, index: number): Mesa {
-  const hash = hashString(`${table.id}:${table.label}:${table.locationId}`);
-  const capacidade = table.capacity ?? [2, 4, 4, 6, 8][hash % 5];
-
-  let status: MesaStatus = table.isActive ? "livre" : "inativa";
-  let pessoasConectadas = 0;
-  let reserva: MesaReserva | undefined;
-  let ocupacaoInicio: string | null = null;
-
-  if (!table.isActive) {
-    status = "inativa";
-  } else if (hash % 11 === 0) {
-    status = "inativa";
-  } else if (hash % 7 === 0) {
-    status = "reservada";
-    const horario = new Date(Date.now() + (index + 1) * 20 * 60 * 1000).toISOString();
-    reserva = {
-      nomeCliente: RESERVATION_NAMES[hash % RESERVATION_NAMES.length] ?? "Cliente",
-      horario,
-      telefone: `(11) 9${String(1000 + (hash % 9000)).padStart(4, "0")}-${String(1000 + ((hash >> 3) % 9000)).padStart(4, "0")}`,
-    };
-  } else if (hash % 3 === 0) {
-    status = "ocupada";
-    pessoasConectadas = Math.max(1, Math.min(capacidade, (hash % capacidade) + 1));
-    ocupacaoInicio = new Date(
-      Date.now() - ((hash % 180) + 15) * 60 * 1000,
-    ).toISOString();
-  }
+  const status: MesaStatus = !table.isActive
+    ? "inativa"
+    : sessionId
+      ? "ocupada"
+      : "livre";
 
   return {
     ...table,
@@ -79,10 +50,10 @@ export function mapTableToMesa(table: Table, index: number): Mesa {
     capacidade,
     status,
     pessoasConectadas,
-    reserva,
-    ocupacaoInicio,
+    reserva: undefined,
+    ocupacaoInicio: table.occupiedAt ?? null,
     filialId: table.locationId,
-    sessionId: null,
+    sessionId,
   };
 }
 

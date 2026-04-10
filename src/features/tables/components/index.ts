@@ -1,6 +1,12 @@
 export { MesaCard } from "./MesaCard";
 export type { MesaCardProps } from "./MesaCard";
 
+export { MesaFormModal } from "./MesaFormModal";
+export type { MesaFormModalProps } from "./MesaFormModal";
+
+export { ConfirmDeleteModal } from "./ConfirmDeleteModal";
+export type { ConfirmDeleteModalProps } from "./ConfirmDeleteModal";
+
 export { MesaGrid } from "./MesaGrid";
 export type { MesaGridProps } from "./MesaGrid";
 

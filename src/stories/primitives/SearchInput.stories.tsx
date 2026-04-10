@@ -16,7 +16,11 @@ export const Default: Story = {
     const [value, setValue] = React.useState("");
     return (
       <div className="max-w-md">
-        <SearchInput value={value} onChange={setValue} placeholder="Buscar mesa por nome" />
+        <SearchInput
+          value={value}
+          onChange={setValue}
+          placeholder="Buscar mesa por nome"
+        />
       </div>
     );
   },

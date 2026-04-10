@@ -15,7 +15,9 @@ import {
 import type { Mesa } from "../model";
 
 function buildMatrix(seed: string, size = 21) {
-  let state = seed.split("").reduce((acc, char) => acc + char.charCodeAt(0), 97);
+  let state = seed
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 97);
 
   const isFinder = (row: number, col: number) => {
     const corners = [
@@ -105,7 +107,9 @@ export function MesaQrModal({
     <Modal open={open} onOpenChange={onOpenChange}>
       <ModalContent className="max-w-xl">
         <ModalHeader>
-          <ModalTitle>{mesa ? `QR Code · ${mesa.nome}` : "QR Code da mesa"}</ModalTitle>
+          <ModalTitle>
+            {mesa ? `QR Code · ${mesa.nome}` : "QR Code da mesa"}
+          </ModalTitle>
           <ModalDescription>
             Compartilhe este código com clientes ou equipe para conexão rápida.
           </ModalDescription>
@@ -115,13 +119,19 @@ export function MesaQrModal({
           <div className="rounded-[28px] border border-border bg-white p-4 shadow-sm">
             <div
               className="grid gap-0.5"
-              style={{ gridTemplateColumns: `repeat(${matrix.length}, minmax(0, 1fr))` }}
+              style={{
+                gridTemplateColumns: `repeat(${matrix.length}, minmax(0, 1fr))`,
+              }}
             >
               {matrix.flatMap((row, rowIndex) =>
                 row.map((cell, colIndex) => (
                   <span
                     key={`${rowIndex}-${colIndex}`}
-                    className={cell ? "h-2.5 w-2.5 rounded-[2px] bg-slate-900" : "h-2.5 w-2.5 rounded-[2px] bg-transparent"}
+                    className={
+                      cell
+                        ? "h-2.5 w-2.5 rounded-[2px] bg-slate-900"
+                        : "h-2.5 w-2.5 rounded-[2px] bg-transparent"
+                    }
                   />
                 )),
               )}
@@ -151,7 +161,7 @@ export function MesaQrModal({
             }}
           >
             <PlugZap className="h-4 w-4" />
-            Simular conexão
+            Conectar agora
           </Button>
         </ModalFooter>
       </ModalContent>
