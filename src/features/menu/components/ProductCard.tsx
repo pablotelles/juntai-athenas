@@ -1,7 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { MoreHorizontal, Pencil, EyeOff, Eye, Trash2, Package } from "lucide-react";
+import {
+  MoreHorizontal,
+  Pencil,
+  EyeOff,
+  Eye,
+  Trash2,
+  Package,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/shared/card/Card";
 import { Badge } from "@/components/primitives/badge/Badge";
 import { Text } from "@/components/primitives/text/Text";
@@ -32,6 +39,9 @@ export function ProductCard({
   onToggleAvailable,
   onDelete,
 }: ProductCardProps) {
+  const isComposable =
+    item.type === "composable" || item.modifierGroups.length > 0;
+
   const moreMenu = (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -108,11 +118,16 @@ export function ProductCard({
               <Text variant="sm" className="font-medium truncate">
                 {item.name}
               </Text>
-              <Badge variant={item.type === "composable" ? "info" : "secondary"} className="hidden lg:inline-flex">
-                {item.type === "composable" ? "Personalizável" : "Simples"}
+              <Badge
+                variant={isComposable ? "info" : "secondary"}
+                className="hidden lg:inline-flex"
+              >
+                {isComposable ? "Personalizável" : "Simples"}
               </Badge>
               {!item.isAvailable && (
-                <Badge variant="secondary" className="hidden lg:inline-flex">Indisponível</Badge>
+                <Badge variant="secondary" className="hidden lg:inline-flex">
+                  Indisponível
+                </Badge>
               )}
             </div>
             {item.description && (
@@ -125,8 +140,8 @@ export function ProductCard({
               <span className="text-sm font-semibold tabular-nums text-foreground">
                 {formatPrice(item.basePrice)}
               </span>
-              <Badge variant={item.type === "composable" ? "info" : "secondary"}>
-                {item.type === "composable" ? "Personalizável" : "Simples"}
+              <Badge variant={isComposable ? "info" : "secondary"}>
+                {isComposable ? "Personalizável" : "Simples"}
               </Badge>
               {!item.isAvailable && (
                 <Badge variant="secondary">Indisponível</Badge>

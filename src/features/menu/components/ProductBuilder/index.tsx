@@ -89,6 +89,10 @@ export function ProductBuilderPage({
   const [state, setState] = React.useState<BuilderState>(() =>
     initialItem ? itemToBuilderState(initialItem) : emptyBuilderState(),
   );
+  const effectiveType: MenuItemType =
+    state.type === "composable" || state.steps.length > 0
+      ? "composable"
+      : "simple";
   // Edit mode starts at step 1 of its own wizard (which maps to "Informações")
   const [step, setStep] = React.useState(1);
   const [previewOpen, setPreviewOpen] = React.useState(false);
@@ -129,7 +133,7 @@ export function ProductBuilderPage({
         description: values.description ?? "",
         basePrice: values.basePrice,
         imageUrl: values.imageUrl ?? "",
-        type: state.type,
+        type: effectiveType,
       }));
       setStep((s) => s + 1);
     },
@@ -147,19 +151,19 @@ export function ProductBuilderPage({
         description: infoFormik.values.description ?? "",
         basePrice: infoFormik.values.basePrice,
         imageUrl: infoFormik.values.imageUrl ?? "",
-        type: state.type,
+        type: effectiveType,
       }));
       setStep((s) => s + 1);
     }
-  }, [infoFormik, state.type]);
+  }, [effectiveType, infoFormik]);
 
   // In edit mode: step 1 = Informações, step 2 = Personalização (composable)
   // In create mode: step 1 = Tipo, step 2 = Informações, step 3 = Personalização
   const wizardSteps = isEditMode
-    ? state.type === "composable"
+    ? effectiveType === "composable"
       ? WIZARD_STEPS_COMPOSABLE_EDIT
       : WIZARD_STEPS_SIMPLE_EDIT
-    : state.type === "composable"
+    : effectiveType === "composable"
       ? WIZARD_STEPS_COMPOSABLE
       : WIZARD_STEPS_SIMPLE;
 
@@ -216,6 +220,11 @@ export function ProductBuilderPage({
         type: state.type,
       };
     }
+
+    saveState = {
+      ...saveState,
+      type: effectiveType,
+    };
 
     if (saveState.type === "composable") {
       if (saveState.steps.length === 0) {
@@ -357,7 +366,7 @@ export function ProductBuilderPage({
         )}
 
         {/* Steps builder (step 3 in create, step 2 in edit) */}
-        {contentStep === 3 && state.type === "composable" && (
+        {contentStep === 3 && effectiveType === "composable" && (
           <div className="flex flex-col gap-4">
             <div>
               <div className="flex items-center gap-2">

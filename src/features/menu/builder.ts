@@ -268,8 +268,13 @@ export async function saveProduct(
 // ─── Mapper: MenuItem → BuilderState (para edição) ───────────────────────────
 
 export function itemToBuilderState(item: MenuItem): BuilderState {
+  const resolvedType: MenuItemType =
+    item.type === "composable" || item.modifierGroups.length > 0
+      ? "composable"
+      : "simple";
+
   return {
-    type: item.type,
+    type: resolvedType,
     name: item.name,
     description: item.description ?? "",
     basePrice: item.basePrice,
@@ -333,15 +338,17 @@ export async function updateProduct(
   const { restaurantId, existingGroupIds } = context;
 
   // 1. Atualizar campos básicos
-  await patchItem(
+  const updatedItem = await patchItem(
     itemId,
     {
       restaurantId,
       name: state.name,
       description: state.description || undefined,
+      // The backend accepts `type` on PATCH; the SDK typing is just behind.
+      type: state.steps.length > 0 ? "composable" : state.type,
       basePrice: state.basePrice,
       imageUrl: state.imageUrl || undefined,
-    },
+    } as Parameters<typeof patchItem>[1],
     token,
   );
 
@@ -418,9 +425,8 @@ export async function updateProduct(
     await attachModifierGroup(itemId, group.id, restaurantId, token);
   }
 
-  // Retorna item via patchItem — o caller invalida o cache
-  const updated = await patchItem(itemId, { restaurantId }, token);
-  return updated;
+  // O caller invalida o cache após salvar; não precisamos disparar um PATCH vazio.
+  return updatedItem;
 }
 
 // ─── Estado inicial vazio ─────────────────────────────────────────────────────
