@@ -12,7 +12,8 @@ export default function CategoryProductsPage() {
   const { context } = useActiveContext();
   const params = useParams<{ menuId: string; categoryId: string }>();
   const searchParams = useSearchParams();
-  const locationId = searchParams.get("locationId");
+  const locationIdFromUrl = searchParams.get("locationId");
+  const locationId = locationIdFromUrl ?? (context.type === "restaurant" ? (context.locationId ?? null) : null);
 
   const restaurantId = context.type === "restaurant" ? context.restaurantId : null;
   const { data: menus } = useMenu(restaurantId ?? "", locationId);
