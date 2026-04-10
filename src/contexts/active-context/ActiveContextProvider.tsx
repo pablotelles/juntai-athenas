@@ -10,7 +10,7 @@ import { apiClient } from "@/lib/api";
 
 export type ActiveContextValue =
   | { type: "platform" }
-  | { type: "restaurant"; restaurantId: string };
+  | { type: "restaurant"; restaurantId: string; locationId?: string | null };
 
 export interface RestaurantOption {
   id: string;
@@ -20,6 +20,8 @@ export interface RestaurantOption {
 export interface ActiveContextState {
   context: ActiveContextValue;
   setContext: (ctx: ActiveContextValue) => void;
+  /** Persists locationId within the current restaurant context */
+  setLocationId: (locationId: string | null) => void;
   /** Restaurants accessible to the current user */
   restaurants: RestaurantOption[];
   restaurantsLoading: boolean;
@@ -136,16 +138,26 @@ export function ActiveContextProvider({
     writeStorage(ctx);
   }, []);
 
+  const setLocationId = React.useCallback((locationId: string | null) => {
+    setContextState((prev) => {
+      if (prev.type !== "restaurant") return prev;
+      const next: ActiveContextValue = { ...prev, locationId };
+      writeStorage(next);
+      return next;
+    });
+  }, []);
+
   const value: ActiveContextState = React.useMemo(
     () => ({
       context,
       setContext,
+      setLocationId,
       restaurants,
       restaurantsLoading,
       isPlatform: context.type === "platform",
       isRestaurant: context.type === "restaurant",
     }),
-    [context, setContext, restaurants, restaurantsLoading],
+    [context, setContext, setLocationId, restaurants, restaurantsLoading],
   );
 
   return (

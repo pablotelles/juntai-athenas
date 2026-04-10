@@ -1,14 +1,13 @@
 "use client";
 
-import * as React from "react";
 import { Text } from "@/components/primitives/text/Text";
 import { useActiveContext } from "@/contexts/active-context/ActiveContextProvider";
 import { LocationPicker } from "@/features/restaurants/components/LocationPicker";
 import { MenuList } from "@/features/menu/components/MenuList";
 
 export default function MenuPage() {
-  const { context } = useActiveContext();
-  const [locationId, setLocationId] = React.useState<string | null>(null);
+  const { context, setLocationId } = useActiveContext();
+  const locationId = context.type === "restaurant" ? (context.locationId ?? null) : null;
 
   if (context.type !== "restaurant") {
     return (
