@@ -22,16 +22,31 @@ import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/primitives/button/Button";
 import { StepCard } from "./StepCard";
 import { ProductTemplateSelector } from "./ProductTemplateSelector";
-import { emptyStep, emptyOption, type BuilderStep, type BuilderOption } from "../../builder";
+import {
+  emptyStep,
+  emptyOption,
+  type BuilderStep,
+  type BuilderOption,
+} from "../../builder";
+import type { MenuItem } from "@juntai/types";
 
 // ─── Sortable wrapper ─────────────────────────────────────────────────────────
 
 function SortableStepCard({
   step,
   ...props
-}: { step: BuilderStep } & Omit<React.ComponentProps<typeof StepCard>, "step" | "dragHandleProps">) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: step.id });
+}: { step: BuilderStep } & Omit<
+  React.ComponentProps<typeof StepCard>,
+  "step" | "dragHandleProps"
+>) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: step.id });
 
   return (
     <div
@@ -42,7 +57,11 @@ function SortableStepCard({
         opacity: isDragging ? 0.5 : 1,
       }}
     >
-      <StepCard step={step} dragHandleProps={{ ...attributes, ...listeners }} {...props} />
+      <StepCard
+        step={step}
+        dragHandleProps={{ ...attributes, ...listeners }}
+        {...props}
+      />
     </div>
   );
 }
@@ -52,36 +71,53 @@ function SortableStepCard({
 function updateOptionInTree(
   options: BuilderOption[],
   optId: string,
-  field: keyof BuilderOption,
-  value: unknown,
+  patch: Partial<BuilderOption>,
 ): BuilderOption[] {
   return options.map((opt) => {
-    if (opt.id === optId) return { ...opt, [field]: value };
+    if (opt.id === optId) return { ...opt, ...patch };
     if (opt.childOptions.length > 0)
-      return { ...opt, childOptions: updateOptionInTree(opt.childOptions, optId, field, value) };
+      return {
+        ...opt,
+        childOptions: updateOptionInTree(opt.childOptions, optId, patch),
+      };
     return opt;
   });
 }
 
-function removeOptionFromTree(options: BuilderOption[], optId: string): BuilderOption[] {
+function removeOptionFromTree(
+  options: BuilderOption[],
+  optId: string,
+): BuilderOption[] {
   return options
     .filter((opt) => opt.id !== optId)
-    .map((opt) => ({ ...opt, childOptions: removeOptionFromTree(opt.childOptions, optId) }));
+    .map((opt) => ({
+      ...opt,
+      childOptions: removeOptionFromTree(opt.childOptions, optId),
+    }));
 }
 
 // ─── StepsBuilder ─────────────────────────────────────────────────────────────
 
 interface StepsBuilderProps {
   steps: BuilderStep[];
+  allItems: MenuItem[];
   onStepsChange: (steps: BuilderStep[]) => void;
 }
 
-export function StepsBuilder({ steps, onStepsChange }: StepsBuilderProps) {
-  const [templateSelected, setTemplateSelected] = React.useState(steps.length > 0);
+export function StepsBuilder({
+  steps,
+  allItems,
+  onStepsChange,
+}: StepsBuilderProps) {
+  const [templateSelected, setTemplateSelected] = React.useState(
+    steps.length > 0,
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -105,20 +141,30 @@ export function StepsBuilder({ steps, onStepsChange }: StepsBuilderProps) {
 
   const addOption = (stepId: string) =>
     onStepsChange(
-      steps.map((s) => (s.id === stepId ? { ...s, options: [...s.options, emptyOption()] } : s)),
+      steps.map((s) =>
+        s.id === stepId ? { ...s, options: [...s.options, emptyOption()] } : s,
+      ),
     );
 
-  const updateOption = (stepId: string, optId: string, field: keyof BuilderOption, value: unknown) =>
+  const updateOption = (
+    stepId: string,
+    optId: string,
+    patch: Partial<BuilderOption>,
+  ) =>
     onStepsChange(
       steps.map((s) =>
-        s.id === stepId ? { ...s, options: updateOptionInTree(s.options, optId, field, value) } : s,
+        s.id === stepId
+          ? { ...s, options: updateOptionInTree(s.options, optId, patch) }
+          : s,
       ),
     );
 
   const removeOption = (stepId: string, optId: string) =>
     onStepsChange(
       steps.map((s) =>
-        s.id === stepId ? { ...s, options: removeOptionFromTree(s.options, optId) } : s,
+        s.id === stepId
+          ? { ...s, options: removeOptionFromTree(s.options, optId) }
+          : s,
       ),
     );
 
@@ -154,13 +200,21 @@ export function StepsBuilder({ steps, onStepsChange }: StepsBuilderProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={steps.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={steps.map((s) => s.id)}
+          strategy={verticalListSortingStrategy}
+        >
           <div className="flex flex-col gap-4">
             {steps.map((step) => (
               <SortableStepCard
                 key={step.id}
                 step={step}
+                allItems={allItems}
                 onUpdate={updateStep}
                 onRemove={removeStep}
                 onAddOption={addOption}

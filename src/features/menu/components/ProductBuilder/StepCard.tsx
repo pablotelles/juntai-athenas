@@ -20,17 +20,22 @@ import {
   type BuilderStep,
   type BuilderOption,
 } from "../../builder";
-import type { StepType, PricingStrategy } from "@juntai/types";
+import type { StepType, PricingStrategy, MenuItem } from "@juntai/types";
 
 const STEP_TYPES: StepType[] = ["choice", "multi", "composition", "quantity"];
 
 interface StepCardProps {
   step: BuilderStep;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
+  allItems: MenuItem[];
   onUpdate: (stepId: string, patch: Partial<BuilderStep>) => void;
   onRemove: (stepId: string) => void;
   onAddOption: (stepId: string) => void;
-  onUpdateOption: (stepId: string, optId: string, field: keyof BuilderOption, value: unknown) => void;
+  onUpdateOption: (
+    stepId: string,
+    optId: string,
+    patch: Partial<BuilderOption>,
+  ) => void;
   onRemoveOption: (stepId: string, optId: string) => void;
   onAddChildOption: (stepId: string, parentId: string) => void;
 }
@@ -38,6 +43,7 @@ interface StepCardProps {
 export function StepCard({
   step,
   dragHandleProps,
+  allItems,
   onUpdate,
   onRemove,
   onAddOption,
@@ -49,8 +55,14 @@ export function StepCard({
     const stepType = value as StepType;
     const patch: Partial<BuilderStep> = {
       stepType,
-      compositionConfig: stepType === "composition" ? (step.compositionConfig ?? { maxParts: 2 }) : null,
-      pricingStrategy: stepType === "composition" ? (step.pricingStrategy ?? "max") : undefined,
+      compositionConfig:
+        stepType === "composition"
+          ? (step.compositionConfig ?? { maxParts: 2 })
+          : null,
+      pricingStrategy:
+        stepType === "composition"
+          ? (step.pricingStrategy ?? "max")
+          : undefined,
     };
     // choice is always 1→1
     if (stepType === "choice") {
@@ -113,14 +125,15 @@ export function StepCard({
 
       {/* ── Body ── */}
       <div className="flex flex-col gap-5 px-5 py-5">
-
         {/* ── Rules per type ── */}
         {step.stepType === "choice" && (
           <div className="flex items-center gap-2">
             <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-muted-foreground">
               <Checkbox
                 checked={step.isRequired}
-                onCheckedChange={(checked) => onUpdate(step.id, { isRequired: !!checked })}
+                onCheckedChange={(checked) =>
+                  onUpdate(step.id, { isRequired: !!checked })
+                }
               />
               Obrigatório
             </label>
@@ -135,28 +148,44 @@ export function StepCard({
             <label className="flex items-center gap-2 cursor-pointer select-none text-sm">
               <Checkbox
                 checked={step.isRequired}
-                onCheckedChange={(checked) => onUpdate(step.id, { isRequired: !!checked })}
+                onCheckedChange={(checked) =>
+                  onUpdate(step.id, { isRequired: !!checked })
+                }
               />
               Obrigatório
             </label>
             <div className="flex items-center gap-3">
               <div className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground">Mínimo de opções</span>
+                <span className="text-xs text-muted-foreground">
+                  Mínimo de opções
+                </span>
                 <Input
                   type="number"
                   min="0"
                   value={step.minSelections}
-                  onChange={(e) => onUpdate(step.id, { minSelections: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    onUpdate(step.id, {
+                      minSelections: parseInt(e.target.value) || 0,
+                    })
+                  }
                   className="w-20 h-8 text-sm text-center"
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground">Máximo de opções</span>
+                <span className="text-xs text-muted-foreground">
+                  Máximo de opções
+                </span>
                 <Input
                   type="number"
                   min="1"
                   value={step.maxSelections ?? ""}
-                  onChange={(e) => onUpdate(step.id, { maxSelections: e.target.value ? parseInt(e.target.value) : null })}
+                  onChange={(e) =>
+                    onUpdate(step.id, {
+                      maxSelections: e.target.value
+                        ? parseInt(e.target.value)
+                        : null,
+                    })
+                  }
                   placeholder="∞"
                   className="w-20 h-8 text-sm text-center"
                 />
@@ -176,17 +205,23 @@ export function StepCard({
                 min="2"
                 value={step.compositionConfig?.maxParts ?? 2}
                 onChange={(e) =>
-                  onUpdate(step.id, { compositionConfig: { maxParts: parseInt(e.target.value) || 2 } })
+                  onUpdate(step.id, {
+                    compositionConfig: {
+                      maxParts: parseInt(e.target.value) || 2,
+                    },
+                  })
                 }
                 className="w-24 h-9"
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Como calcular o preço?</label>
+              <label className="text-sm font-medium">
+                Como calcular o preço?
+              </label>
               <div className="flex flex-col gap-2">
                 {(
                   [
-                    { value: "max",     label: "Cobrar o mais caro" },
+                    { value: "max", label: "Cobrar o mais caro" },
                     { value: "average", label: "Média dos itens" },
                   ] as { value: PricingStrategy; label: string }[]
                 ).map((opt) => (
@@ -199,7 +234,9 @@ export function StepCard({
                       name={`pricing-${step.id}`}
                       value={opt.value}
                       checked={pricing === opt.value}
-                      onChange={() => onUpdate(step.id, { pricingStrategy: opt.value })}
+                      onChange={() =>
+                        onUpdate(step.id, { pricingStrategy: opt.value })
+                      }
                       className="accent-primary"
                     />
                     {opt.label}
@@ -212,7 +249,8 @@ export function StepCard({
 
         {step.stepType === "quantity" && (
           <p className="text-xs text-muted-foreground">
-            Configure preço e limites de quantidade individualmente em cada opção abaixo.
+            Configure preço e limites de quantidade individualmente em cada
+            opção abaixo.
           </p>
         )}
 
@@ -245,7 +283,8 @@ export function StepCard({
                 key={opt.id}
                 option={opt}
                 stepType={step.stepType}
-                onChange={(id, field, value) => onUpdateOption(step.id, id, field, value)}
+                allItems={allItems}
+                onChange={(id, patch) => onUpdateOption(step.id, id, patch)}
                 onRemove={(id) => onRemoveOption(step.id, id)}
                 onAddChild={(parentId) => onAddChildOption(step.id, parentId)}
               />

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/primitives/button/Button";
 import { useToast } from "@/contexts/toast/ToastProvider";
-import { useCreateProduct } from "../../hooks";
+import { useCreateProduct, useMenu } from "../../hooks";
 import { emptyBuilderState, type BuilderState } from "../../builder";
 import { itemFormSchema, type ItemFormValues } from "../../schemas";
 import { getItemInitialValues } from "./basic-info.initial-values";
@@ -48,6 +48,13 @@ export function ProductBuilderPage({
   const [step, setStep] = React.useState(1);
 
   const createProduct = useCreateProduct(categoryId, restaurantId, locationId);
+  const { data: menus } = useMenu(restaurantId, locationId);
+
+  // Lista achatada de itens existentes para reutilização nas opções
+  const allItems = React.useMemo(
+    () => menus?.flatMap((menu) => menu.categories.flatMap((category) => category.items)) ?? [],
+    [menus],
+  );
 
   const infoFormik = useFormik<ItemFormValues>({
     initialValues: getItemInitialValues(),
@@ -252,6 +259,7 @@ export function ProductBuilderPage({
             </div>
             <StepsBuilder
               steps={state.steps}
+              allItems={allItems}
               onStepsChange={(steps) => patch("steps", steps)}
             />
           </div>

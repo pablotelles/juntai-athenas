@@ -33,13 +33,18 @@ export function ProductList({
   const patchItem = usePatchItem(restaurantId);
   const deleteItem = useDeleteItem(restaurantId);
 
-  const menu: MenuWithCategories | undefined = menus?.find((m) => m.id === menuId);
+  const menu: MenuWithCategories | undefined = menus?.find(
+    (m) => m.id === menuId,
+  );
   const category = menu?.categories.find((c) => c.id === categoryId);
   const items = category?.items ?? [];
 
   const handleToggleAvailable = (item: MenuItem) => {
     patchItem.mutate(
-      { itemId: item.id, body: { restaurantId, isAvailable: !item.isAvailable } },
+      {
+        itemId: item.id,
+        body: { restaurantId, isAvailable: !item.isAvailable },
+      },
       {
         onSuccess: () =>
           toast.success(
@@ -51,15 +56,23 @@ export function ProductList({
   };
 
   const handleDelete = (item: MenuItem) => {
-    deleteItem.mutate(item.id, {
-      onSuccess: () =>
-        toast.success("Produto excluído", { description: `"${item.name}" removido.` }),
-      onError: () => toast.error("Erro ao excluir produto"),
-    });
+    // cascadeOptions=false: desvincula as opções que referenciam este item (fallback local preservado)
+    deleteItem.mutate(
+      { itemId: item.id, cascadeOptions: false },
+      {
+        onSuccess: () =>
+          toast.success("Produto excluído", {
+            description: `"${item.name}" removido.`,
+          }),
+        onError: () => toast.error("Erro ao excluir produto"),
+      },
+    );
   };
 
   const handleEdit = (item: MenuItem) => {
-    router.push(`/products/${item.id}/edit?categoryId=${categoryId}&menuId=${menuId}${locationId ? `&locationId=${locationId}` : ""}`);
+    router.push(
+      `/products/${item.id}/edit?categoryId=${categoryId}&menuId=${menuId}${locationId ? `&locationId=${locationId}` : ""}`,
+    );
   };
 
   if (isLoading) {
@@ -108,7 +121,6 @@ export function ProductList({
           ))}
         </div>
       )}
-
     </div>
   );
 }

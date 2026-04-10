@@ -99,9 +99,10 @@ export function patchItem(
 export function deleteItem(
   itemId: string,
   restaurantId: string,
+  cascadeOptions: boolean,
   token: string | null,
 ): Promise<void> {
-  return client(token).deleteItem(itemId, restaurantId);
+  return client(token).deleteItem(itemId, { restaurantId, cascadeOptions });
 }
 
 // ── Modifier Groups ───────────────────────────────────────────────────────────

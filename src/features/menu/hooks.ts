@@ -52,7 +52,9 @@ export function useCreateMenu(restaurantId: string) {
     mutationFn: (body: CreateMenuBody) =>
       createMenu(restaurantId, body, sessionToken),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: menuKeys.all(restaurantId) });
+      void queryClient.invalidateQueries({
+        queryKey: menuKeys.all(restaurantId),
+      });
     },
   });
 }
@@ -66,7 +68,9 @@ export function useCreateCategory(menuId: string, restaurantId: string) {
     mutationFn: (body: CreateCategoryBody) =>
       createCategory(menuId, body, sessionToken),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: menuKeys.all(restaurantId) });
+      void queryClient.invalidateQueries({
+        queryKey: menuKeys.all(restaurantId),
+      });
     },
   });
 }
@@ -83,7 +87,9 @@ export function usePatchCategory(restaurantId: string) {
       body: PatchCategoryBody;
     }) => patchCategory(categoryId, body, sessionToken),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: menuKeys.all(restaurantId) });
+      void queryClient.invalidateQueries({
+        queryKey: menuKeys.all(restaurantId),
+      });
     },
   });
 }
@@ -95,7 +101,9 @@ export function useDeleteCategory(restaurantId: string) {
     mutationFn: (categoryId: string) =>
       deleteCategory(categoryId, restaurantId, sessionToken),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: menuKeys.all(restaurantId) });
+      void queryClient.invalidateQueries({
+        queryKey: menuKeys.all(restaurantId),
+      });
     },
   });
 }
@@ -109,7 +117,9 @@ export function useCreateItem(categoryId: string, restaurantId: string) {
     mutationFn: (body: CreateItemBody) =>
       createItem(categoryId, body, sessionToken),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: menuKeys.all(restaurantId) });
+      void queryClient.invalidateQueries({
+        queryKey: menuKeys.all(restaurantId),
+      });
     },
   });
 }
@@ -121,7 +131,9 @@ export function usePatchItem(restaurantId: string) {
     mutationFn: ({ itemId, body }: { itemId: string; body: PatchItemBody }) =>
       patchItem(itemId, body, sessionToken),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: menuKeys.all(restaurantId) });
+      void queryClient.invalidateQueries({
+        queryKey: menuKeys.all(restaurantId),
+      });
     },
   });
 }
@@ -130,10 +142,17 @@ export function useDeleteItem(restaurantId: string) {
   const { sessionToken } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (itemId: string) =>
-      deleteItem(itemId, restaurantId, sessionToken),
+    mutationFn: ({
+      itemId,
+      cascadeOptions,
+    }: {
+      itemId: string;
+      cascadeOptions: boolean;
+    }) => deleteItem(itemId, restaurantId, cascadeOptions, sessionToken),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: menuKeys.all(restaurantId) });
+      void queryClient.invalidateQueries({
+        queryKey: menuKeys.all(restaurantId),
+      });
     },
   });
 }
@@ -147,7 +166,9 @@ export function useCreateModifierGroup(restaurantId: string) {
     mutationFn: (body: CreateModifierGroupBody) =>
       createModifierGroup(restaurantId, body, sessionToken),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: menuKeys.all(restaurantId) });
+      void queryClient.invalidateQueries({
+        queryKey: menuKeys.all(restaurantId),
+      });
     },
   });
 }
@@ -161,7 +182,9 @@ export function useCreateModifierOption(groupId: string, restaurantId: string) {
     mutationFn: (body: CreateModifierOptionBody) =>
       createModifierOption(groupId, body, sessionToken),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: menuKeys.all(restaurantId) });
+      void queryClient.invalidateQueries({
+        queryKey: menuKeys.all(restaurantId),
+      });
     },
   });
 }
@@ -172,15 +195,12 @@ export function useAttachModifierGroup(restaurantId: string) {
   const { sessionToken } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      itemId,
-      groupId,
-    }: {
-      itemId: string;
-      groupId: string;
-    }) => attachModifierGroup(itemId, groupId, restaurantId, sessionToken),
+    mutationFn: ({ itemId, groupId }: { itemId: string; groupId: string }) =>
+      attachModifierGroup(itemId, groupId, restaurantId, sessionToken),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: menuKeys.all(restaurantId) });
+      void queryClient.invalidateQueries({
+        queryKey: menuKeys.all(restaurantId),
+      });
     },
   });
 }

@@ -1,4 +1,10 @@
-import type { StepType, PricingStrategy, CompositionConfig, MenuItemType, MenuItem } from "@juntai/types";
+import type {
+  StepType,
+  PricingStrategy,
+  CompositionConfig,
+  MenuItemType,
+  MenuItem,
+} from "@juntai/types";
 import {
   createItem,
   createModifierGroup,
@@ -11,7 +17,12 @@ import {
 export type BuilderOption = {
   /** ID temporário, gerado no frontend */
   id: string;
+  // Vínculo parcial: quando presente, name/imageUrl/description são do item vinculado.
+  // null = opção independente ou vínculo perdido.
+  linkedItemId: string | null;
   name: string;
+  imageUrl: string;
+  description: string;
   priceDelta: number;
   // quantity step
   unitPrice: number | null;
@@ -51,26 +62,26 @@ const STEP_CONFIG: Record<
   StepType,
   { selectionType: "SINGLE" | "MULTIPLE"; pricingStrategy: PricingStrategy }
 > = {
-  choice:      { selectionType: "SINGLE",   pricingStrategy: "sum" },
-  multi:       { selectionType: "MULTIPLE", pricingStrategy: "sum" },
+  choice: { selectionType: "SINGLE", pricingStrategy: "sum" },
+  multi: { selectionType: "MULTIPLE", pricingStrategy: "sum" },
   composition: { selectionType: "MULTIPLE", pricingStrategy: "max" },
-  quantity:    { selectionType: "MULTIPLE", pricingStrategy: "sum" },
+  quantity: { selectionType: "MULTIPLE", pricingStrategy: "sum" },
 };
 
 /** Labels de negócio exibidos na UI — nunca expor os valores técnicos diretamente */
 export const STEP_TYPE_LABELS: Record<StepType, string> = {
-  choice:      "Escolher 1 opção",
-  multi:       "Escolher várias opções",
+  choice: "Escolher 1 opção",
+  multi: "Escolher várias opções",
   composition: "Dividir em partes (pizza/combo)",
-  quantity:    "Escolher quantidade",
+  quantity: "Escolher quantidade",
 };
 
 /** Ícones por tipo de step */
 export const STEP_TYPE_ICONS: Record<StepType, string> = {
-  choice:      "🎯",
-  multi:       "✅",
+  choice: "🎯",
+  multi: "✅",
   composition: "🍕",
-  quantity:    "🔢",
+  quantity: "🔢",
 };
 
 // ─── Templates ────────────────────────────────────────────────────────────────
@@ -92,7 +103,9 @@ function makeStep(
   };
 }
 
-export function getProductTemplate(type: "pizza" | "burger" | "poke"): BuilderStep[] {
+export function getProductTemplate(
+  type: "pizza" | "burger" | "poke",
+): BuilderStep[] {
   switch (type) {
     case "pizza":
       return [
@@ -176,7 +189,8 @@ export async function saveProduct(
 
   // 2. Para cada step: criar grupo → opções → sub-opções → vincular
   for (const step of state.steps) {
-    const { selectionType, pricingStrategy: defaultPricing } = STEP_CONFIG[step.stepType];
+    const { selectionType, pricingStrategy: defaultPricing } =
+      STEP_CONFIG[step.stepType];
     const pricingStrategy = step.pricingStrategy ?? defaultPricing;
 
     // SINGLE selection type always requires exactly minSelections=1, maxSelections=1.
@@ -185,8 +199,8 @@ export async function saveProduct(
       selectionType === "SINGLE"
         ? 1
         : step.isRequired
-        ? Math.max(step.minSelections, 1)
-        : step.minSelections;
+          ? Math.max(step.minSelections, 1)
+          : step.minSelections;
     const maxSelections =
       selectionType === "SINGLE" ? 1 : (step.maxSelections ?? undefined);
 
@@ -212,7 +226,10 @@ export async function saveProduct(
         group.id,
         {
           restaurantId,
+          linkedItemId: opt.linkedItemId ?? undefined,
           name: opt.name,
+          imageUrl: opt.imageUrl || undefined,
+          description: opt.description || undefined,
           priceDelta: opt.priceDelta,
           unitPrice: opt.unitPrice ?? undefined,
           minQuantity: opt.minQuantity,
@@ -262,7 +279,10 @@ export function emptyBuilderState(): BuilderState {
 export function emptyOption(): BuilderOption {
   return {
     id: crypto.randomUUID(),
+    linkedItemId: null,
     name: "",
+    imageUrl: "",
+    description: "",
     priceDelta: 0,
     unitPrice: null,
     minQuantity: 0,
