@@ -43,13 +43,22 @@ const CardTitle = React.forwardRef<
 ));
 CardTitle.displayName = "CardTitle";
 
+interface CardDescriptionProps
+  extends React.HTMLAttributes<HTMLParagraphElement> {
+  variant?: "default" | "compact";
+}
+
 const CardDescription = React.forwardRef<
   HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, ...props }, ref) => (
+  CardDescriptionProps
+>(({ className, variant = "default", ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn(
+      "text-sm text-muted-foreground",
+      variant === "compact" && "text-xs italic leading-relaxed",
+      className,
+    )}
     {...props}
   />
 ));

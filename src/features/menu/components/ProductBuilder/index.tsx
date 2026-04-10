@@ -271,11 +271,12 @@ export function ProductBuilderPage({
         )}
 
         {step === 2 && (
-          <div className="flex flex-col gap-4 max-w-xl">
+          <div className="flex flex-col gap-4 w-full">
             <div>
               <h2 className="text-lg font-semibold">Informações do produto</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Nome, descrição, preço e imagem.
+                Nome, descrição, preço e imagem em uma visão mais completa e
+                equilibrada.
               </p>
             </div>
             <FormikProvider value={infoFormik}>
