@@ -55,6 +55,8 @@ export function mapTableToMesa(table: Table, index: number): Mesa {
 
   if (!table.isActive) {
     status = "inativa";
+  } else if (hash % 11 === 0) {
+    status = "inativa";
   } else if (hash % 7 === 0) {
     status = "reservada";
     const horario = new Date(Date.now() + (index + 1) * 20 * 60 * 1000).toISOString();
