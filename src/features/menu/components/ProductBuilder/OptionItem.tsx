@@ -86,8 +86,8 @@ export function OptionItem({
   // ── Child options: compact, sem picker ─────────────────────────────────────
   if (isChild) {
     return (
-      <div className="flex flex-col gap-2 ml-5 pl-4 border-l-2 border-border">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 ml-3 sm:ml-5 pl-3 sm:pl-4 border-l-2 border-border">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Input
             value={option.name}
             onChange={(e) => onChange(option.id, { name: e.target.value })}
@@ -95,7 +95,7 @@ export function OptionItem({
             className="flex-1 h-9 text-sm"
           />
           {!isQuantity && (
-            <div className="relative w-28">
+            <div className="relative w-full sm:w-28">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
                 +R$
               </span>
@@ -134,7 +134,7 @@ export function OptionItem({
   return (
     <div className="flex flex-col gap-2">
       {/* Row 1: nome + preço + ações */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {/* Thumbnail quando vinculado */}
         {isLinked && option.imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -147,7 +147,7 @@ export function OptionItem({
 
         {/* Nome — bloqueado quando vinculado */}
         {isLinked ? (
-          <div className="flex-1 flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-secondary/50 text-sm min-w-0 select-none">
+          <div className="flex-[1_1_220px] flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-secondary/50 text-sm min-w-0 select-none">
             <span className="flex-1 truncate text-foreground">
               {option.name}
             </span>
@@ -158,13 +158,13 @@ export function OptionItem({
             value={option.name}
             onChange={(e) => onChange(option.id, { name: e.target.value })}
             placeholder="Nome da opção"
-            className="flex-1 h-9 text-sm"
+            className="min-w-0 flex-[1_1_220px] h-9 text-sm"
           />
         )}
 
         {/* Preço */}
         {!isQuantity && (
-          <div className="relative w-28">
+          <div className="relative w-full sm:w-28">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
               +R$
             </span>
@@ -213,7 +213,7 @@ export function OptionItem({
 
       {/* Row 2: vínculo */}
       {isLinked ? (
-        <div className="flex items-center gap-3 pl-0.5">
+        <div className="flex flex-wrap items-center gap-3 pl-0.5">
           <Tooltip content={linkHelpContent}>
             <span className="text-xs text-primary flex items-center gap-1 cursor-help">
               <Link className="h-3 w-3" />
@@ -299,7 +299,7 @@ export function OptionItem({
                 })
               }
               placeholder="R$ 0,00"
-              className="w-28 h-8 text-sm"
+              className="w-full sm:w-28 h-8 text-sm"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -313,7 +313,7 @@ export function OptionItem({
                   minQuantity: parseInt(e.target.value) || 0,
                 })
               }
-              className="w-20 h-8 text-sm text-center"
+              className="w-full sm:w-20 h-8 text-sm text-center"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -328,7 +328,7 @@ export function OptionItem({
                 })
               }
               placeholder="∞"
-              className="w-20 h-8 text-sm text-center"
+              className="w-full sm:w-20 h-8 text-sm text-center"
             />
           </div>
         </div>

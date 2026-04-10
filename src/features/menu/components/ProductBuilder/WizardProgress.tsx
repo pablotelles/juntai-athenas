@@ -14,7 +14,7 @@ interface WizardProgressProps {
 
 export function WizardProgress({ steps, currentStep }: WizardProgressProps) {
   return (
-    <div className="flex items-center gap-0">
+    <div className="flex flex-wrap items-center gap-2 md:gap-0">
       {steps.map((step, index) => {
         const stepNum = index + 1;
         const isDone = stepNum < currentStep;
@@ -22,12 +22,13 @@ export function WizardProgress({ steps, currentStep }: WizardProgressProps) {
 
         return (
           <React.Fragment key={step.label}>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
               <div
                 className={cn(
                   "h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors",
                   isDone && "bg-primary text-primary-foreground",
-                  isCurrent && "bg-primary text-primary-foreground ring-4 ring-primary/20",
+                  isCurrent &&
+                    "bg-primary text-primary-foreground ring-4 ring-primary/20",
                   !isDone && !isCurrent && "bg-secondary text-muted-foreground",
                 )}
               >
@@ -35,7 +36,7 @@ export function WizardProgress({ steps, currentStep }: WizardProgressProps) {
               </div>
               <span
                 className={cn(
-                  "text-sm font-medium transition-colors",
+                  "text-xs sm:text-sm font-medium transition-colors",
                   isCurrent ? "text-foreground" : "text-muted-foreground",
                 )}
               >
@@ -46,7 +47,7 @@ export function WizardProgress({ steps, currentStep }: WizardProgressProps) {
             {index < steps.length - 1 && (
               <div
                 className={cn(
-                  "flex-1 h-px mx-3 transition-colors",
+                  "hidden md:block flex-1 h-px mx-3 transition-colors",
                   isDone ? "bg-primary/40" : "bg-border",
                 )}
               />

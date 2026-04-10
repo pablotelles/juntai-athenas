@@ -15,9 +15,9 @@ export function PreviewPanel({ state }: PreviewPanelProps) {
   const hasInfo = !!state.name || state.basePrice > 0;
 
   return (
-    <aside className="flex flex-col h-full bg-muted/30 border-l border-border">
+    <aside className="flex flex-col bg-muted/30 border-t border-border lg:h-full lg:border-t-0 lg:border-l">
       {/* Title bar */}
-      <div className="px-5 py-4 border-b border-border">
+      <div className="px-4 py-4 sm:px-5 border-b border-border">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Preview do cliente
         </p>
@@ -33,7 +33,7 @@ export function PreviewPanel({ state }: PreviewPanelProps) {
         ) : (
           <div className="flex flex-col">
             {/* Product card */}
-            <div className="p-5 border-b border-border">
+            <div className="p-4 sm:p-5 border-b border-border">
               <div className="flex gap-3 items-start">
                 {state.imageUrl ? (
                   <img
@@ -71,7 +71,7 @@ export function PreviewPanel({ state }: PreviewPanelProps) {
               return (
                 <div key={step.id} className="border-b border-border">
                   {/* Step header */}
-                  <div className="flex items-center justify-between px-5 pt-4 pb-2">
+                  <div className="flex items-center justify-between px-4 sm:px-5 pt-4 pb-2 gap-3">
                     <div>
                       <p className="font-semibold text-sm">
                         {step.name || "Etapa sem nome"}
@@ -92,7 +92,7 @@ export function PreviewPanel({ state }: PreviewPanelProps) {
                   </div>
 
                   {/* Options */}
-                  <div className="flex flex-col px-5 pb-4 gap-1">
+                  <div className="flex flex-col px-4 sm:px-5 pb-4 gap-1">
                     {step.options.length === 0 && (
                       <p className="text-xs text-muted-foreground italic">
                         Nenhuma opção adicionada.
@@ -126,7 +126,9 @@ export function PreviewPanel({ state }: PreviewPanelProps) {
                               className="h-9 w-9 rounded-md object-cover bg-secondary shrink-0"
                             />
                           ) : null}
-                          <span className="text-sm truncate">{opt.name || "—"}</span>
+                          <span className="text-sm truncate">
+                            {opt.name || "—"}
+                          </span>
                         </div>
                         <span className="text-xs text-muted-foreground shrink-0">
                           {isQuantity && opt.unitPrice
@@ -144,7 +146,7 @@ export function PreviewPanel({ state }: PreviewPanelProps) {
 
             {/* Add to cart button */}
             {hasInfo && (
-              <div className="p-5">
+              <div className="p-4 sm:p-5">
                 <div className="w-full rounded-xl bg-primary/90 text-primary-foreground text-sm font-semibold py-3 text-center opacity-60 select-none">
                   Adicionar ao pedido
                 </div>

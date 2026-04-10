@@ -47,7 +47,9 @@ const PRODUCT_ASSEMBLY_HELP = (
     <ul className="list-disc pl-4 space-y-1">
       <li>Crie etapas obrigatórias ou opcionais.</li>
       <li>Defina se o cliente escolhe 1, várias, partes ou quantidades.</li>
-      <li>Reaproveite produtos e categorias do catálogo para ganhar velocidade.</li>
+      <li>
+        Reaproveite produtos e categorias do catálogo para ganhar velocidade.
+      </li>
       <li>Controle limites, preço extra e acompanhe tudo no preview.</li>
     </ul>
   </div>

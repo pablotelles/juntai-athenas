@@ -110,7 +110,7 @@ export function StepCard({
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       {/* ── Header ── */}
-      <div className="flex items-center gap-3 px-5 py-4 bg-secondary/30 border-b border-border">
+      <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5 sm:py-4 bg-secondary/30 border-b border-border">
         <div
           {...dragHandleProps}
           className="text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing shrink-0"
@@ -123,16 +123,16 @@ export function StepCard({
           value={step.name}
           onChange={(e) => onUpdate(step.id, { name: e.target.value })}
           placeholder="Nome da etapa  (ex: Escolha o tamanho)"
-          className="flex-1 border-transparent bg-transparent shadow-none text-base font-medium focus-visible:bg-background focus-visible:border-border px-0"
+          className="order-2 basis-full flex-1 border-transparent bg-transparent shadow-none text-base font-medium focus-visible:bg-background focus-visible:border-border px-0 md:order-none md:basis-auto"
         />
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="order-3 flex w-full items-center justify-between gap-2 sm:w-auto md:order-none md:justify-end shrink-0">
           <span className="text-xl shrink-0" aria-hidden="true">
             {STEP_TYPE_ICONS[step.stepType]}
           </span>
 
           <Select value={step.stepType} onValueChange={handleTypeChange}>
-            <SelectTrigger className="w-[220px] max-w-full shrink-0 [&>span]:truncate">
+            <SelectTrigger className="w-full sm:w-[220px] max-w-full shrink-0 [&>span]:truncate">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="w-[280px]">
@@ -171,25 +171,25 @@ export function StepCard({
               <CircleHelp className="h-4 w-4" />
             </button>
           </Tooltip>
-        </div>
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={() => onRemove(step.id)}
-          className="text-muted-foreground hover:text-destructive shrink-0"
-          aria-label="Remover etapa"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => onRemove(step.id)}
+            className="text-muted-foreground hover:text-destructive shrink-0"
+            aria-label="Remover etapa"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* ── Body ── */}
-      <div className="flex flex-col gap-5 px-5 py-5">
+      <div className="flex flex-col gap-5 px-4 py-4 sm:px-5 sm:py-5">
         {/* ── Rules per type ── */}
         {step.stepType === "choice" && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-muted-foreground">
               <Checkbox
                 checked={step.isRequired}
@@ -199,14 +199,14 @@ export function StepCard({
               />
               Obrigatório
             </label>
-            <span className="text-xs text-muted-foreground ml-auto bg-secondary px-2 py-0.5 rounded-full">
+            <span className="text-xs text-muted-foreground sm:ml-auto bg-secondary px-2 py-0.5 rounded-full">
               Sempre 1 opção
             </span>
           </div>
         )}
 
         {step.stepType === "multi" && (
-          <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
             <label className="flex items-center gap-2 cursor-pointer select-none text-sm h-8">
               <Checkbox
                 checked={step.isRequired}
@@ -216,7 +216,7 @@ export function StepCard({
               />
               <span className="leading-none">Obrigatório</span>
             </label>
-            <div className="flex items-end gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="flex flex-col gap-1">
                 <span className="text-xs text-muted-foreground">
                   Mínimo de opções
@@ -230,7 +230,7 @@ export function StepCard({
                       minSelections: parseInt(e.target.value) || 0,
                     })
                   }
-                  className="w-20 h-8 text-sm text-center"
+                  className="w-full sm:w-20 h-8 text-sm text-center"
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -249,7 +249,7 @@ export function StepCard({
                     })
                   }
                   placeholder="∞"
-                  className="w-20 h-8 text-sm text-center"
+                  className="w-full sm:w-20 h-8 text-sm text-center"
                 />
               </div>
             </div>
@@ -257,7 +257,7 @@ export function StepCard({
         )}
 
         {step.stepType === "composition" && (
-          <div className="flex flex-col gap-4">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,220px)_1fr]">
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium">
                 Quantos sabores o cliente pode escolher?
@@ -273,7 +273,7 @@ export function StepCard({
                     },
                   })
                 }
-                className="w-24 h-9"
+                className="w-full sm:w-24 h-9"
               />
             </div>
             <div className="flex flex-col gap-2">
@@ -318,14 +318,12 @@ export function StepCard({
 
         {/* ── Options list ── */}
         <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Opções
             </span>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Tooltip
-                content="Traga todos os produtos de uma categoria de uma vez, como Refrigerantes, Sobremesas ou Molhos."
-              >
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              <Tooltip content="Traga todos os produtos de uma categoria de uma vez, como Refrigerantes, Sobremesas ou Molhos.">
                 <div>
                   <Select
                     key={categoryImportKey}
@@ -335,7 +333,7 @@ export function StepCard({
                     }}
                   >
                     <SelectTrigger
-                      className="w-[240px] max-w-full"
+                      className="w-full sm:w-[240px] max-w-full"
                       disabled={importableCategories.length === 0}
                     >
                       <SelectValue placeholder="Trazer categoria inteira..." />
@@ -356,6 +354,7 @@ export function StepCard({
                 variant="outline"
                 size="sm"
                 onClick={() => onAddOption(step.id)}
+                className="w-full sm:w-auto justify-center"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Adicionar opção

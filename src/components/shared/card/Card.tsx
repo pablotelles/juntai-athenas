@@ -43,8 +43,7 @@ const CardTitle = React.forwardRef<
 ));
 CardTitle.displayName = "CardTitle";
 
-interface CardDescriptionProps
-  extends React.HTMLAttributes<HTMLParagraphElement> {
+interface CardDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
   variant?: "default" | "compact";
 }
 
