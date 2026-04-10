@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Trash2, Plus, GripVertical } from "lucide-react";
+import { Trash2, Plus, GripVertical, CircleHelp } from "lucide-react";
 import { Input } from "@/components/primitives/input/Input";
 import { Button } from "@/components/primitives/button/Button";
 import { Checkbox } from "@/components/shared/checkbox/Checkbox";
+import { Tooltip } from "@/components/shared/tooltip/Tooltip";
 import {
   Select,
   SelectTrigger,
@@ -23,6 +24,25 @@ import {
 import type { StepType, PricingStrategy, MenuItem } from "@juntai/types";
 
 const STEP_TYPES: StepType[] = ["choice", "multi", "composition", "quantity"];
+
+const STEP_TYPE_HELP: Record<StepType, { title: string; example: string }> = {
+  choice: {
+    title: "1 opção",
+    example: "Ex.: tamanho P/M/G ou ponto da carne.",
+  },
+  multi: {
+    title: "Várias opções",
+    example: "Ex.: adicionais como queijo, bacon e molhos.",
+  },
+  composition: {
+    title: "Dividir em partes",
+    example: "Ex.: pizza meio a meio ou combo montado por partes.",
+  },
+  quantity: {
+    title: "Quantidade",
+    example: "Ex.: extra bacon, molho ou hashi cobrados por unidade.",
+  },
+};
 
 interface StepCardProps {
   step: BuilderStep;
@@ -94,22 +114,52 @@ export function StepCard({
           className="flex-1 border-transparent bg-transparent shadow-none text-base font-medium focus-visible:bg-background focus-visible:border-border px-0"
         />
 
-        <span className="text-xl shrink-0" aria-hidden="true">
-          {STEP_TYPE_ICONS[step.stepType]}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xl shrink-0" aria-hidden="true">
+            {STEP_TYPE_ICONS[step.stepType]}
+          </span>
 
-        <Select value={step.stepType} onValueChange={handleTypeChange}>
-          <SelectTrigger className="w-52 shrink-0">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {STEP_TYPES.map((t) => (
-              <SelectItem key={t} value={t}>
-                {STEP_TYPE_ICONS[t]} {STEP_TYPE_LABELS[t]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select value={step.stepType} onValueChange={handleTypeChange}>
+            <SelectTrigger className="w-[220px] max-w-full shrink-0 [&>span]:truncate">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="w-[280px]">
+              {STEP_TYPES.map((t) => (
+                <SelectItem key={t} value={t} className="py-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="shrink-0">{STEP_TYPE_ICONS[t]}</span>
+                    <span className="truncate">{STEP_TYPE_LABELS[t]}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Tooltip
+            side="left"
+            content={
+              <div className="max-w-xs space-y-2 text-left leading-relaxed">
+                <p className="font-semibold">Como funciona cada tipo</p>
+                {STEP_TYPES.map((type) => (
+                  <div key={type}>
+                    <p className="font-medium">
+                      {STEP_TYPE_ICONS[type]} {STEP_TYPE_HELP[type].title}
+                    </p>
+                    <p>{STEP_TYPE_HELP[type].example}</p>
+                  </div>
+                ))}
+              </div>
+            }
+          >
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Ajuda sobre os tipos de etapa"
+            >
+              <CircleHelp className="h-4 w-4" />
+            </button>
+          </Tooltip>
+        </div>
 
         <Button
           type="button"

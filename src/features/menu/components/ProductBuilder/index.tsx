@@ -52,7 +52,10 @@ export function ProductBuilderPage({
 
   // Lista achatada de itens existentes para reutilização nas opções
   const allItems = React.useMemo(
-    () => menus?.flatMap((menu) => menu.categories.flatMap((category) => category.items)) ?? [],
+    () =>
+      menus?.flatMap((menu) =>
+        menu.categories.flatMap((category) => category.items),
+      ) ?? [],
     [menus],
   );
 
@@ -131,7 +134,9 @@ export function ProductBuilderPage({
     if (step === 2) {
       const errors = await infoFormik.validateForm();
       await infoFormik.setTouched(
-        Object.fromEntries(Object.keys(infoFormik.values).map((k) => [k, true])),
+        Object.fromEntries(
+          Object.keys(infoFormik.values).map((k) => [k, true]),
+        ),
       );
       if (Object.keys(errors).length > 0) return;
       saveState = {
@@ -158,7 +163,9 @@ export function ProductBuilderPage({
       }
       const stepSemOpcao = saveState.steps.find((s) => s.options.length === 0);
       if (stepSemOpcao) {
-        toast.warning(`A etapa "${stepSemOpcao.name}" precisa ter pelo menos uma opção.`);
+        toast.warning(
+          `A etapa "${stepSemOpcao.name}" precisa ter pelo menos uma opção.`,
+        );
         return;
       }
       const opcaoSemNome = saveState.steps
@@ -296,6 +303,9 @@ export function ProductBuilderPage({
   );
 
   return (
-    <BuilderLayout content={content} preview={<PreviewPanel state={previewState} />} />
+    <BuilderLayout
+      content={content}
+      preview={<PreviewPanel state={previewState} />}
+    />
   );
 }

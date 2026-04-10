@@ -99,27 +99,41 @@ export function PreviewPanel({ state }: PreviewPanelProps) {
                       </p>
                     )}
                     {step.options.map((opt) => (
-                      <div key={opt.id} className="flex items-center justify-between gap-3 py-1.5">
+                      <div
+                        key={opt.id}
+                        className="flex items-center justify-between gap-3 py-1.5"
+                      >
                         <div className="flex items-center gap-2.5 min-w-0">
                           {isChoice ? (
                             <span className="h-4 w-4 rounded-full border-2 border-border bg-background shrink-0" />
                           ) : isQuantity ? (
                             <div className="flex items-center gap-1 shrink-0">
-                              <span className="h-6 w-6 rounded border border-border bg-background text-xs flex items-center justify-center text-muted-foreground">−</span>
+                              <span className="h-6 w-6 rounded border border-border bg-background text-xs flex items-center justify-center text-muted-foreground">
+                                −
+                              </span>
                               <span className="text-xs w-4 text-center">0</span>
-                              <span className="h-6 w-6 rounded border border-border bg-background text-xs flex items-center justify-center text-primary font-bold">+</span>
+                              <span className="h-6 w-6 rounded border border-border bg-background text-xs flex items-center justify-center text-primary font-bold">
+                                +
+                              </span>
                             </div>
                           ) : (
                             <span className="h-4 w-4 rounded border-2 border-border bg-background shrink-0" />
                           )}
+                          {opt.imageUrl ? (
+                            <img
+                              src={opt.imageUrl}
+                              alt={opt.name || "Opção"}
+                              className="h-9 w-9 rounded-md object-cover bg-secondary shrink-0"
+                            />
+                          ) : null}
                           <span className="text-sm truncate">{opt.name || "—"}</span>
                         </div>
                         <span className="text-xs text-muted-foreground shrink-0">
                           {isQuantity && opt.unitPrice
                             ? fmt(opt.unitPrice) + "/un."
                             : opt.priceDelta > 0
-                            ? "+" + fmt(opt.priceDelta)
-                            : ""}
+                              ? "+" + fmt(opt.priceDelta)
+                              : ""}
                         </span>
                       </div>
                     ))}

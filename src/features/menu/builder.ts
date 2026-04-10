@@ -70,10 +70,10 @@ const STEP_CONFIG: Record<
 
 /** Labels de negócio exibidos na UI — nunca expor os valores técnicos diretamente */
 export const STEP_TYPE_LABELS: Record<StepType, string> = {
-  choice: "Escolher 1 opção",
-  multi: "Escolher várias opções",
-  composition: "Dividir em partes (pizza/combo)",
-  quantity: "Escolher quantidade",
+  choice: "1 opção",
+  multi: "Várias opções",
+  composition: "Dividir em partes",
+  quantity: "Quantidade",
 };
 
 /** Ícones por tipo de step */
