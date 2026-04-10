@@ -110,10 +110,10 @@ export function StepCard({
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       {/* ── Header ── */}
-      <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5 sm:py-4 bg-secondary/30 border-b border-border">
+      <div className="flex flex-wrap items-start gap-3 px-4 py-3 sm:px-5 sm:py-4 bg-secondary/30 border-b border-border">
         <div
           {...dragHandleProps}
-          className="text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing shrink-0"
+          className="mt-2 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing shrink-0"
           aria-label="Arrastar para reordenar"
         >
           <GripVertical size={18} />
@@ -123,7 +123,7 @@ export function StepCard({
           value={step.name}
           onChange={(e) => onUpdate(step.id, { name: e.target.value })}
           placeholder="Nome da etapa  (ex: Escolha o tamanho)"
-          className="order-2 basis-full flex-1 border-transparent bg-transparent shadow-none text-base font-medium focus-visible:bg-background focus-visible:border-border px-0 md:order-none md:basis-auto"
+          className="order-1 min-w-0 flex-[1_1_320px] border-transparent bg-transparent shadow-none text-base font-medium focus-visible:bg-background focus-visible:border-border px-0 md:order-none"
         />
 
         <div className="order-3 flex w-full items-center justify-between gap-2 sm:w-auto md:order-none md:justify-end shrink-0">
