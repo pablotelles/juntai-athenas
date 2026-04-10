@@ -31,6 +31,8 @@ export type BuilderStep = {
   minSelections: number;
   maxSelections: number | null;
   compositionConfig: CompositionConfig | null;
+  /** Override de pricingStrategy para composition (default: "max") */
+  pricingStrategy?: PricingStrategy;
   options: BuilderOption[];
 };
 
@@ -57,10 +59,18 @@ const STEP_CONFIG: Record<
 
 /** Labels de negócio exibidos na UI — nunca expor os valores técnicos diretamente */
 export const STEP_TYPE_LABELS: Record<StepType, string> = {
-  choice:      "Escolha única",
-  multi:       "Múltiplas escolhas",
-  composition: "Dividir em partes (pizza, combo)",
-  quantity:    "Quantidade",
+  choice:      "Escolher 1 opção",
+  multi:       "Escolher várias opções",
+  composition: "Dividir em partes (pizza/combo)",
+  quantity:    "Escolher quantidade",
+};
+
+/** Ícones por tipo de step */
+export const STEP_TYPE_ICONS: Record<StepType, string> = {
+  choice:      "🎯",
+  multi:       "✅",
+  composition: "🍕",
+  quantity:    "🔢",
 };
 
 // ─── Templates ────────────────────────────────────────────────────────────────
@@ -166,7 +176,8 @@ export async function saveProduct(
 
   // 2. Para cada step: criar grupo → opções → sub-opções → vincular
   for (const step of state.steps) {
-    const { selectionType, pricingStrategy } = STEP_CONFIG[step.stepType];
+    const { selectionType, pricingStrategy: defaultPricing } = STEP_CONFIG[step.stepType];
+    const pricingStrategy = step.pricingStrategy ?? defaultPricing;
 
     const group = await createModifierGroup(
       restaurantId,

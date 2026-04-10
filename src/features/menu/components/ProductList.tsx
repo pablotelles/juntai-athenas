@@ -1,13 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { Package, Plus } from "lucide-react";
 import { Text } from "@/components/primitives/text/Text";
 import { Button } from "@/components/primitives/button/Button";
 import { useToast } from "@/contexts/toast/ToastProvider";
 import { useMenu, usePatchItem, useDeleteItem } from "../hooks";
 import { ProductCard } from "./ProductCard";
-import { ProductBuilder } from "./ProductBuilder";
 import type { MenuItem, MenuWithCategories } from "@juntai/types";
 
 interface ProductListProps {
@@ -23,8 +23,11 @@ export function ProductList({
   restaurantId,
   locationId,
 }: ProductListProps) {
+  const router = useRouter();
   const { toast } = useToast();
-  const [builderOpen, setBuilderOpen] = React.useState(false);
+
+  const builderHref = `/products/new?categoryId=${categoryId}&menuId=${menuId}${locationId ? `&locationId=${locationId}` : ""}`;
+  const navigateToBuilder = () => router.push(builderHref);
 
   const { data: menus, isLoading } = useMenu(restaurantId, locationId);
   const patchItem = usePatchItem(restaurantId);
@@ -55,9 +58,8 @@ export function ProductList({
     });
   };
 
-  const handleEdit = (_item: MenuItem) => {
-    // TODO: abrir builder em modo edição
-    toast.info("Edição em desenvolvimento.");
+  const handleEdit = (item: MenuItem) => {
+    router.push(`/products/${item.id}/edit?categoryId=${categoryId}&menuId=${menuId}${locationId ? `&locationId=${locationId}` : ""}`);
   };
 
   if (isLoading) {
@@ -79,7 +81,7 @@ export function ProductList({
         <Text variant="sm" muted>
           {items.length} produto{items.length !== 1 ? "s" : ""}
         </Text>
-        <Button size="sm" onClick={() => setBuilderOpen(true)}>
+        <Button size="sm" onClick={navigateToBuilder}>
           <Plus className="h-4 w-4" />
           Novo produto
         </Button>
@@ -89,7 +91,7 @@ export function ProductList({
         <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
           <Package size={32} className="opacity-40" />
           <Text variant="sm">Nenhum produto nesta categoria.</Text>
-          <Button variant="outline" size="sm" onClick={() => setBuilderOpen(true)}>
+          <Button variant="outline" size="sm" onClick={navigateToBuilder}>
             Criar primeiro produto
           </Button>
         </div>
@@ -107,13 +109,6 @@ export function ProductList({
         </div>
       )}
 
-      <ProductBuilder
-        open={builderOpen}
-        onOpenChange={setBuilderOpen}
-        categoryId={categoryId}
-        restaurantId={restaurantId}
-        locationId={locationId}
-      />
     </div>
   );
 }

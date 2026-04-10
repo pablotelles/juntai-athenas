@@ -1,25 +1,75 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Wand2 } from "lucide-react";
-import { Button } from "@/components/primitives/button/Button";
-import { Text } from "@/components/primitives/text/Text";
+import { Plus } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/shared/dropdown-menu/DropdownMenu";
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Button } from "@/components/primitives/button/Button";
 import { StepCard } from "./StepCard";
-import { getProductTemplate, emptyStep, emptyOption, type BuilderStep, type BuilderOption } from "../../builder";
+import { ProductTemplateSelector } from "./ProductTemplateSelector";
+import { emptyStep, emptyOption, type BuilderStep, type BuilderOption } from "../../builder";
 
-type TemplateType = "pizza" | "burger" | "poke";
+// ─── Sortable wrapper ─────────────────────────────────────────────────────────
 
-const TEMPLATES: { value: TemplateType; label: string }[] = [
-  { value: "pizza", label: "Pizza" },
-  { value: "burger", label: "Hambúrguer" },
-  { value: "poke", label: "Poke" },
-];
+function SortableStepCard({
+  step,
+  ...props
+}: { step: BuilderStep } & Omit<React.ComponentProps<typeof StepCard>, "step" | "dragHandleProps">) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: step.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+      }}
+    >
+      <StepCard step={step} dragHandleProps={{ ...attributes, ...listeners }} {...props} />
+    </div>
+  );
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function updateOptionInTree(
+  options: BuilderOption[],
+  optId: string,
+  field: keyof BuilderOption,
+  value: unknown,
+): BuilderOption[] {
+  return options.map((opt) => {
+    if (opt.id === optId) return { ...opt, [field]: value };
+    if (opt.childOptions.length > 0)
+      return { ...opt, childOptions: updateOptionInTree(opt.childOptions, optId, field, value) };
+    return opt;
+  });
+}
+
+function removeOptionFromTree(options: BuilderOption[], optId: string): BuilderOption[] {
+  return options
+    .filter((opt) => opt.id !== optId)
+    .map((opt) => ({ ...opt, childOptions: removeOptionFromTree(opt.childOptions, optId) }));
+}
+
+// ─── StepsBuilder ─────────────────────────────────────────────────────────────
 
 interface StepsBuilderProps {
   steps: BuilderStep[];
@@ -27,67 +77,50 @@ interface StepsBuilderProps {
 }
 
 export function StepsBuilder({ steps, onStepsChange }: StepsBuilderProps) {
-  const updateStep = (stepId: string, patch: Partial<BuilderStep>) => {
-    onStepsChange(steps.map((s) => (s.id === stepId ? { ...s, ...patch } : s)));
+  const [templateSelected, setTemplateSelected] = React.useState(steps.length > 0);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = steps.findIndex((s) => s.id === active.id);
+    const newIdx = steps.findIndex((s) => s.id === over.id);
+    onStepsChange(arrayMove(steps, oldIdx, newIdx));
   };
 
-  const removeStep = (stepId: string) => {
+  const updateStep = (stepId: string, patch: Partial<BuilderStep>) =>
+    onStepsChange(steps.map((s) => (s.id === stepId ? { ...s, ...patch } : s)));
+
+  const removeStep = (stepId: string) =>
     onStepsChange(steps.filter((s) => s.id !== stepId));
-  };
 
   const addStep = () => {
+    setTemplateSelected(true);
     onStepsChange([...steps, emptyStep()]);
   };
 
-  const addOption = (stepId: string) => {
+  const addOption = (stepId: string) =>
+    onStepsChange(
+      steps.map((s) => (s.id === stepId ? { ...s, options: [...s.options, emptyOption()] } : s)),
+    );
+
+  const updateOption = (stepId: string, optId: string, field: keyof BuilderOption, value: unknown) =>
     onStepsChange(
       steps.map((s) =>
-        s.id === stepId ? { ...s, options: [...s.options, emptyOption()] } : s,
+        s.id === stepId ? { ...s, options: updateOptionInTree(s.options, optId, field, value) } : s,
       ),
     );
-  };
 
-  // Recursively update option (handles child options too)
-  const updateOptionInTree = (
-    options: BuilderOption[],
-    optId: string,
-    field: keyof BuilderOption,
-    value: unknown,
-  ): BuilderOption[] =>
-    options.map((opt) => {
-      if (opt.id === optId) return { ...opt, [field]: value };
-      if (opt.childOptions.length > 0)
-        return { ...opt, childOptions: updateOptionInTree(opt.childOptions, optId, field, value) };
-      return opt;
-    });
-
-  const removeOptionFromTree = (options: BuilderOption[], optId: string): BuilderOption[] =>
-    options
-      .filter((opt) => opt.id !== optId)
-      .map((opt) => ({
-        ...opt,
-        childOptions: removeOptionFromTree(opt.childOptions, optId),
-      }));
-
-  const updateOption = (stepId: string, optId: string, field: keyof BuilderOption, value: unknown) => {
+  const removeOption = (stepId: string, optId: string) =>
     onStepsChange(
       steps.map((s) =>
-        s.id === stepId
-          ? { ...s, options: updateOptionInTree(s.options, optId, field, value) }
-          : s,
+        s.id === stepId ? { ...s, options: removeOptionFromTree(s.options, optId) } : s,
       ),
     );
-  };
-
-  const removeOption = (stepId: string, optId: string) => {
-    onStepsChange(
-      steps.map((s) =>
-        s.id === stepId
-          ? { ...s, options: removeOptionFromTree(s.options, optId) }
-          : s,
-      ),
-    );
-  };
 
   const addChildOption = (stepId: string, parentId: string) => {
     const child = { ...emptyOption(), parentOptionId: parentId };
@@ -106,57 +139,49 @@ export function StepsBuilder({ steps, onStepsChange }: StepsBuilderProps) {
     );
   };
 
-  const applyTemplate = (type: TemplateType) => {
-    onStepsChange(getProductTemplate(type));
-  };
+  // Show template selector if user hasn't chosen yet
+  if (!templateSelected) {
+    return (
+      <ProductTemplateSelector
+        onSelect={(tplSteps) => {
+          onStepsChange(tplSteps);
+          setTemplateSelected(true);
+        }}
+        onSkip={() => setTemplateSelected(true)}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <Text variant="sm" className="font-medium">
-          Etapas de personalização
-        </Text>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button type="button" variant="outline" size="sm">
-                <Wand2 className="h-3.5 w-3.5 mr-1" />
-                Usar template
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {TEMPLATES.map((t) => (
-                <DropdownMenuItem key={t.value} onClick={() => applyTemplate(t.value)}>
-                  {t.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button type="button" size="sm" onClick={addStep}>
-            <Plus className="h-3.5 w-3.5 mr-1" />
-            Adicionar etapa
-          </Button>
-        </div>
-      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={steps.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+          <div className="flex flex-col gap-4">
+            {steps.map((step) => (
+              <SortableStepCard
+                key={step.id}
+                step={step}
+                onUpdate={updateStep}
+                onRemove={removeStep}
+                onAddOption={addOption}
+                onUpdateOption={updateOption}
+                onRemoveOption={removeOption}
+                onAddChildOption={addChildOption}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
-      {steps.length === 0 && (
-        <Text variant="sm" muted className="italic">
-          Nenhuma etapa. Adicione etapas ou use um template.
-        </Text>
-      )}
-
-      {steps.map((step) => (
-        <StepCard
-          key={step.id}
-          step={step}
-          onUpdate={updateStep}
-          onRemove={removeStep}
-          onAddOption={addOption}
-          onUpdateOption={updateOption}
-          onRemoveOption={removeOption}
-          onAddChildOption={addChildOption}
-        />
-      ))}
+      <Button
+        type="button"
+        variant="outline"
+        onClick={addStep}
+        className="w-full border-dashed h-11 text-muted-foreground hover:text-foreground"
+      >
+        <Plus className="h-4 w-4" />
+        Adicionar etapa
+      </Button>
     </div>
   );
 }
