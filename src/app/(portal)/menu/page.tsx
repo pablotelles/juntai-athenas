@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Text } from "@/components/primitives/text/Text";
 import { useActiveContext } from "@/contexts/active-context/ActiveContextProvider";
 import { LocationPicker } from "@/features/restaurants/components/LocationPicker";
@@ -7,9 +8,12 @@ import { MenuList } from "@/features/menu/components/MenuList";
 
 export default function MenuPage() {
   const { context, setLocationId } = useActiveContext();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
+
   const locationId = context.type === "restaurant" ? (context.locationId ?? null) : null;
 
-  if (context.type !== "restaurant") {
+  if (!mounted || context.type !== "restaurant") {
     return (
       <div className="flex flex-col gap-6">
         <div>
@@ -18,9 +22,11 @@ export default function MenuPage() {
             Gerenciamento de menus, categorias e produtos.
           </Text>
         </div>
-        <Text variant="sm" muted>
-          Selecione um restaurante para gerenciar o cardápio.
-        </Text>
+        {mounted && (
+          <Text variant="sm" muted>
+            Selecione um restaurante para gerenciar o cardápio.
+          </Text>
+        )}
       </div>
     );
   }

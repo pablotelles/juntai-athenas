@@ -230,7 +230,7 @@ export function ProductBuilderPage({
   const isLastStep = step === totalSteps;
 
   const content = (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col lg:h-full">
       {/* Top bar */}
       <div className="flex items-center gap-4 px-4 sm:px-6 lg:px-8 py-4 border-b border-border bg-background/80 backdrop-blur sticky top-0 z-10">
         <button
