@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@juntai/types": ["../juntai-hermes/lib/index.ts"]
     }
   },
   "include": [
