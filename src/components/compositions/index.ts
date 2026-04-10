@@ -14,6 +14,9 @@ export type { SidebarProps, NavItem, NavSection } from "./sidebar/Sidebar";
 export { Header } from "./header/Header";
 export type { HeaderProps } from "./header/Header";
 
+export { Subheader, SubheaderGroup } from "./subheader/Subheader";
+export type { SubheaderProps } from "./subheader/Subheader";
+
 export { PageLayout, PageContent } from "./page-layout/PageLayout";
 export type {
   PageLayoutProps,
