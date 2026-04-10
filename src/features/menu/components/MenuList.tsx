@@ -33,7 +33,8 @@ export function MenuList({ restaurantId, locationId }: MenuListProps) {
   };
 
   const handleManage = (menu: Menu) => {
-    router.push(`/menu/${menu.id}`);
+    const loc = locationId ?? menu.locationId ?? "";
+    router.push(`/menu/${menu.id}?locationId=${loc}`);
   };
 
   const handleToggleActive = (menu: Menu) => {

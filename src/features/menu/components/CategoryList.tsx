@@ -90,7 +90,8 @@ export function CategoryList({
   };
 
   const handleNavigate = (category: Category) => {
-    router.push(`/menu/${menuId}/${category.id}`);
+    const loc = locationId ?? "";
+    router.push(`/menu/${menuId}/${category.id}?locationId=${loc}`);
   };
 
   const handleToggleActive = (category: Category, active: boolean) => {
