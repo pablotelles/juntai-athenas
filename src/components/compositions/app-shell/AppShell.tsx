@@ -26,7 +26,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
   const { context } = useActiveContext();
   const { user, memberships } = useAuth();
-  const profile = resolvePortalProfile(memberships, context.type);
+  const restaurantId = context.type === "restaurant" ? context.restaurantId : undefined;
+  const profile = resolvePortalProfile(memberships, context.type, restaurantId);
 
   // Close mobile drawer when switching to desktop
   React.useEffect(() => {
@@ -50,9 +51,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (!mounted) return;
 
-    const isPlatformOnlyRoute = pathname === "/dashboard" || pathname === "/restaurants";
+    const fallback = context.type === "restaurant" ? "/restaurant" : "/dashboard";
+
+    // 1. Context-based redirect: some routes only exist in one context
+    const isPlatformOnlyRoute = pathname === "/restaurants";
     const isRestaurantOnlyRoute =
-      pathname === "/restaurant" ||
       pathname === "/orders" ||
       pathname === "/menu" ||
       pathname.startsWith("/menu/") ||
@@ -64,11 +67,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       router.replace("/restaurant");
       return;
     }
-
     if (context.type === "platform" && isRestaurantOnlyRoute) {
       router.replace("/dashboard");
+      return;
     }
-  }, [context.type, mounted, pathname, router]);
+
+    // 2. Profile-based redirect: hide routes the current profile can't access
+    const matchingNavItem = NAV_ITEMS.find((item) =>
+      item.exact
+        ? pathname === item.href
+        : pathname === item.href || pathname.startsWith(item.href + "/"),
+    );
+    if (
+      matchingNavItem?.profiles &&
+      !matchingNavItem.profiles.includes(profile)
+    ) {
+      router.replace(fallback);
+    }
+  }, [context.type, mounted, pathname, profile, router]);
 
   // ── Dynamic nav: filter by active context ──────────────────────────────────
   // Deferred to post-mount to avoid server/client hydration mismatch,

@@ -36,7 +36,8 @@ export function RestaurantsView() {
   const { context, restaurants: accessibleRestaurants } = useActiveContext();
   const { memberships, user } = useAuth();
   const { toast } = useToast();
-  const profile = resolvePortalProfile(memberships, context.type);
+  const restaurantId = context.type === "restaurant" ? context.restaurantId : undefined;
+  const profile = resolvePortalProfile(memberships, context.type, restaurantId);
   const [restaurantModalOpen, setRestaurantModalOpen] = React.useState(false);
   const [locationModalRestaurant, setLocationModalRestaurant] =
     React.useState<Restaurant | null>(null);

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+
 import {
   Select,
   SelectTrigger,
@@ -25,6 +26,13 @@ export function LocationPicker({
   triggerClassName,
 }: LocationPickerProps) {
   const { data: locations, isLoading } = useLocations(restaurantId);
+
+  // Auto-select the first available location when no value is set
+  React.useEffect(() => {
+    if (!value && locations?.length && locations[0]) {
+      onChange(locations[0].id);
+    }
+  }, [value, locations, onChange]);
 
   return (
     <Select value={value ?? ""} onValueChange={onChange}>

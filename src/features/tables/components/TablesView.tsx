@@ -31,7 +31,6 @@ import { Text } from "@/components/primitives/text/Text";
 import { useActiveContext } from "@/contexts/active-context/ActiveContextProvider";
 import { useAuth } from "@/contexts/auth/AuthProvider";
 import { useToast } from "@/contexts/toast/ToastProvider";
-import { LocationPicker } from "@/features/restaurants/components/LocationPicker";
 import { useLocations } from "@/features/restaurants/hooks";
 import {
   useCloseTableSession,
@@ -99,15 +98,13 @@ function getFriendlyErrorMessage(error: unknown) {
 }
 
 export function TablesView({ restaurantId }: TablesViewProps) {
-  const { context, setLocationId: persistLocationId } = useActiveContext();
+  const { context } = useActiveContext();
   const { user } = useAuth();
   const { toast } = useToast();
   const subheaderOffset = useMobileSubheaderOffset();
 
-  const { data: locations } = useLocations(restaurantId);
-  const [locationId, setLocationId] = React.useState<string | null>(
-    context.type === "restaurant" ? context.locationId ?? null : null,
-  );
+  const locationId = context.type === "restaurant" ? (context.locationId ?? null) : null;
+
   const [search, setSearch] = React.useState("");
   const [filter, setFilter] = React.useState<MesaFilterValue>("todas");
   const [mesas, setMesas] = React.useState<Mesa[]>([]);
@@ -118,25 +115,6 @@ export function TablesView({ restaurantId }: TablesViewProps) {
   const [isFilterSheetOpen, setFilterSheetOpen] = React.useState(false);
   const [isFormOpen, setFormOpen] = React.useState(false);
   const [formMode, setFormMode] = React.useState<"create" | "edit">("create");
-
-  React.useEffect(() => {
-    if (!locations?.length) return;
-
-    const storedLocationId =
-      context.type === "restaurant" ? context.locationId ?? null : null;
-    const candidates = [locationId, storedLocationId].filter(Boolean) as string[];
-    const nextLocationId =
-      candidates.find((candidate) =>
-        locations.some((location) => location.id === candidate),
-      ) ?? locations[0]?.id ?? null;
-
-    if (nextLocationId && nextLocationId !== locationId) {
-      setLocationId(nextLocationId);
-    }
-    if (nextLocationId && nextLocationId !== storedLocationId) {
-      persistLocationId(nextLocationId);
-    }
-  }, [context, locationId, locations, persistLocationId]);
 
   const { data: tables, isLoading } = useTables(restaurantId, locationId);
   const createTable = useCreateTable(restaurantId, locationId);
@@ -157,14 +135,6 @@ export function TablesView({ restaurantId }: TablesViewProps) {
       );
     },
     [],
-  );
-
-  const handleLocationChange = React.useCallback(
-    (nextLocationId: string) => {
-      setLocationId(nextLocationId);
-      persistLocationId(nextLocationId);
-    },
-    [persistLocationId],
   );
 
   const handleOpenCreate = React.useCallback(() => {
@@ -384,8 +354,9 @@ export function TablesView({ restaurantId }: TablesViewProps) {
     }
   }, [deleteMesa, deleteTable, toast]);
 
+  const { data: locations } = useLocations(restaurantId);
   const currentLocationName =
-    locations?.find((location) => location.id === locationId)?.name ?? "Filial";
+    locations?.find((loc) => loc.id === locationId)?.name ?? "Filial";
 
   const filteredMesas = React.useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -498,11 +469,6 @@ export function TablesView({ restaurantId }: TablesViewProps) {
           </SubheaderGroup>
 
           <div className="flex items-center gap-2">
-            <LocationPicker
-              restaurantId={restaurantId}
-              value={locationId}
-              onChange={handleLocationChange}
-            />
             <Button variant="outline" onClick={() => setFilterSheetOpen(true)}>
               <SlidersHorizontal className="h-4 w-4" />
               Filtros
@@ -523,12 +489,6 @@ export function TablesView({ restaurantId }: TablesViewProps) {
             placeholder="Buscar mesas"
           />
           <div className="flex items-center gap-2">
-            <LocationPicker
-              restaurantId={restaurantId}
-              value={locationId}
-              onChange={handleLocationChange}
-              triggerClassName="w-full"
-            />
             <Button
               variant="outline"
               className="shrink-0"

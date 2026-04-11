@@ -63,7 +63,8 @@ const DASHBOARD_COPY: Record<
 export default function DashboardPage() {
   const { context } = useActiveContext();
   const { memberships } = useAuth();
-  const profile = resolvePortalProfile(memberships, context.type);
+  const restaurantId = context.type === "restaurant" ? context.restaurantId : undefined;
+  const profile = resolvePortalProfile(memberships, context.type, restaurantId);
   const copy = DASHBOARD_COPY[profile];
 
   return (
