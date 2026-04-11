@@ -13,10 +13,6 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import {
-  Subheader,
-  SubheaderGroup,
-} from "@/components/compositions/subheader/Subheader";
 import { ActionSheet } from "@/components/primitives/action-sheet/ActionSheet";
 import { Button } from "@/components/primitives/button/Button";
 import { FAB } from "@/components/primitives/fab/FAB";
@@ -460,8 +456,8 @@ export function TablesView({ restaurantId }: TablesViewProps) {
   return (
     <div className={cn("flex flex-col gap-4 lg:gap-6", subheaderOffset)}>
       <div className="hidden lg:block">
-        <Subheader>
-          <SubheaderGroup>
+        <Card className="flex flex-col gap-3  bg-surface/90 p-3 shadow-sm backdrop-blur sm:p-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-1 flex-wrap items-center gap-2">
             <div className="min-w-72 flex-1">
               <SearchInput
                 value={search}
@@ -479,7 +475,7 @@ export function TablesView({ restaurantId }: TablesViewProps) {
                 {MESA_STATUS_LABELS[option]}
               </FilterChip>
             ))}
-          </SubheaderGroup>
+          </div>
 
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => setFilterSheetOpen(true)}>
@@ -491,7 +487,7 @@ export function TablesView({ restaurantId }: TablesViewProps) {
               Nova mesa
             </Button>
           </div>
-        </Subheader>
+        </Card>
       </div>
 
       <MobileSubheader>
@@ -514,7 +510,7 @@ export function TablesView({ restaurantId }: TablesViewProps) {
         </div>
       </MobileSubheader>
 
-      <Card className="rounded-2xl bg-surface/70">
+      <Card className="bg-surface/70">
         <CardContent className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <Text variant="body" className="font-semibold">
@@ -544,7 +540,7 @@ export function TablesView({ restaurantId }: TablesViewProps) {
           {Array.from({ length: 6 }, (_, index) => (
             <div
               key={index}
-              className="h-64 animate-pulse  border border-border bg-secondary/40"
+              className="h-64 animate-pulse rounded-3xl border border-border bg-secondary/40"
             />
           ))}
         </MesaGrid>
