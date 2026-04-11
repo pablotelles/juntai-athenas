@@ -62,7 +62,10 @@ import type { Menu, MenuItem, Order } from "@juntai/types";
 import type { Order } from "@/features/orders/types"; // re-export canônico
 
 // ERRADO — nunca definir inline tipos que já existem
-interface Order { id: string; items: any[]; } // ← PROIBIDO
+interface Order {
+  id: string;
+  items: any[];
+} // ← PROIBIDO
 ```
 
 ### Re-exports por módulo
@@ -107,7 +110,10 @@ const data = await apiClient(token).get<T>("/endpoint", {
 ```typescript
 import { useFormik, FormikProvider } from "formik";
 import { toFormikValidationSchema } from "zod-formik-adapter";
-import { FormField, FormSubmitButton } from "@/components/shared/form-field/FormField";
+import {
+  FormField,
+  FormSubmitButton,
+} from "@/components/shared/form-field/FormField";
 ```
 
 ### Estrutura mínima de todo formulário
@@ -174,13 +180,13 @@ Todas as variáveis CSS do sistema ficam em `src/app/globals.css`. **Nunca hardc
 
 ### Tokens disponíveis (usar sempre via Tailwind ou `var()`)
 
-| Categoria | Exemplos de tokens |
-|---|---|
-| Cores | `--color-primary`, `--color-secondary`, `--color-muted`, `--color-destructive`, `--color-surface`, `--color-border` |
-| Tipografia | `--font-sans`, `--font-mono` |
-| Raios | `--radius-sm` (4px), `--radius-md` (6px), `--radius-lg` (8px), `--radius-xl` (12px), `--radius-2xl` (16px) |
-| Sombras | `--shadow-xs`, `--shadow-sm`, `--shadow-md`, `--shadow-lg`, `--shadow-xl` |
-| Layout | `--sidebar-width` (240px), `--sidebar-width-collapsed` (64px), `--header-height` (56px) |
+| Categoria  | Exemplos de tokens                                                                                                  |
+| ---------- | ------------------------------------------------------------------------------------------------------------------- |
+| Cores      | `--color-primary`, `--color-secondary`, `--color-muted`, `--color-destructive`, `--color-surface`, `--color-border` |
+| Tipografia | `--font-sans`, `--font-mono`                                                                                        |
+| Raios      | `--radius-sm` (4px), `--radius-md` (6px), `--radius-lg` (8px), `--radius-xl` (12px), `--radius-2xl` (16px)          |
+| Sombras    | `--shadow-xs`, `--shadow-sm`, `--shadow-md`, `--shadow-lg`, `--shadow-xl`                                           |
+| Layout     | `--sidebar-width` (240px), `--sidebar-width-collapsed` (64px), `--header-height` (56px)                             |
 
 ### Regras de uso
 
@@ -199,58 +205,58 @@ Antes de criar qualquer componente novo, verificar os três níveis abaixo **nes
 
 Átomos visuais sem lógica de negócio. Usar diretamente.
 
-| Componente | Uso |
-|---|---|
-| `Button` | Todo botão — variantes: `default`, `outline`, `ghost`, `destructive` |
-| `Input` | Todo campo de texto |
-| `Label` | Label de campo de formulário (prop `required` nativa) |
-| `Text` | Todo texto — variantes: `h1`–`h4`, `sm`, `xs`, prop `muted` |
-| `Badge` | Tags de status — variantes: `success`, `warning`, `destructive`, `info` |
-| `Icon` / `IconButton` | Ícones e botões-ícone |
-| `ActionSheet` | Menu de ações mobile (bottom sheet de ações) |
-| `BottomSheet` | Sheet genérico mobile |
-| `FAB` | Floating action button |
-| `FilterChip` | Chip de filtro selecionável |
-| `SearchInput` | Input com ícone de busca |
-| `Toast` | Notificações inline |
+| Componente            | Uso                                                                     |
+| --------------------- | ----------------------------------------------------------------------- |
+| `Button`              | Todo botão — variantes: `default`, `outline`, `ghost`, `destructive`    |
+| `Input`               | Todo campo de texto                                                     |
+| `Label`               | Label de campo de formulário (prop `required` nativa)                   |
+| `Text`                | Todo texto — variantes: `h1`–`h4`, `sm`, `xs`, prop `muted`             |
+| `Badge`               | Tags de status — variantes: `success`, `warning`, `destructive`, `info` |
+| `Icon` / `IconButton` | Ícones e botões-ícone                                                   |
+| `ActionSheet`         | Menu de ações mobile (bottom sheet de ações)                            |
+| `BottomSheet`         | Sheet genérico mobile                                                   |
+| `FAB`                 | Floating action button                                                  |
+| `FilterChip`          | Chip de filtro selecionável                                             |
+| `SearchInput`         | Input com ícone de busca                                                |
+| `Toast`               | Notificações inline                                                     |
 
 ### 2. Shared — `src/components/shared/`
 
 Composições genéricas reutilizáveis, agnósticas de feature.
 
-| Componente | Uso |
-|---|---|
-| `FormField` + `FormSubmitButton` | Campos de formulário com Formik (ver seção Formulários) |
-| `Modal` + `ModalContent/Header/Title/Description/Footer` | Todo dialog/modal |
-| `Select` + `SelectTrigger/Content/Item` | Selects com radix |
-| `Combobox` | Select com busca |
-| `Card` | Container de card |
-| `Checkbox` | Checkbox controlado |
-| `ConfirmDialog` | Dialog de confirmação destrutiva |
-| `DropdownMenu` | Menu suspenso |
-| `Avatar` | Avatar de usuário |
-| `Popover` | Popover genérico |
-| `Switch` | Toggle switch |
-| `Tooltip` | Tooltip |
+| Componente                                               | Uso                                                     |
+| -------------------------------------------------------- | ------------------------------------------------------- |
+| `FormField` + `FormSubmitButton`                         | Campos de formulário com Formik (ver seção Formulários) |
+| `Modal` + `ModalContent/Header/Title/Description/Footer` | Todo dialog/modal                                       |
+| `Select` + `SelectTrigger/Content/Item`                  | Selects com radix                                       |
+| `Combobox`                                               | Select com busca                                        |
+| `Card`                                                   | Container de card                                       |
+| `Checkbox`                                               | Checkbox controlado                                     |
+| `ConfirmDialog`                                          | Dialog de confirmação destrutiva                        |
+| `DropdownMenu`                                           | Menu suspenso                                           |
+| `Avatar`                                                 | Avatar de usuário                                       |
+| `Popover`                                                | Popover genérico                                        |
+| `Switch`                                                 | Toggle switch                                           |
+| `Tooltip`                                                | Tooltip                                                 |
 
 ### 3. Compositions — `src/components/compositions/`
 
 Componentes de layout e shell da aplicação. Raramente instanciados em features — usados pelo layout global.
 
-| Componente | Uso |
-|---|---|
-| `AppShell` | Shell principal da aplicação (sidebar + header) |
-| `AppHeader` | Header superior |
-| `Sidebar` | Navegação lateral |
-| `PageLayout` | Layout padrão de página com padding e max-width |
-| `DataTable` | Tabela com ordenação, filtros e paginação |
-| `ResponsiveDataView` | DataTable + visualização mobile unificada |
-| `Breadcrumb` | Trilha de navegação |
-| `CommandPalette` | Paleta de comandos (cmd+k) |
-| `ContextSwitcher` | Troca de restaurante/contexto |
-| `ContextDisplay` | Banner do contexto ativo |
-| `UserMenu` | Menu do usuário logado |
-| `Subheader` | Subheader de seção |
+| Componente           | Uso                                             |
+| -------------------- | ----------------------------------------------- |
+| `AppShell`           | Shell principal da aplicação (sidebar + header) |
+| `AppHeader`          | Header superior                                 |
+| `Sidebar`            | Navegação lateral                               |
+| `PageLayout`         | Layout padrão de página com padding e max-width |
+| `DataTable`          | Tabela com ordenação, filtros e paginação       |
+| `ResponsiveDataView` | DataTable + visualização mobile unificada       |
+| `Breadcrumb`         | Trilha de navegação                             |
+| `CommandPalette`     | Paleta de comandos (cmd+k)                      |
+| `ContextSwitcher`    | Troca de restaurante/contexto                   |
+| `ContextDisplay`     | Banner do contexto ativo                        |
+| `UserMenu`           | Menu do usuário logado                          |
+| `Subheader`          | Subheader de seção                              |
 
 ### Regra geral
 
@@ -271,7 +277,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { MeuComponente } from "@/components/<nivel>/meu-componente/MeuComponente";
 
 const meta: Meta<typeof MeuComponente> = {
-  title: "<Nivel>/MeuComponente",  // ex: "Primitives/Badge", "Shared/Modal"
+  title: "<Nivel>/MeuComponente", // ex: "Primitives/Badge", "Shared/Modal"
   component: MeuComponente,
   tags: ["autodocs"],
 };
@@ -280,7 +286,9 @@ export default meta;
 type Story = StoryObj<typeof MeuComponente>;
 
 export const Default: Story = {
-  args: { /* props padrão */ },
+  args: {
+    /* props padrão */
+  },
 };
 ```
 
@@ -300,10 +308,10 @@ export const Default: Story = {
 
 A aplicação opera em dois contextos mutuamente exclusivos, gerenciados por `ActiveContextProvider`:
 
-| Contexto | Tipo | Quando ativo |
-|---|---|---|
-| Plataforma | `{ type: "platform" }` | Admin da plataforma sem restaurante selecionado |
-| Restaurante | `{ type: "restaurant"; restaurantId; locationId? }` | Qualquer usuário com um restaurante ativo |
+| Contexto    | Tipo                                                | Quando ativo                                    |
+| ----------- | --------------------------------------------------- | ----------------------------------------------- |
+| Plataforma  | `{ type: "platform" }`                              | Admin da plataforma sem restaurante selecionado |
+| Restaurante | `{ type: "restaurant"; restaurantId; locationId? }` | Qualquer usuário com um restaurante ativo       |
 
 ```typescript
 import { useActiveContext } from "@/contexts/active-context/ActiveContextProvider";
@@ -315,12 +323,12 @@ const { context, isPlatform, isRestaurant, setContext } = useActiveContext();
 
 Roles vêm de `memberships` no `AuthProvider`. O helper `resolvePortalProfile()` (em `src/lib/access.ts`) traduz memberships + contexto ativo para um perfil simplificado:
 
-| Perfil | Quem é |
-|---|---|
-| `platform-admin` | `membership.entityType === "platform" && role === "admin"` |
-| `owner` | `membership.entityType === "restaurant" && role === "owner"` (ou platform-admin em ctx restaurante) |
-| `operator` | `role === "manager"` ou `role === "waiter"` |
-| `basic-user` | Nenhum dos acima |
+| Perfil           | Quem é                                                                                              |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| `platform-admin` | `membership.entityType === "platform" && role === "admin"`                                          |
+| `owner`          | `membership.entityType === "restaurant" && role === "owner"` (ou platform-admin em ctx restaurante) |
+| `operator`       | `role === "manager"` ou `role === "waiter"`                                                         |
+| `basic-user`     | Nenhum dos acima                                                                                    |
 
 ```typescript
 import { resolvePortalProfile } from "@/lib/access";
@@ -339,7 +347,11 @@ const profile = resolvePortalProfile(memberships, context.type, restaurantId);
 // Padrão obrigatório em páginas de restaurante
 const { context } = useActiveContext();
 if (context.type !== "restaurant") {
-  return <Text variant="sm" muted>Selecione um restaurante para continuar.</Text>;
+  return (
+    <Text variant="sm" muted>
+      Selecione um restaurante para continuar.
+    </Text>
+  );
 }
 // A partir daqui, context.restaurantId está garantido
 ```
@@ -352,6 +364,7 @@ Não persistir contexto manualmente em outros lugares.
 ### Auth state
 
 `useAuth()` (de `src/contexts/auth/AuthProvider.tsx`) expõe:
+
 - `user`, `memberships`, `sessionToken`, `isAuthenticated`
 - `hasRole(entityType, entityId, role)` — verificação pontual de role
 - `isPlatformAdmin` — atalho booleano

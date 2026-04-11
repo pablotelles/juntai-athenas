@@ -72,7 +72,11 @@ function mergeMesas(previous: Mesa[], next: Mesa[]) {
     const current = previous.find((item) => item.id === mesa.id);
     if (!current) return mesa;
 
-    if (current.status === "reservada" && current.reserva && mesa.status === "livre") {
+    if (
+      current.status === "reservada" &&
+      current.reserva &&
+      mesa.status === "livre"
+    ) {
       return {
         ...mesa,
         status: "reservada" as const,
@@ -104,7 +108,8 @@ export function TablesView({ restaurantId }: TablesViewProps) {
   const { toast } = useToast();
   const subheaderOffset = useMobileSubheaderOffset();
 
-  const locationId = context.type === "restaurant" ? (context.locationId ?? null) : null;
+  const locationId =
+    context.type === "restaurant" ? (context.locationId ?? null) : null;
 
   const [search, setSearch] = React.useState("");
   const [filter, setFilter] = React.useState<MesaFilterValue>("todas");
@@ -213,7 +218,8 @@ export function TablesView({ restaurantId }: TablesViewProps) {
                 current.capacidade,
                 Math.max(1, current.pessoasConectadas + 1),
               ),
-              ocupacaoInicio: current.ocupacaoInicio ?? new Date().toISOString(),
+              ocupacaoInicio:
+                current.ocupacaoInicio ?? new Date().toISOString(),
               reserva: undefined,
               sessionId: session.id,
             }));
@@ -234,7 +240,9 @@ export function TablesView({ restaurantId }: TablesViewProps) {
     (mesa: Mesa) => {
       if (mesa.status === "ocupada") {
         if (!mesa.sessionId) {
-          toast.warning(`A ${mesa.nome} não possui uma sessão ativa para encerrar.`);
+          toast.warning(
+            `A ${mesa.nome} não possui uma sessão ativa para encerrar.`,
+          );
           return;
         }
 
@@ -251,7 +259,8 @@ export function TablesView({ restaurantId }: TablesViewProps) {
                 sessionId: null,
               }));
               toast.success(`Mesa liberada: ${mesa.nome}`, {
-                description: "A sessão foi encerrada e a mesa voltou a ficar livre.",
+                description:
+                  "A sessão foi encerrada e a mesa voltou a ficar livre.",
               });
             },
             onError: (error) => {
@@ -289,7 +298,8 @@ export function TablesView({ restaurantId }: TablesViewProps) {
               sessionId: null,
             }));
             toast.success(`Conta fechada: ${mesa.nome}`, {
-              description: "Atendimento encerrado e mesa pronta para o próximo giro.",
+              description:
+                "Atendimento encerrado e mesa pronta para o próximo giro.",
             });
           },
           onError: (error) => {
@@ -344,7 +354,9 @@ export function TablesView({ restaurantId }: TablesViewProps) {
 
     try {
       await deleteTable.mutateAsync(deleteMesa.id);
-      setMesas((current) => current.filter((mesa) => mesa.id !== deleteMesa.id));
+      setMesas((current) =>
+        current.filter((mesa) => mesa.id !== deleteMesa.id),
+      );
       toast.success(`Mesa excluída: ${deleteMesa.nome}`);
       setDeleteMesa(null);
       setActionMesa(null);
@@ -506,7 +518,8 @@ export function TablesView({ restaurantId }: TablesViewProps) {
         <CardContent className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <Text variant="body" className="font-semibold">
-              {filteredMesas.length} de {mesas.length} mesas · {currentLocationName}
+              {filteredMesas.length} de {mesas.length} mesas ·{" "}
+              {currentLocationName}
             </Text>
             <Text variant="sm" muted>
               Status em tempo real para operação do salão e conexão via QR.
@@ -531,7 +544,7 @@ export function TablesView({ restaurantId }: TablesViewProps) {
           {Array.from({ length: 6 }, (_, index) => (
             <div
               key={index}
-              className="h-64 animate-pulse rounded-3xl border border-border bg-secondary/40"
+              className="h-64 animate-pulse  border border-border bg-secondary/40"
             />
           ))}
         </MesaGrid>
@@ -544,7 +557,8 @@ export function TablesView({ restaurantId }: TablesViewProps) {
               <div className="space-y-1">
                 <Text variant="h4">Nenhuma mesa encontrada</Text>
                 <Text variant="sm" muted>
-                  Ajuste os filtros ou selecione outra filial para visualizar o salão.
+                  Ajuste os filtros ou selecione outra filial para visualizar o
+                  salão.
                 </Text>
               </div>
               <Button

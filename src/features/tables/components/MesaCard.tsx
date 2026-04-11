@@ -8,6 +8,7 @@ import { cn } from "@/lib/cn";
 import { MESA_SERVICE_MODE_LABELS, type Mesa } from "../model";
 import { MesaQuickActions } from "./MesaQuickActions";
 import { MesaStatusBadge } from "./MesaStatusBadge";
+import { Card } from "@/components/shared";
 
 export interface MesaCardProps {
   mesa: Mesa;
@@ -54,7 +55,7 @@ function InfoTile({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-background/70 p-3">
+    <Card className="bg-background/70 p-3">
       <div className="mb-2 flex items-center gap-2 text-muted-foreground">
         {icon}
         <Text variant="xs" className="uppercase tracking-wide">
@@ -64,7 +65,7 @@ function InfoTile({
       <Text variant="body" className="font-semibold text-foreground">
         {value}
       </Text>
-    </div>
+    </Card>
   );
 }
 
@@ -91,7 +92,7 @@ export function MesaCard({
           : "Disponível agora";
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-border bg-surface shadow-sm">
+    <Card>
       <div
         className={cn(
           "absolute inset-y-0 right-0 flex items-center gap-2 bg-secondary/80 px-3 md:hidden",
@@ -216,6 +217,6 @@ export function MesaCard({
           </button>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
