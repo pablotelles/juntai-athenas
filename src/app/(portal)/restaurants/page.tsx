@@ -7,9 +7,9 @@ export default function RestaurantsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Text variant="h2">Restaurantes</Text>
+        <Text variant="h2">Restaurantes e filiais</Text>
         <Text variant="sm" muted className="mt-1">
-          Todos os restaurantes cadastrados na plataforma.
+          Acompanhe as unidades disponíveis para o seu perfil e organize a expansão da operação.
         </Text>
       </div>
       <RestaurantsView />

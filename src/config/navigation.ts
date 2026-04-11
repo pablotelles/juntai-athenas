@@ -50,8 +50,8 @@ export const NAV_ITEMS: NavConfigItem[] = [
     label: "Restaurantes",
     href: "/restaurants",
     icon: UtensilsCrossed,
-    contexts: ["platform"],
-    profiles: ["platform-admin"],
+    contexts: ["platform", "restaurant"],
+    profiles: ["platform-admin", "owner", "operator"],
   },
   {
     label: "Usuários",
