@@ -50,6 +50,7 @@ import { MesaFilterSheet } from "./MesaFilterSheet";
 import { MesaFormModal } from "./MesaFormModal";
 import { MesaGrid } from "./MesaGrid";
 import { MesaQrModal } from "./MesaQrModal";
+import { useLocationChannel } from "@/hooks/useLocationChannel";
 
 const FILTERS: MesaFilterValue[] = [
   "todas",
@@ -100,12 +101,14 @@ function getFriendlyErrorMessage(error: unknown) {
 
 export function TablesView({ restaurantId }: TablesViewProps) {
   const { context } = useActiveContext();
-  const { user } = useAuth();
+  const { user, sessionToken } = useAuth();
   const { toast } = useToast();
   const subheaderOffset = useMobileSubheaderOffset();
 
   const locationId =
     context.type === "restaurant" ? (context.locationId ?? null) : null;
+
+  useLocationChannel({ locationId, restaurantId, token: sessionToken });
 
   const [search, setSearch] = React.useState("");
   const [filter, setFilter] = React.useState<MesaFilterValue>("todas");
