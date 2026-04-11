@@ -1,6 +1,7 @@
 "use client";
 
 import { ActiveContextBanner } from "@/components/compositions/context-display/ActiveContextBanner";
+import { Card, CardContent } from "@/components/shared/card/Card";
 import { Text } from "@/components/primitives/text/Text";
 import { useActiveContext } from "@/contexts/active-context/ActiveContextProvider";
 import { useAuth } from "@/contexts/auth/AuthProvider";
@@ -80,17 +81,16 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         {copy.highlights.map((item) => (
-          <div
-            key={item}
-            className="rounded-2xl border border-border bg-surface p-4 shadow-sm"
-          >
-            <Text variant="sm" className="font-semibold">
-              {item}
-            </Text>
-            <Text variant="xs" muted className="mt-2 block">
-              Perfil ativo: {getPortalProfileLabel(profile)}
-            </Text>
-          </div>
+          <Card key={item} className="rounded-2xl shadow-sm">
+            <CardContent className="p-4">
+              <Text variant="sm" className="font-semibold">
+                {item}
+              </Text>
+              <Text variant="xs" muted className="mt-2 block">
+                Perfil ativo: {getPortalProfileLabel(profile)}
+              </Text>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>

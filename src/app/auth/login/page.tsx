@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/auth/AuthProvider";
 import { Button } from "@/components/primitives/button/Button";
 import { Input } from "@/components/primitives/input/Input";
 import { Label } from "@/components/primitives/label/Label";
+import { Card, CardContent } from "@/components/shared/card/Card";
 
 type FormState = "idle" | "loading" | "sent" | "error";
 
@@ -52,8 +53,8 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Card */}
-      <div className="rounded-xl border border-border bg-surface shadow-sm p-6 space-y-6">
+      <Card className="rounded-xl">
+        <CardContent className="p-6 space-y-6">
         {formState !== "sent" ? (
           <>
             <div className="space-y-1">
@@ -134,7 +135,8 @@ export default function LoginPage() {
             </Button>
           </div>
         )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

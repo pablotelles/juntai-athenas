@@ -48,6 +48,7 @@ import {
   type MesaFilterValue,
 } from "@/features/tables/model";
 import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
+import { Card, CardContent } from "@/components/shared/card/Card";
 import { MesaCard } from "./MesaCard";
 import { MesaFilterSheet } from "./MesaFilterSheet";
 import { MesaFormModal } from "./MesaFormModal";
@@ -501,27 +502,29 @@ export function TablesView({ restaurantId }: TablesViewProps) {
         </div>
       </MobileSubheader>
 
-      <div className="flex flex-col gap-2 rounded-2xl border border-border bg-surface/70 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Text variant="body" className="font-semibold">
-            {filteredMesas.length} de {mesas.length} mesas · {currentLocationName}
-          </Text>
-          <Text variant="sm" muted>
-            Status em tempo real para operação do salão e conexão via QR.
-          </Text>
-        </div>
-        <div className="hidden items-center gap-2 md:flex">
-          <Text variant="sm" muted>
-            Livre: {counts.livre}
-          </Text>
-          <Text variant="sm" muted>
-            Ocupada: {counts.ocupada}
-          </Text>
-          <Text variant="sm" muted>
-            Reservada: {counts.reservada}
-          </Text>
-        </div>
-      </div>
+      <Card className="rounded-2xl bg-surface/70">
+        <CardContent className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <Text variant="body" className="font-semibold">
+              {filteredMesas.length} de {mesas.length} mesas · {currentLocationName}
+            </Text>
+            <Text variant="sm" muted>
+              Status em tempo real para operação do salão e conexão via QR.
+            </Text>
+          </div>
+          <div className="hidden items-center gap-2 md:flex">
+            <Text variant="sm" muted>
+              Livre: {counts.livre}
+            </Text>
+            <Text variant="sm" muted>
+              Ocupada: {counts.ocupada}
+            </Text>
+            <Text variant="sm" muted>
+              Reservada: {counts.reservada}
+            </Text>
+          </div>
+        </CardContent>
+      </Card>
 
       {isLoading ? (
         <MesaGrid>

@@ -18,8 +18,8 @@ import {
 } from "@/features/restaurants/hooks";
 import type { Restaurant } from "@/features/restaurants/types";
 import { resolvePortalProfile } from "@/lib/access";
-import type { RestaurantFormValues } from "../schemas";
-import type { LocationFormValues } from "../schemas";
+import { Card, CardContent } from "@/components/shared/card/Card";
+import type { LocationFormValues, RestaurantFormValues } from "../schemas";
 import { LocationFormModal } from "./LocationFormModal";
 import { RestaurantFormModal } from "./RestaurantFormModal";
 import { RestaurantLocationsCell } from "./RestaurantLocationsCell";
@@ -180,30 +180,32 @@ export function RestaurantsView() {
 
   return (
     <>
-      <div className="mb-4 flex flex-col gap-4 rounded-2xl border border-border bg-surface p-4 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Building2 size={16} className="text-primary" />
-            <Text variant="sm" className="font-semibold text-foreground">
-              Gestão de restaurantes e filiais
+      <Card className="mb-4 rounded-2xl">
+        <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Building2 size={16} className="text-primary" />
+              <Text variant="sm" className="font-semibold text-foreground">
+                Gestão de restaurantes e filiais
+              </Text>
+            </div>
+            <Text variant="sm" muted>
+              {canCreateRestaurant
+                ? "Cadastre novos restaurantes, defina o owner responsável e abra as primeiras filiais da operação."
+                : canCreateLocation
+                  ? "Acompanhe suas unidades e abra novas filiais quando necessário."
+                  : "Consulte os restaurantes e filiais disponíveis para a sua operação."}
             </Text>
           </div>
-          <Text variant="sm" muted>
-            {canCreateRestaurant
-              ? "Cadastre novos restaurantes, defina o owner responsável e abra as primeiras filiais da operação."
-              : canCreateLocation
-                ? "Acompanhe suas unidades e abra novas filiais quando necessário."
-                : "Consulte os restaurantes e filiais disponíveis para a sua operação."}
-          </Text>
-        </div>
 
-        {canCreateRestaurant ? (
-          <Button onClick={() => setRestaurantModalOpen(true)}>
-            <Plus size={16} />
-            Novo restaurante
-          </Button>
-        ) : null}
-      </div>
+          {canCreateRestaurant ? (
+            <Button onClick={() => setRestaurantModalOpen(true)}>
+              <Plus size={16} />
+              Novo restaurante
+            </Button>
+          ) : null}
+        </CardContent>
+      </Card>
 
       <DataTable
         data={visibleRestaurants}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/auth/AuthProvider";
 import { Button } from "@/components/primitives/button/Button";
+import { Card, CardContent } from "@/components/shared/card/Card";
 
 type CallbackState = "validating" | "success" | "error";
 
@@ -39,7 +40,8 @@ export default function AuthCallbackPage() {
 
   return (
     <div className="w-full max-w-sm">
-      <div className="rounded-xl border border-border bg-surface shadow-sm p-8 text-center space-y-4">
+      <Card className="rounded-xl">
+        <CardContent className="p-8 text-center space-y-4">
         {state === "validating" && (
           <>
             <Loader2 size={40} className="animate-spin text-primary mx-auto" />
@@ -96,7 +98,8 @@ export default function AuthCallbackPage() {
             </Button>
           </>
         )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
