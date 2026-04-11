@@ -17,6 +17,13 @@ import {
   ModalHeader,
   ModalTitle,
 } from "@/components/shared/modal/Modal";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/shared/select/Select";
 import { useActiveContext } from "@/contexts/active-context/ActiveContextProvider";
 import { useAuth } from "@/contexts/auth/AuthProvider";
 import { useToast } from "@/contexts/toast/ToastProvider";
@@ -27,6 +34,7 @@ import {
   useLocations,
 } from "@/features/restaurants/hooks";
 import type { Restaurant } from "@/features/restaurants/types";
+import { useUsers } from "@/features/users/hooks";
 import { resolvePortalProfile } from "@/lib/access";
 
 function slugify(value: string) {
@@ -93,30 +101,67 @@ function RestaurantLocationsCell({ restaurantId }: { restaurantId: string }) {
 
 interface RestaurantFormModalProps {
   open: boolean;
+  canChooseOwner: boolean;
+  currentUser: {
+    id: string;
+    name: string | null;
+    email: string | null;
+  } | null;
   isSubmitting?: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: { name: string; slug: string }) => Promise<void>;
+  onSubmit: (values: {
+    name: string;
+    slug: string;
+    ownerUserId?: string;
+  }) => Promise<void>;
 }
 
 function RestaurantFormModal({
   open,
+  canChooseOwner,
+  currentUser,
   isSubmitting = false,
   onOpenChange,
   onSubmit,
 }: RestaurantFormModalProps) {
   const [name, setName] = React.useState("");
   const [slug, setSlug] = React.useState("");
+  const [ownerSearch, setOwnerSearch] = React.useState("");
+  const [debouncedOwnerSearch, setDebouncedOwnerSearch] = React.useState("");
+  const [ownerUserId, setOwnerUserId] = React.useState(currentUser?.id ?? "");
   const [isTouched, setIsTouched] = React.useState(false);
   const [slugTouched, setSlugTouched] = React.useState(false);
+
+  const { data: usersPage, isLoading: isUsersLoading } = useUsers(
+    canChooseOwner
+      ? {
+          name: debouncedOwnerSearch || undefined,
+          email: debouncedOwnerSearch || undefined,
+          page: 1,
+          limit: 20,
+        }
+      : { page: 1, limit: 20 },
+  );
+
+  React.useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDebouncedOwnerSearch(ownerSearch.trim());
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [ownerSearch]);
 
   React.useEffect(() => {
     if (!open) {
       setName("");
       setSlug("");
+      setOwnerSearch("");
+      setDebouncedOwnerSearch("");
+      setOwnerUserId(currentUser?.id ?? "");
       setIsTouched(false);
       setSlugTouched(false);
     }
-  }, [open]);
+  }, [currentUser?.id, open]);
 
   function handleNameChange(value: string) {
     setName(value);
@@ -125,22 +170,53 @@ function RestaurantFormModal({
     }
   }
 
+  const ownerOptions = React.useMemo(() => {
+    const map = new Map<
+      string,
+      { id: string; label: string; description: string }
+    >();
+
+    if (currentUser?.id) {
+      map.set(currentUser.id, {
+        id: currentUser.id,
+        label: currentUser.name?.trim() || currentUser.email || "Eu",
+        description: currentUser.email ?? "Usuário atual",
+      });
+    }
+
+    for (const item of usersPage?.data ?? []) {
+      if (item.type !== "user") continue;
+      map.set(item.id, {
+        id: item.id,
+        label: item.name?.trim() || item.email || item.id,
+        description: item.email ?? item.id,
+      });
+    }
+
+    return Array.from(map.values());
+  }, [currentUser, usersPage?.data]);
+
   const normalizedName = name.trim();
   const normalizedSlug = slugify(slug);
   const nameError = normalizedName ? null : "Informe o nome do restaurante.";
   const slugError = normalizedSlug ? null : "Informe um slug válido.";
+  const ownerError =
+    canChooseOwner && !ownerUserId
+      ? "Selecione o usuário proprietário."
+      : null;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsTouched(true);
 
-    if (nameError || slugError) {
+    if (nameError || slugError || ownerError) {
       return;
     }
 
     await onSubmit({
       name: normalizedName,
       slug: normalizedSlug,
+      ownerUserId: canChooseOwner ? ownerUserId : currentUser?.id ?? undefined,
     });
   }
 
@@ -151,13 +227,16 @@ function RestaurantFormModal({
           <ModalHeader>
             <ModalTitle>Novo restaurante</ModalTitle>
             <ModalDescription>
-              Cadastre uma nova operação principal para depois organizar suas
-              filiais e unidades.
+              Cadastre uma nova operação principal e defina quem será o owner
+              responsável desde a criação.
             </ModalDescription>
           </ModalHeader>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground" htmlFor="restaurant-name">
+            <label
+              className="text-sm font-medium text-foreground"
+              htmlFor="restaurant-name"
+            >
               Nome do restaurante
             </label>
             <Input
@@ -175,7 +254,10 @@ function RestaurantFormModal({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground" htmlFor="restaurant-slug">
+            <label
+              className="text-sm font-medium text-foreground"
+              htmlFor="restaurant-slug"
+            >
               Slug
             </label>
             <Input
@@ -197,6 +279,59 @@ function RestaurantFormModal({
               </Text>
             ) : null}
           </div>
+
+          {canChooseOwner ? (
+            <div className="space-y-2">
+              <label
+                className="text-sm font-medium text-foreground"
+                htmlFor="restaurant-owner-search"
+              >
+                Proprietário responsável
+              </label>
+              <Input
+                id="restaurant-owner-search"
+                value={ownerSearch}
+                onChange={(event) => setOwnerSearch(event.target.value)}
+                placeholder="Pesquisar usuário por nome ou e-mail"
+              />
+              <Select value={ownerUserId} onValueChange={setOwnerUserId}>
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      isUsersLoading
+                        ? "Carregando usuários…"
+                        : "Selecione quem será o owner"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {ownerOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.label} — {option.description}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Text variant="xs" muted className="block">
+                Você pode escolher se o restaurante pertence a você ou a outro
+                usuário.
+              </Text>
+              {isTouched && ownerError ? (
+                <Text variant="sm" className="text-destructive">
+                  {ownerError}
+                </Text>
+              ) : null}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border bg-muted/40 p-3">
+              <Text variant="sm" className="font-medium text-foreground">
+                Este restaurante será vinculado automaticamente a você.
+              </Text>
+              <Text variant="xs" muted className="mt-1 block">
+                {currentUser?.email ?? currentUser?.name ?? "Owner atual"}
+              </Text>
+            </div>
+          )}
 
           <ModalFooter>
             <Button
@@ -488,7 +623,7 @@ function LocationFormModal({
 export function RestaurantsView() {
   const { data: restaurants, isLoading } = useAllRestaurants();
   const { restaurants: accessibleRestaurants } = useActiveContext();
-  const { memberships } = useAuth();
+  const { memberships, user } = useAuth();
   const { toast } = useToast();
   const profile = resolvePortalProfile(memberships);
   const [restaurantModalOpen, setRestaurantModalOpen] = React.useState(false);
@@ -513,7 +648,8 @@ export function RestaurantsView() {
     return [...filtered].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
   }, [accessibleIds, profile, restaurants]);
 
-  const canCreateRestaurant = profile === "platform-admin";
+  const canCreateRestaurant =
+    profile === "platform-admin" || profile === "owner";
   const canCreateLocation =
     profile === "platform-admin" || profile === "owner";
 
@@ -579,11 +715,13 @@ export function RestaurantsView() {
   async function handleCreateRestaurant(values: {
     name: string;
     slug: string;
+    ownerUserId?: string;
   }) {
     try {
       await createRestaurantMutation.mutateAsync({
         name: values.name,
         slug: values.slug,
+        ownerUserId: values.ownerUserId,
         settings: {
           type: "RESTAURANT",
           allowAnonymous: true,
@@ -654,7 +792,7 @@ export function RestaurantsView() {
           </div>
           <Text variant="sm" muted>
             {canCreateRestaurant
-              ? "Cadastre novos restaurantes e abra as primeiras filiais da operação."
+              ? "Cadastre novos restaurantes, defina o owner responsável e abra as primeiras filiais da operação."
               : canCreateLocation
                 ? "Acompanhe suas unidades e abra novas filiais quando necessário."
                 : "Consulte os restaurantes e filiais disponíveis para a sua operação."}
@@ -693,6 +831,16 @@ export function RestaurantsView() {
 
       <RestaurantFormModal
         open={restaurantModalOpen}
+        canChooseOwner={profile === "platform-admin"}
+        currentUser={
+          user
+            ? {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+              }
+            : null
+        }
         onOpenChange={setRestaurantModalOpen}
         onSubmit={handleCreateRestaurant}
         isSubmitting={createRestaurantMutation.isPending}
