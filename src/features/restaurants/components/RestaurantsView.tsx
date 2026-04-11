@@ -1,29 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Building2, MapPin, Plus, UtensilsCrossed } from "lucide-react";
+import { Building2, Plus, UtensilsCrossed } from "lucide-react";
 import {
   DataTable,
   type ColumnDef,
 } from "@/components/compositions/data-table/DataTable";
 import { Button } from "@/components/primitives/button/Button";
-import { Input } from "@/components/primitives/input/Input";
 import { Text } from "@/components/primitives/text/Text";
-import {
-  Modal,
-  ModalContent,
-  ModalDescription,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-} from "@/components/shared/modal/Modal";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/shared/select/Select";
 import { useActiveContext } from "@/contexts/active-context/ActiveContextProvider";
 import { useAuth } from "@/contexts/auth/AuthProvider";
 import { useToast } from "@/contexts/toast/ToastProvider";
@@ -31,607 +15,36 @@ import {
   useAllRestaurants,
   useCreateLocation,
   useCreateRestaurant,
-  useLocations,
 } from "@/features/restaurants/hooks";
 import type { Restaurant } from "@/features/restaurants/types";
-import { useUsers } from "@/features/users/hooks";
 import { resolvePortalProfile } from "@/lib/access";
-
-function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 100);
-}
+import type { RestaurantFormValues } from "../schemas";
+import type { LocationFormValues } from "../schemas";
+import { LocationFormModal } from "./LocationFormModal";
+import { RestaurantFormModal } from "./RestaurantFormModal";
+import { RestaurantLocationsCell } from "./RestaurantLocationsCell";
 
 function getErrorDescription(error: unknown) {
   if (error instanceof Error && error.message) {
     return error.message;
   }
-
   return "Tente novamente em alguns instantes.";
-}
-
-function RestaurantLocationsCell({ restaurantId }: { restaurantId: string }) {
-  const { data: locations, isLoading } = useLocations(restaurantId);
-
-  if (isLoading) {
-    return (
-      <Text variant="xs" muted>
-        Carregando filiais…
-      </Text>
-    );
-  }
-
-  if (!locations || locations.length === 0) {
-    return (
-      <Text variant="xs" muted>
-        Nenhuma filial cadastrada.
-      </Text>
-    );
-  }
-
-  return (
-    <div className="flex min-w-0 flex-col gap-1">
-      {locations.slice(0, 2).map((location) => (
-        <div key={location.id} className="min-w-0">
-          <div className="flex items-center gap-1">
-            <MapPin size={12} className="shrink-0 text-muted-foreground" />
-            <span className="truncate text-sm font-medium text-foreground">
-              {location.name}
-            </span>
-          </div>
-          <Text variant="xs" muted className="block pl-4">
-            {location.address.city}/{location.address.state}
-          </Text>
-        </div>
-      ))}
-
-      {locations.length > 2 ? (
-        <Text variant="xs" muted>
-          +{locations.length - 2} filiais
-        </Text>
-      ) : null}
-    </div>
-  );
-}
-
-interface RestaurantFormModalProps {
-  open: boolean;
-  canChooseOwner: boolean;
-  currentUser: {
-    id: string;
-    name: string | null;
-    email: string | null;
-  } | null;
-  isSubmitting?: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (values: {
-    name: string;
-    slug: string;
-    ownerUserId?: string;
-  }) => Promise<void>;
-}
-
-function RestaurantFormModal({
-  open,
-  canChooseOwner,
-  currentUser,
-  isSubmitting = false,
-  onOpenChange,
-  onSubmit,
-}: RestaurantFormModalProps) {
-  const [name, setName] = React.useState("");
-  const [slug, setSlug] = React.useState("");
-  const [ownerSearch, setOwnerSearch] = React.useState("");
-  const [debouncedOwnerSearch, setDebouncedOwnerSearch] = React.useState("");
-  const [ownerUserId, setOwnerUserId] = React.useState(currentUser?.id ?? "");
-  const [isTouched, setIsTouched] = React.useState(false);
-  const [slugTouched, setSlugTouched] = React.useState(false);
-
-  const { data: usersPage, isLoading: isUsersLoading } = useUsers(
-    canChooseOwner
-      ? {
-          name: debouncedOwnerSearch || undefined,
-          email: debouncedOwnerSearch || undefined,
-          page: 1,
-          limit: 20,
-        }
-      : { page: 1, limit: 20 },
-  );
-
-  React.useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      setDebouncedOwnerSearch(ownerSearch.trim());
-    }, 250);
-
-    return () => window.clearTimeout(timeout);
-  }, [ownerSearch]);
-
-  React.useEffect(() => {
-    if (!open) {
-      setName("");
-      setSlug("");
-      setOwnerSearch("");
-      setDebouncedOwnerSearch("");
-      setOwnerUserId(currentUser?.id ?? "");
-      setIsTouched(false);
-      setSlugTouched(false);
-    }
-  }, [currentUser?.id, open]);
-
-  function handleNameChange(value: string) {
-    setName(value);
-    if (!slugTouched) {
-      setSlug(slugify(value));
-    }
-  }
-
-  const ownerOptions = React.useMemo(() => {
-    const map = new Map<
-      string,
-      { id: string; label: string; description: string }
-    >();
-
-    if (currentUser?.id) {
-      map.set(currentUser.id, {
-        id: currentUser.id,
-        label: currentUser.name?.trim() || currentUser.email || "Eu",
-        description: currentUser.email ?? "Usuário atual",
-      });
-    }
-
-    for (const item of usersPage?.data ?? []) {
-      if (item.type !== "user") continue;
-      map.set(item.id, {
-        id: item.id,
-        label: item.name?.trim() || item.email || item.id,
-        description: item.email ?? item.id,
-      });
-    }
-
-    return Array.from(map.values());
-  }, [currentUser, usersPage?.data]);
-
-  const normalizedName = name.trim();
-  const normalizedSlug = slugify(slug);
-  const nameError = normalizedName ? null : "Informe o nome do restaurante.";
-  const slugError = normalizedSlug ? null : "Informe um slug válido.";
-  const ownerError =
-    canChooseOwner && !ownerUserId
-      ? "Selecione o usuário proprietário."
-      : null;
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setIsTouched(true);
-
-    if (nameError || slugError || ownerError) {
-      return;
-    }
-
-    await onSubmit({
-      name: normalizedName,
-      slug: normalizedSlug,
-      ownerUserId: canChooseOwner ? ownerUserId : currentUser?.id ?? undefined,
-    });
-  }
-
-  return (
-    <Modal open={open} onOpenChange={onOpenChange}>
-      <ModalContent className="max-w-lg">
-        <form className="space-y-5" onSubmit={handleSubmit}>
-          <ModalHeader>
-            <ModalTitle>Novo restaurante</ModalTitle>
-            <ModalDescription>
-              Cadastre uma nova operação principal e defina quem será o owner
-              responsável desde a criação.
-            </ModalDescription>
-          </ModalHeader>
-
-          <div className="space-y-2">
-            <label
-              className="text-sm font-medium text-foreground"
-              htmlFor="restaurant-name"
-            >
-              Nome do restaurante
-            </label>
-            <Input
-              id="restaurant-name"
-              value={name}
-              onChange={(event) => handleNameChange(event.target.value)}
-              placeholder="Ex.: Juntai Centro"
-              error={Boolean(isTouched && nameError)}
-            />
-            {isTouched && nameError ? (
-              <Text variant="sm" className="text-destructive">
-                {nameError}
-              </Text>
-            ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <label
-              className="text-sm font-medium text-foreground"
-              htmlFor="restaurant-slug"
-            >
-              Slug
-            </label>
-            <Input
-              id="restaurant-slug"
-              value={slug}
-              onChange={(event) => {
-                setSlugTouched(true);
-                setSlug(event.target.value);
-              }}
-              placeholder="juntai-centro"
-              error={Boolean(isTouched && slugError)}
-            />
-            <Text variant="xs" muted className="block">
-              Use apenas letras minúsculas, números e hífens.
-            </Text>
-            {isTouched && slugError ? (
-              <Text variant="sm" className="text-destructive">
-                {slugError}
-              </Text>
-            ) : null}
-          </div>
-
-          {canChooseOwner ? (
-            <div className="space-y-2">
-              <label
-                className="text-sm font-medium text-foreground"
-                htmlFor="restaurant-owner-search"
-              >
-                Proprietário responsável
-              </label>
-              <Input
-                id="restaurant-owner-search"
-                value={ownerSearch}
-                onChange={(event) => setOwnerSearch(event.target.value)}
-                placeholder="Pesquisar usuário por nome ou e-mail"
-              />
-              <Select value={ownerUserId} onValueChange={setOwnerUserId}>
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      isUsersLoading
-                        ? "Carregando usuários…"
-                        : "Selecione quem será o owner"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {ownerOptions.map((option) => (
-                    <SelectItem key={option.id} value={option.id}>
-                      {option.label} — {option.description}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Text variant="xs" muted className="block">
-                Você pode escolher se o restaurante pertence a você ou a outro
-                usuário.
-              </Text>
-              {isTouched && ownerError ? (
-                <Text variant="sm" className="text-destructive">
-                  {ownerError}
-                </Text>
-              ) : null}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-border bg-muted/40 p-3">
-              <Text variant="sm" className="font-medium text-foreground">
-                Este restaurante será vinculado automaticamente a você.
-              </Text>
-              <Text variant="xs" muted className="mt-1 block">
-                {currentUser?.email ?? currentUser?.name ?? "Owner atual"}
-              </Text>
-            </div>
-          )}
-
-          <ModalFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" loading={isSubmitting}>
-              Criar restaurante
-            </Button>
-          </ModalFooter>
-        </form>
-      </ModalContent>
-    </Modal>
-  );
-}
-
-interface LocationFormModalProps {
-  open: boolean;
-  restaurant: Restaurant | null;
-  isSubmitting?: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (values: {
-    name: string;
-    phone?: string;
-    street: string;
-    number: string;
-    complement?: string;
-    neighborhood: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-  }) => Promise<void>;
-}
-
-function LocationFormModal({
-  open,
-  restaurant,
-  isSubmitting = false,
-  onOpenChange,
-  onSubmit,
-}: LocationFormModalProps) {
-  const [form, setForm] = React.useState({
-    name: "",
-    phone: "",
-    street: "",
-    number: "",
-    complement: "",
-    neighborhood: "",
-    city: "",
-    state: "",
-    postalCode: "",
-    country: "BR",
-  });
-  const [isTouched, setIsTouched] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!open) {
-      setForm({
-        name: "",
-        phone: "",
-        street: "",
-        number: "",
-        complement: "",
-        neighborhood: "",
-        city: "",
-        state: "",
-        postalCode: "",
-        country: "BR",
-      });
-      setIsTouched(false);
-    }
-  }, [open]);
-
-  const requiredFields = [
-    form.name.trim(),
-    form.street.trim(),
-    form.number.trim(),
-    form.neighborhood.trim(),
-    form.city.trim(),
-    form.state.trim(),
-    form.postalCode.trim(),
-  ];
-  const hasMissingField = requiredFields.some((value) => value.length === 0);
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setIsTouched(true);
-
-    if (!restaurant || hasMissingField) {
-      return;
-    }
-
-    await onSubmit({
-      name: form.name.trim(),
-      phone: form.phone.trim() || undefined,
-      street: form.street.trim(),
-      number: form.number.trim(),
-      complement: form.complement.trim() || undefined,
-      neighborhood: form.neighborhood.trim(),
-      city: form.city.trim(),
-      state: form.state.trim().toUpperCase(),
-      postalCode: form.postalCode.replace(/\D/g, "").slice(0, 8),
-      country: (form.country.trim() || "BR").toUpperCase(),
-    });
-  }
-
-  function updateField(field: keyof typeof form, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  }
-
-  return (
-    <Modal open={open} onOpenChange={onOpenChange}>
-      <ModalContent className="max-w-2xl">
-        <form className="space-y-5" onSubmit={handleSubmit}>
-          <ModalHeader>
-            <ModalTitle>Nova filial</ModalTitle>
-            <ModalDescription>
-              {restaurant
-                ? `Cadastre uma nova unidade para ${restaurant.name}.`
-                : "Cadastre uma nova unidade para o restaurante selecionado."}
-            </ModalDescription>
-          </ModalHeader>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2 sm:col-span-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="location-name">
-                Nome da filial
-              </label>
-              <Input
-                id="location-name"
-                value={form.name}
-                onChange={(event) => updateField("name", event.target.value)}
-                placeholder="Ex.: Unidade Paulista"
-                error={Boolean(isTouched && !form.name.trim())}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="location-phone">
-                Telefone
-              </label>
-              <Input
-                id="location-phone"
-                value={form.phone}
-                onChange={(event) => updateField("phone", event.target.value)}
-                placeholder="(11) 99999-9999"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="location-postalCode">
-                CEP
-              </label>
-              <Input
-                id="location-postalCode"
-                value={form.postalCode}
-                onChange={(event) =>
-                  updateField("postalCode", event.target.value)
-                }
-                placeholder="01310-100"
-                error={Boolean(isTouched && !form.postalCode.trim())}
-              />
-            </div>
-
-            <div className="space-y-2 sm:col-span-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="location-street">
-                Rua
-              </label>
-              <Input
-                id="location-street"
-                value={form.street}
-                onChange={(event) => updateField("street", event.target.value)}
-                placeholder="Av. Paulista"
-                error={Boolean(isTouched && !form.street.trim())}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="location-number">
-                Número
-              </label>
-              <Input
-                id="location-number"
-                value={form.number}
-                onChange={(event) => updateField("number", event.target.value)}
-                placeholder="1000"
-                error={Boolean(isTouched && !form.number.trim())}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="location-complement">
-                Complemento
-              </label>
-              <Input
-                id="location-complement"
-                value={form.complement}
-                onChange={(event) =>
-                  updateField("complement", event.target.value)
-                }
-                placeholder="Loja 2, térreo…"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="location-neighborhood">
-                Bairro
-              </label>
-              <Input
-                id="location-neighborhood"
-                value={form.neighborhood}
-                onChange={(event) =>
-                  updateField("neighborhood", event.target.value)
-                }
-                placeholder="Bela Vista"
-                error={Boolean(isTouched && !form.neighborhood.trim())}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="location-city">
-                Cidade
-              </label>
-              <Input
-                id="location-city"
-                value={form.city}
-                onChange={(event) => updateField("city", event.target.value)}
-                placeholder="São Paulo"
-                error={Boolean(isTouched && !form.city.trim())}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="location-state">
-                UF
-              </label>
-              <Input
-                id="location-state"
-                value={form.state}
-                onChange={(event) => updateField("state", event.target.value)}
-                placeholder="SP"
-                maxLength={2}
-                error={Boolean(isTouched && !form.state.trim())}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="location-country">
-                País
-              </label>
-              <Input
-                id="location-country"
-                value={form.country}
-                onChange={(event) => updateField("country", event.target.value)}
-                placeholder="BR"
-                maxLength={2}
-              />
-            </div>
-          </div>
-
-          {isTouched && hasMissingField ? (
-            <Text variant="sm" className="text-destructive">
-              Preencha os campos obrigatórios para cadastrar a filial.
-            </Text>
-          ) : null}
-
-          <ModalFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" loading={isSubmitting}>
-              Criar filial
-            </Button>
-          </ModalFooter>
-        </form>
-      </ModalContent>
-    </Modal>
-  );
 }
 
 export function RestaurantsView() {
   const { data: restaurants, isLoading } = useAllRestaurants();
-  const { restaurants: accessibleRestaurants } = useActiveContext();
+  const { context, restaurants: accessibleRestaurants } = useActiveContext();
   const { memberships, user } = useAuth();
   const { toast } = useToast();
-  const profile = resolvePortalProfile(memberships);
+  const profile = resolvePortalProfile(memberships, context.type);
   const [restaurantModalOpen, setRestaurantModalOpen] = React.useState(false);
   const [locationModalRestaurant, setLocationModalRestaurant] =
     React.useState<Restaurant | null>(null);
 
   const createRestaurantMutation = useCreateRestaurant();
-  const createLocationMutation = useCreateLocation(locationModalRestaurant?.id ?? "");
+  const createLocationMutation = useCreateLocation(
+    locationModalRestaurant?.id ?? "",
+  );
 
   const accessibleIds = React.useMemo(
     () => new Set(accessibleRestaurants.map((restaurant) => restaurant.id)),
@@ -650,8 +63,7 @@ export function RestaurantsView() {
 
   const canCreateRestaurant =
     profile === "platform-admin" || profile === "owner";
-  const canCreateLocation =
-    profile === "platform-admin" || profile === "owner";
+  const canCreateLocation = profile === "platform-admin" || profile === "owner";
 
   const columns: ColumnDef<Restaurant>[] = [
     {
@@ -660,7 +72,9 @@ export function RestaurantsView() {
       sortable: true,
       cell: (row) => (
         <div className="flex min-w-0 flex-col gap-1">
-          <span className="truncate font-medium text-foreground">{row.name}</span>
+          <span className="truncate font-medium text-foreground">
+            {row.name}
+          </span>
           <Text variant="xs" muted className="block">
             ID: {row.id}
           </Text>
@@ -712,16 +126,12 @@ export function RestaurantsView() {
     },
   ];
 
-  async function handleCreateRestaurant(values: {
-    name: string;
-    slug: string;
-    ownerUserId?: string;
-  }) {
+  async function handleCreateRestaurant(values: RestaurantFormValues) {
     try {
       await createRestaurantMutation.mutateAsync({
         name: values.name,
         slug: values.slug,
-        ownerUserId: values.ownerUserId,
+        ownerUserId: values.ownerUserId || undefined,
         settings: {
           type: "RESTAURANT",
           allowAnonymous: true,
@@ -729,39 +139,26 @@ export function RestaurantsView() {
           currency: "BRL",
         },
       });
-      setRestaurantModalOpen(false);
       toast.success("Restaurante criado com sucesso.");
     } catch (error) {
       toast.error("Não foi possível criar o restaurante.", {
         description: getErrorDescription(error),
       });
+      throw error;
     }
   }
 
-  async function handleCreateLocation(values: {
-    name: string;
-    phone?: string;
-    street: string;
-    number: string;
-    complement?: string;
-    neighborhood: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-  }) {
-    if (!locationModalRestaurant) {
-      return;
-    }
+  async function handleCreateLocation(values: LocationFormValues) {
+    if (!locationModalRestaurant) return;
 
     try {
       await createLocationMutation.mutateAsync({
         name: values.name,
-        phone: values.phone,
+        phone: values.phone || undefined,
         address: {
           street: values.street,
           number: values.number,
-          complement: values.complement,
+          complement: values.complement || undefined,
           neighborhood: values.neighborhood,
           city: values.city,
           state: values.state,
@@ -771,12 +168,12 @@ export function RestaurantsView() {
           lng: undefined,
         },
       });
-      setLocationModalRestaurant(null);
       toast.success("Filial criada com sucesso.");
     } catch (error) {
       toast.error("Não foi possível criar a filial.", {
         description: getErrorDescription(error),
       });
+      throw error;
     }
   }
 
@@ -834,28 +231,20 @@ export function RestaurantsView() {
         canChooseOwner={profile === "platform-admin"}
         currentUser={
           user
-            ? {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-              }
+            ? { id: user.id, name: user.name, email: user.email }
             : null
         }
         onOpenChange={setRestaurantModalOpen}
         onSubmit={handleCreateRestaurant}
-        isSubmitting={createRestaurantMutation.isPending}
       />
 
       <LocationFormModal
         open={Boolean(locationModalRestaurant)}
         restaurant={locationModalRestaurant}
         onOpenChange={(open) => {
-          if (!open) {
-            setLocationModalRestaurant(null);
-          }
+          if (!open) setLocationModalRestaurant(null);
         }}
         onSubmit={handleCreateLocation}
-        isSubmitting={createLocationMutation.isPending}
       />
     </>
   );

@@ -6,28 +6,30 @@ export type PortalProfile =
   | "operator"
   | "basic-user";
 
-export function resolvePortalProfile(memberships: Membership[]): PortalProfile {
-  if (
-    memberships.some(
-      (membership) =>
-        membership.entityType === "platform" && membership.role === "admin",
-    )
-  ) {
-    return "platform-admin";
+export function resolvePortalProfile(
+  memberships: Membership[],
+  contextType: "platform" | "restaurant" = "platform",
+): PortalProfile {
+  const isPlatformAdmin = memberships.some(
+    (membership) =>
+      membership.entityType === "platform" && membership.role === "admin",
+  );
+
+  const isOwner = memberships.some((membership) => membership.role === "owner");
+  const isOperator = memberships.some(
+    (membership) =>
+      membership.role === "manager" || membership.role === "waiter",
+  );
+
+  if (contextType === "restaurant") {
+    if (isPlatformAdmin || isOwner) return "owner";
+    if (isOperator) return "operator";
+    return "basic-user";
   }
 
-  if (memberships.some((membership) => membership.role === "owner")) {
-    return "owner";
-  }
-
-  if (
-    memberships.some(
-      (membership) =>
-        membership.role === "manager" || membership.role === "waiter",
-    )
-  ) {
-    return "operator";
-  }
+  if (isPlatformAdmin) return "platform-admin";
+  if (isOwner) return "owner";
+  if (isOperator) return "operator";
 
   return "basic-user";
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { ChevronLeft, X } from "lucide-react";
 import {
   PageLayout,
@@ -21,9 +22,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const isMobile = useIsMobile();
+  const router = useRouter();
+  const pathname = usePathname() ?? "/";
   const { context } = useActiveContext();
   const { user, memberships } = useAuth();
-  const profile = resolvePortalProfile(memberships);
+  const profile = resolvePortalProfile(memberships, context.type);
 
   // Close mobile drawer when switching to desktop
   React.useEffect(() => {
@@ -43,6 +46,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     setMounted(true);
   }, []);
+
+  React.useEffect(() => {
+    if (!mounted) return;
+
+    const isPlatformOnlyRoute = pathname === "/dashboard" || pathname === "/restaurants";
+    const isRestaurantOnlyRoute =
+      pathname === "/restaurant" ||
+      pathname === "/orders" ||
+      pathname === "/menu" ||
+      pathname.startsWith("/menu/") ||
+      pathname === "/tables" ||
+      pathname === "/products/new" ||
+      pathname.startsWith("/products/");
+
+    if (context.type === "restaurant" && isPlatformOnlyRoute) {
+      router.replace("/restaurant");
+      return;
+    }
+
+    if (context.type === "platform" && isRestaurantOnlyRoute) {
+      router.replace("/dashboard");
+    }
+  }, [context.type, mounted, pathname, router]);
 
   // ── Dynamic nav: filter by active context ──────────────────────────────────
   // Deferred to post-mount to avoid server/client hydration mismatch,

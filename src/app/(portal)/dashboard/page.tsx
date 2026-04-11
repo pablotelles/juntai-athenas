@@ -2,6 +2,7 @@
 
 import { ActiveContextBanner } from "@/components/compositions/context-display/ActiveContextBanner";
 import { Text } from "@/components/primitives/text/Text";
+import { useActiveContext } from "@/contexts/active-context/ActiveContextProvider";
 import { useAuth } from "@/contexts/auth/AuthProvider";
 import {
   getPortalProfileLabel,
@@ -60,8 +61,9 @@ const DASHBOARD_COPY: Record<
 };
 
 export default function DashboardPage() {
+  const { context } = useActiveContext();
   const { memberships } = useAuth();
-  const profile = resolvePortalProfile(memberships);
+  const profile = resolvePortalProfile(memberships, context.type);
   const copy = DASHBOARD_COPY[profile];
 
   return (
