@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Text } from "@/components/primitives/text/Text";
 import { BackButton } from "@/components/primitives/back-button/BackButton";
@@ -9,13 +10,24 @@ import { useMenu } from "@/features/menu/hooks";
 import { useBreadcrumbLabel } from "@/contexts/breadcrumb/BreadcrumbProvider";
 
 export default function CategoryProductsPage() {
+  return (
+    <Suspense fallback={null}>
+      <CategoryProductsPageContent />
+    </Suspense>
+  );
+}
+
+function CategoryProductsPageContent() {
   const { context } = useActiveContext();
   const params = useParams<{ menuId: string; categoryId: string }>();
   const searchParams = useSearchParams();
   const locationIdFromUrl = searchParams.get("locationId");
-  const locationId = locationIdFromUrl ?? (context.type === "restaurant" ? (context.locationId ?? null) : null);
+  const locationId =
+    locationIdFromUrl ??
+    (context.type === "restaurant" ? (context.locationId ?? null) : null);
 
-  const restaurantId = context.type === "restaurant" ? context.restaurantId : null;
+  const restaurantId =
+    context.type === "restaurant" ? context.restaurantId : null;
   const { data: menus } = useMenu(restaurantId ?? "", locationId);
   const menu = menus?.find((m) => m.id === params.menuId);
   const category = menu?.categories.find((c) => c.id === params.categoryId);
@@ -23,7 +35,11 @@ export default function CategoryProductsPage() {
   useBreadcrumbLabel(params.categoryId, category?.name);
 
   if (context.type !== "restaurant") {
-    return <Text variant="sm" muted>Selecione um restaurante.</Text>;
+    return (
+      <Text variant="sm" muted>
+        Selecione um restaurante.
+      </Text>
+    );
   }
 
   return (

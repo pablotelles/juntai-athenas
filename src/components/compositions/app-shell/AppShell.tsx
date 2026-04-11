@@ -14,6 +14,7 @@ import { useActiveContext } from "@/contexts/active-context/ActiveContextProvide
 import { useAuth } from "@/contexts/auth/AuthProvider";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { NAV_ITEMS } from "@/config/navigation";
+import { resolvePortalProfile } from "@/lib/access";
 import type { NavSection } from "@/components/compositions/sidebar/Sidebar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -21,7 +22,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const isMobile = useIsMobile();
   const { context } = useActiveContext();
-  const { user } = useAuth();
+  const { user, memberships } = useAuth();
+  const profile = resolvePortalProfile(memberships);
 
   // Close mobile drawer when switching to desktop
   React.useEffect(() => {
@@ -38,15 +40,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     : "?";
 
   const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => { setMounted(true); }, []);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // ── Dynamic nav: filter by active context ──────────────────────────────────
   // Deferred to post-mount to avoid server/client hydration mismatch,
   // since context.type is client-only state (localStorage/session).
   const sections: NavSection[] = React.useMemo(() => {
     if (!mounted) return [];
-    const filtered = NAV_ITEMS.filter((item) =>
-      item.contexts.includes(context.type),
+    const filtered = NAV_ITEMS.filter(
+      (item) =>
+        item.contexts.includes(context.type) &&
+        (!item.profiles || item.profiles.includes(profile)),
     );
     const mainItems = filtered.filter((i) => i.href !== "/settings");
     const systemItems = filtered.filter((i) => i.href === "/settings");
@@ -56,7 +62,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         ? [{ title: "Sistema", items: systemItems }]
         : []),
     ].filter((s) => s.items.length > 0);
-  }, [mounted, context.type]);
+  }, [mounted, context.type, profile]);
 
   const sidebarNode = (
     <Sidebar
@@ -116,7 +122,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <ChevronLeft
                 size={12}
                 className={cn(
-                  "transition-transform duration-[var(--duration-slow)]",
+                  "transition-transform duration-(--duration-slow)",
                   collapsed && "rotate-180",
                 )}
               />
@@ -131,7 +137,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {/* Backdrop */}
           <div
             className={cn(
-              "fixed inset-0 bg-black/50 z-20 transition-opacity duration-[var(--duration-slow)]",
+              "fixed inset-0 bg-black/50 z-20 transition-opacity duration-(--duration-slow)",
               mobileOpen
                 ? "opacity-100 pointer-events-auto"
                 : "opacity-0 pointer-events-none",
@@ -143,7 +149,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {/* Drawer */}
           <div
             className={cn(
-              "fixed inset-y-0 left-0 z-30 transition-transform duration-[var(--duration-slow)]",
+              "fixed inset-y-0 left-0 z-30 transition-transform duration-(--duration-slow)",
               mobileOpen ? "translate-x-0" : "-translate-x-full",
             )}
           >

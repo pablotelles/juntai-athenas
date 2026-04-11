@@ -16,6 +16,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import type { PortalProfile } from "@/lib/access";
 
 export type ContextType = "platform" | "restaurant";
 
@@ -28,6 +29,8 @@ export interface NavConfigItem {
   icon: LucideIcon;
   /** Which context types this item appears in */
   contexts: ContextType[];
+  /** Which portal profiles can see the item */
+  profiles?: PortalProfile[];
   /** Use exact pathname match for active state */
   exact?: boolean;
   /** Optional badge (count, label) */
@@ -40,6 +43,7 @@ export const NAV_ITEMS: NavConfigItem[] = [
     href: "/dashboard",
     icon: LayoutDashboard,
     contexts: ["platform", "restaurant"],
+    profiles: ["platform-admin", "owner", "operator", "basic-user"],
     exact: true,
   },
   {
@@ -47,47 +51,55 @@ export const NAV_ITEMS: NavConfigItem[] = [
     href: "/restaurants",
     icon: UtensilsCrossed,
     contexts: ["platform"],
+    profiles: ["platform-admin"],
   },
   {
     label: "Usuários",
     href: "/users",
     icon: Users,
     contexts: ["platform", "restaurant"],
+    profiles: ["platform-admin", "owner", "operator"],
   },
   {
     label: "Pedidos",
     href: "/orders",
     icon: ShoppingBag,
     contexts: ["restaurant"],
+    profiles: ["owner", "operator"],
   },
   {
     label: "Cardápio",
     href: "/menu",
     icon: BookOpen,
     contexts: ["restaurant"],
+    profiles: ["owner", "operator"],
   },
   {
     label: "Mesas",
     href: "/tables",
     icon: LayoutList,
     contexts: ["restaurant"],
+    profiles: ["owner", "operator"],
   },
   {
     label: "Financeiro",
     href: "/finance",
     icon: CreditCard,
     contexts: ["platform", "restaurant"],
+    profiles: ["platform-admin", "owner", "operator"],
   },
   {
     label: "Relatórios",
     href: "/reports",
     icon: BarChart2,
     contexts: ["platform", "restaurant"],
+    profiles: ["platform-admin", "owner", "operator"],
   },
   {
     label: "Configurações",
     href: "/settings",
     icon: Settings,
     contexts: ["platform", "restaurant"],
+    profiles: ["platform-admin", "owner", "operator"],
   },
 ];

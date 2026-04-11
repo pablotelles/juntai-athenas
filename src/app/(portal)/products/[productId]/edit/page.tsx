@@ -8,6 +8,14 @@ import { useMenu } from "@/features/menu/hooks";
 import { ProductBuilderPage } from "@/features/menu/components/ProductBuilder";
 
 export default function EditProductPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <EditProductPageContent />
+    </React.Suspense>
+  );
+}
+
+function EditProductPageContent() {
   const { context } = useActiveContext();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -25,11 +33,19 @@ export default function EditProductPage() {
   if (!mounted) return null;
 
   if (context.type !== "restaurant") {
-    return <Text variant="sm" muted>Selecione um restaurante.</Text>;
+    return (
+      <Text variant="sm" muted>
+        Selecione um restaurante.
+      </Text>
+    );
   }
 
   if (!productId || !categoryId || !menuId) {
-    return <Text variant="sm" muted>Parâmetros inválidos.</Text>;
+    return (
+      <Text variant="sm" muted>
+        Parâmetros inválidos.
+      </Text>
+    );
   }
 
   const locationId = locationIdFromUrl ?? context.locationId ?? null;
@@ -75,7 +91,11 @@ function EditProductLoader({
     ?.items.find((i) => i.id === productId);
 
   if (!item) {
-    return <Text variant="sm" muted>Produto não encontrado.</Text>;
+    return (
+      <Text variant="sm" muted>
+        Produto não encontrado.
+      </Text>
+    );
   }
 
   return (

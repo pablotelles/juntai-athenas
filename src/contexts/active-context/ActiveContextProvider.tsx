@@ -82,51 +82,125 @@ export function ActiveContextProvider({
   const [restaurants, setRestaurants] = React.useState<RestaurantOption[]>([]);
   const [restaurantsLoading, setRestaurantsLoading] = React.useState(false);
 
-  // Derive restaurant IDs the user has a membership for
-  const restaurantIds = React.useMemo(
-    () =>
-      memberships
-        .filter((m) => m.entityType === "restaurant")
-        .map((m) => m.entityId),
+  const restaurantMembershipIds = React.useMemo(
+    () => [
+      ...new Set(
+        memberships
+          .filter((membership) => membership.entityType === "restaurant")
+          .map((membership) => membership.entityId),
+      ),
+    ],
     [memberships],
   );
 
-  // Fetch restaurant details from the BE whenever the membership list changes
+  const locationMembershipIds = React.useMemo(
+    () => [
+      ...new Set(
+        memberships
+          .filter((membership) => membership.entityType === "location")
+          .map((membership) => membership.entityId),
+      ),
+    ],
+    [memberships],
+  );
+
+  const hasPlatformAdminAccess = React.useMemo(
+    () =>
+      memberships.some(
+        (membership) =>
+          membership.entityType === "platform" && membership.role === "admin",
+      ),
+    [memberships],
+  );
+
+  // Fetch restaurant options from the BE whenever the membership list changes
   React.useEffect(() => {
-    if (restaurantIds.length === 0) {
+    if (!sessionToken) {
       setRestaurants([]);
+      setRestaurantsLoading(false);
+      return;
+    }
+
+    if (
+      !hasPlatformAdminAccess &&
+      restaurantMembershipIds.length === 0 &&
+      locationMembershipIds.length === 0
+    ) {
+      setRestaurants([]);
+      setRestaurantsLoading(false);
       return;
     }
 
     const client = apiClient(sessionToken);
     setRestaurantsLoading(true);
 
-    Promise.all(
-      restaurantIds.map((id) =>
-        client.get<{ id: string; name: string }>(`/restaurants/${id}`),
-      ),
-    )
-      .then((results) => {
-        const list = results.map((r) => ({ id: r.id, name: r.name }));
+    client
+      .get<Array<{ id: string; name: string }>>("/restaurants")
+      .then(async (allRestaurants) => {
+        if (hasPlatformAdminAccess) {
+          return allRestaurants;
+        }
+
+        const allowedRestaurantIds = new Set(restaurantMembershipIds);
+
+        if (locationMembershipIds.length > 0) {
+          const locationIds = new Set(locationMembershipIds);
+          const matches = await Promise.all(
+            allRestaurants.map(async (restaurant) => {
+              try {
+                const locations = await client.get<Array<{ id: string }>>(
+                  `/restaurants/${restaurant.id}/locations`,
+                );
+                return locations.some((location) =>
+                  locationIds.has(location.id),
+                )
+                  ? restaurant.id
+                  : null;
+              } catch {
+                return null;
+              }
+            }),
+          );
+
+          matches.forEach((restaurantId) => {
+            if (restaurantId) allowedRestaurantIds.add(restaurantId);
+          });
+        }
+
+        return allRestaurants.filter((restaurant) =>
+          allowedRestaurantIds.has(restaurant.id),
+        );
+      })
+      .then((list) => {
         setRestaurants(list);
-        // If the stored context references a restaurant no longer accessible, reset to platform
         setContextState((prev) => {
-          if (
+          const canKeepRestaurantContext =
             prev.type === "restaurant" &&
-            !list.some((r) => r.id === prev.restaurantId)
-          ) {
-            const fallback: ActiveContextValue = { type: "platform" };
-            writeStorage(fallback);
-            return fallback;
+            list.some((restaurant) => restaurant.id === prev.restaurantId);
+
+          if (canKeepRestaurantContext) {
+            return prev;
           }
-          return prev;
+
+          const fallback: ActiveContextValue =
+            !hasPlatformAdminAccess && list.length > 0
+              ? { type: "restaurant", restaurantId: list[0].id }
+              : { type: "platform" };
+
+          writeStorage(fallback);
+          return fallback;
         });
       })
       .catch(() => {
         setRestaurants([]);
       })
       .finally(() => setRestaurantsLoading(false));
-  }, [restaurantIds, sessionToken]);
+  }, [
+    hasPlatformAdminAccess,
+    locationMembershipIds,
+    restaurantMembershipIds,
+    sessionToken,
+  ]);
 
   // Clear restaurants when the user logs out
   React.useEffect(() => {
