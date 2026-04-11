@@ -43,29 +43,41 @@ export function useSessionChannel({
     (envelope: RealtimeEnvelope) => {
       switch (envelope.type) {
         case "USER_JOINED":
-          void queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
+          void queryClient.invalidateQueries({
+            queryKey: ["session", sessionId],
+          });
           break;
 
         case "USER_LEFT":
-          void queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
+          void queryClient.invalidateQueries({
+            queryKey: ["session", sessionId],
+          });
           break;
 
         case "ORDER_CREATED":
-          void queryClient.invalidateQueries({ queryKey: ["orders", sessionId] });
+          void queryClient.invalidateQueries({
+            queryKey: ["orders", sessionId],
+          });
           toast.info("Novo pedido registrado");
           break;
 
         case "ORDER_STATUS_CHANGED":
-          void queryClient.invalidateQueries({ queryKey: ["orders", sessionId] });
+          void queryClient.invalidateQueries({
+            queryKey: ["orders", sessionId],
+          });
           break;
 
         case "PAYMENT_COMPLETED":
-          void queryClient.invalidateQueries({ queryKey: ["payments", sessionId] });
+          void queryClient.invalidateQueries({
+            queryKey: ["payments", sessionId],
+          });
           toast.success("Pagamento confirmado");
           break;
 
         case "SESSION_CLOSED":
-          void queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
+          void queryClient.invalidateQueries({
+            queryKey: ["session", sessionId],
+          });
           toast.warning("A mesa foi encerrada");
           break;
 

@@ -5,7 +5,6 @@ import {
   createTable,
   deleteTable,
   getOrCreateTableSession,
-  joinTableSession,
   listTables,
   updateTable,
   type CreateTableBody,
@@ -88,23 +87,12 @@ export function useDeleteTable(
 }
 
 export function useConnectTable() {
-  const { sessionToken, user } = useAuth();
+  const { sessionToken } = useAuth();
 
   return useMutation({
-    mutationFn: async ({
-      qrCodeToken,
-      displayName,
-    }: {
-      qrCodeToken: string;
-      displayName?: string;
-    }) => {
+    mutationFn: async ({ qrCodeToken }: { qrCodeToken: string }) => {
       const session = await getOrCreateTableSession(qrCodeToken, sessionToken);
-      const member = await joinTableSession(
-        session.id,
-        displayName ?? user?.name ?? user?.email ?? "Convidado",
-        sessionToken,
-      );
-      return { session, member };
+      return { session };
     },
   });
 }

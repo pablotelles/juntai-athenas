@@ -61,7 +61,8 @@ export function apiClient(token?: string | null) {
     delete<T>(path: string, headers?: Record<string, string>): Promise<T> {
       return fetch(`${BASE_URL}${path}`, {
         method: "DELETE",
-        headers: buildHeaders(token, headers),
+        // No Content-Type — DELETE has no body; sending it causes Fastify to reject
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers },
       }).then((r) => handleResponse<T>(r));
     },
 

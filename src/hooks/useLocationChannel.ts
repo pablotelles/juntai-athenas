@@ -35,8 +35,7 @@ export function useLocationChannel({
   const queryClient = useQueryClient();
 
   const url = React.useMemo(
-    () =>
-      locationId && token ? wsUrl(locationId, token) : null,
+    () => (locationId && token ? wsUrl(locationId, token) : null),
     [locationId, token],
   );
 
@@ -45,20 +44,28 @@ export function useLocationChannel({
       switch (envelope.type) {
         case "USER_JOINED":
         case "USER_LEFT":
-          void queryClient.invalidateQueries({ queryKey: ["tables", restaurantId, locationId] });
+          void queryClient.invalidateQueries({
+            queryKey: ["tables", restaurantId, locationId],
+          });
           break;
 
         case "ORDER_CREATED":
         case "ORDER_STATUS_CHANGED":
-          void queryClient.invalidateQueries({ queryKey: ["orders", restaurantId] });
+          void queryClient.invalidateQueries({
+            queryKey: ["orders", restaurantId],
+          });
           break;
 
         case "PAYMENT_COMPLETED":
-          void queryClient.invalidateQueries({ queryKey: ["payments", restaurantId] });
+          void queryClient.invalidateQueries({
+            queryKey: ["payments", restaurantId],
+          });
           break;
 
         case "SESSION_CLOSED":
-          void queryClient.invalidateQueries({ queryKey: ["tables", restaurantId, locationId] });
+          void queryClient.invalidateQueries({
+            queryKey: ["tables", restaurantId, locationId],
+          });
           break;
 
         case "CONNECTION_READY":

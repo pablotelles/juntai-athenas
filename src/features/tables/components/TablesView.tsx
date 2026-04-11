@@ -204,35 +204,28 @@ export function TablesView({ restaurantId }: TablesViewProps) {
   const handleConnect = React.useCallback(
     (mesa: Mesa) => {
       connectTable.mutate(
-        {
-          qrCodeToken: mesa.qrCodeToken,
-          displayName: user?.name ?? user?.email ?? "Convidado",
-        },
+        { qrCodeToken: mesa.qrCodeToken },
         {
           onSuccess: ({ session }) => {
             updateMesa(mesa.id, (current) => ({
               ...current,
               status: "ocupada",
-              pessoasConectadas: Math.min(
-                current.capacidade,
-                Math.max(1, current.pessoasConectadas + 1),
-              ),
               ocupacaoInicio:
                 current.ocupacaoInicio ?? new Date().toISOString(),
               reserva: undefined,
               sessionId: session.id,
             }));
-            toast.success(`Usuário conectado à mesa ${mesa.nome}`);
+            toast.success(`Mesa ${mesa.nome} ocupada`);
           },
           onError: (error) => {
-            toast.error(`Não foi possível conectar à ${mesa.nome}`, {
+            toast.error(`Não foi possível ocupar a ${mesa.nome}`, {
               description: getFriendlyErrorMessage(error),
             });
           },
         },
       );
     },
-    [connectTable, toast, updateMesa, user?.email, user?.name],
+    [connectTable, toast, updateMesa],
   );
 
   const handleToggleOccupancy = React.useCallback(
