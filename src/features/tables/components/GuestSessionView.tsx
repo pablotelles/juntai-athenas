@@ -8,6 +8,7 @@ import { Text } from "@/components/primitives/text/Text";
 import { cn } from "@/lib/cn";
 import { useSessionChannel } from "@/hooks/useSessionChannel";
 import { useSessionMembers, useTableSession } from "@/features/tables/hooks";
+import { useSessionOrdersByToken } from "@/features/guest/hooks";
 import { type WsStatus } from "@/hooks/useWebSocket";
 import type { RealtimeEnvelope } from "@juntai/types";
 
@@ -80,6 +81,7 @@ export function GuestSessionView({
   const { status } = useSessionChannel({ sessionId, token, onEvent });
   const { data: session } = useTableSession(sessionId);
   const { data: members = [] } = useSessionMembers(sessionId);
+  const { data: orders = [] } = useSessionOrdersByToken(sessionId, token);
 
   const isOpen = session?.status === "OPEN";
   const activeCount = members.filter((m) => !m.leftAt).length;
@@ -173,14 +175,31 @@ export function GuestSessionView({
         )}
       </div>
 
-      {/* Future sections — placeholder */}
+      {/* Orders + Payment summary */}
       <div className="mx-3 mb-3 mt-1 flex gap-2">
-        <div className="flex-1 rounded-lg border border-dashed border-border px-2.5 py-2 flex items-center gap-1.5 text-muted-foreground">
-          <ShoppingBag size={12} />
-          <Text variant="xs" muted>
-            Pedidos
-          </Text>
+        {/* Orders summary */}
+        <div className="flex-1 rounded-lg border border-border bg-surface px-2.5 py-2 flex items-center gap-1.5">
+          <ShoppingBag size={12} className="text-muted-foreground shrink-0" />
+          {orders.length === 0 ? (
+            <Text variant="xs" muted>
+              Sem pedidos
+            </Text>
+          ) : (
+            <>
+              <Text variant="xs" className="font-medium flex-1">
+                {orders.length} pedido{orders.length > 1 ? "s" : ""}
+              </Text>
+              {orders.some((o) =>
+                ["PENDING", "PREPARING"].includes(o.status),
+              ) && (
+                <Badge variant="warning" className="text-xs shrink-0">
+                  Em andamento
+                </Badge>
+              )}
+            </>
+          )}
         </div>
+        {/* Payment placeholder */}
         <div className="flex-1 rounded-lg border border-dashed border-border px-2.5 py-2 flex items-center gap-1.5 text-muted-foreground">
           <CreditCard size={12} />
           <Text variant="xs" muted>
