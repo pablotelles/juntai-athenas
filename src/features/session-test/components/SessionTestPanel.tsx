@@ -2,16 +2,12 @@
 
 import * as React from "react";
 import {
-  Clock,
-  Users,
-  XCircle,
   ChevronDown,
   ChevronRight,
   Trash2,
-  Loader2,
+  XCircle,
 } from "lucide-react";
 import { RestaurantCombobox } from "@/components/shared/restaurant-combobox/RestaurantCombobox";
-import { UserCombobox } from "@/components/shared/user-combobox/UserCombobox";
 import {
   Select,
   SelectContent,
@@ -29,29 +25,19 @@ import { Button } from "@/components/primitives/button/Button";
 import { Input } from "@/components/primitives/input/Input";
 import { Badge, type BadgeVariant } from "@/components/primitives/badge/Badge";
 import { Text } from "@/components/primitives/text/Text";
-import { Avatar } from "@/components/shared/avatar/Avatar";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog/ConfirmDialog";
 import { useToast } from "@/contexts/toast/ToastProvider";
 import { useAuth } from "@/contexts/auth/AuthProvider";
 import { useLocations } from "@/features/restaurants/hooks";
 import {
   useTables,
-  useConnectTable,
-  useCloseTableSession,
-  useAddSessionMember,
-  useSessionMembers,
-  useTableSession,
   useGuestJoinSession,
 } from "@/features/tables/hooks";
-import { useUsers } from "@/features/users/hooks";
 import { useLocationChannel } from "@/hooks/useLocationChannel";
-import { useWebSocket, type WsStatus } from "@/hooks/useWebSocket";
+import { type WsStatus } from "@/hooks/useWebSocket";
 import { cn } from "@/lib/cn";
-import type { TableSessionMember, RealtimeEnvelope } from "@juntai/types";
-
-const BASE_WS_URL = (
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
-).replace(/^http/, "ws");
+import type { RealtimeEnvelope } from "@juntai/types";
+import { TablesView } from "@/features/tables/components/TablesView";
+import { GuestSessionView } from "@/features/tables/components/GuestSessionView";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -73,13 +59,6 @@ interface LogEntry {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function elapsed(isoDate: string) {
-  const diff = Math.floor((Date.now() - new Date(isoDate).getTime()) / 1000);
-  if (diff < 60) return `${diff}s`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}min`;
-  return `${Math.floor(diff / 3600)}h ${Math.floor((diff % 3600) / 60)}min`;
-}
 
 function friendlyError(error: unknown) {
   if (error instanceof Error) return error.message;
@@ -126,26 +105,18 @@ function WsStatusBadge({ status, label }: { status: WsStatus; label: string }) {
 interface ContextSelectorProps {
   restaurantId: string;
   locationId: string;
-  tableId: string;
   onRestaurantChange: (id: string) => void;
   onLocationChange: (id: string) => void;
-  onTableChange: (id: string) => void;
 }
 
 function ContextSelector({
   restaurantId,
   locationId,
-  tableId,
   onRestaurantChange,
   onLocationChange,
-  onTableChange,
 }: ContextSelectorProps) {
   const { data: locations = [], isLoading: locationsLoading } =
     useLocations(restaurantId);
-  const { data: tables = [], isLoading: tablesLoading } = useTables(
-    restaurantId,
-    locationId || null,
-  );
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -158,7 +129,6 @@ function ContextSelector({
           onChange={(id) => {
             onRestaurantChange(id);
             onLocationChange("");
-            onTableChange("");
           }}
           placeholder="Selecionar restaurante…"
         />
@@ -170,10 +140,7 @@ function ContextSelector({
         </Text>
         <Select
           value={locationId}
-          onValueChange={(id) => {
-            onLocationChange(id);
-            onTableChange("");
-          }}
+          onValueChange={onLocationChange}
           disabled={!restaurantId || locationsLoading}
         >
           <SelectTrigger>
@@ -192,299 +159,7 @@ function ContextSelector({
           </SelectContent>
         </Select>
       </div>
-
-      <div className="flex flex-col gap-1.5 flex-1">
-        <Text variant="xs" muted>
-          Mesa
-        </Text>
-        <Select
-          value={tableId}
-          onValueChange={onTableChange}
-          disabled={!locationId || tablesLoading}
-        >
-          <SelectTrigger>
-            <SelectValue
-              placeholder={tablesLoading ? "Carregando…" : "Selecionar mesa…"}
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {tables.map((t) => (
-              <SelectItem key={t.id} value={t.id}>
-                {t.label}
-                {t.area ? ` · ${t.area}` : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
     </div>
-  );
-}
-
-// ── Session status card ───────────────────────────────────────────────────────
-
-function SessionStatusCard({ sessionId }: { sessionId: string | null }) {
-  const { data: session, isLoading } = useTableSession(sessionId);
-  const { data: members = [] } = useSessionMembers(sessionId);
-
-  if (!sessionId) {
-    return (
-      <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-4 py-3">
-        <XCircle size={16} className="text-muted-foreground" />
-        <Text variant="sm" muted>
-          Sem sessão ativa nesta mesa
-        </Text>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center gap-2 rounded-lg border border-border px-4 py-3">
-        <Loader2 size={16} className="animate-spin text-muted-foreground" />
-        <Text variant="sm" muted>
-          Carregando sessão…
-        </Text>
-      </div>
-    );
-  }
-
-  if (!session) return null;
-
-  const isOpen = session.status === "OPEN";
-  const activeCount = members.filter((m) => !m.leftAt).length;
-
-  return (
-    <div className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3">
-      <div className="flex items-center gap-3">
-        <Badge variant={isOpen ? "success" : "secondary"} dot>
-          {isOpen ? "Sessão aberta" : "Sessão encerrada"}
-        </Badge>
-        {isOpen && (
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <Clock size={13} />
-            <Text variant="xs" muted>
-              {elapsed(session.openedAt)}
-            </Text>
-          </div>
-        )}
-      </div>
-      <div className="flex items-center gap-1 text-muted-foreground">
-        <Users size={13} />
-        <Text variant="xs" muted>
-          {activeCount} {activeCount === 1 ? "pessoa" : "pessoas"}
-        </Text>
-      </div>
-    </div>
-  );
-}
-
-// ── Members list ──────────────────────────────────────────────────────────────
-
-function MemberList({ members }: { members: TableSessionMember[] }) {
-  if (members.length === 0) {
-    return (
-      <Text variant="xs" muted className="italic">
-        Nenhum cliente na mesa ainda.
-      </Text>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      {members.map((m) => (
-        <div key={m.id} className="flex items-center gap-2">
-          <Avatar
-            fallback={m.displayName.slice(0, 2).toUpperCase()}
-            size="sm"
-          />
-          <div className="flex flex-col">
-            <Text variant="sm">{m.displayName}</Text>
-            <Text variant="xs" muted>
-              {m.leftAt ? "Saiu" : `Entrou há ${elapsed(m.joinedAt)}`}
-            </Text>
-          </div>
-          {m.leftAt && (
-            <Badge variant="secondary" className="ml-auto text-xs">
-              Saiu
-            </Badge>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── Staff side ────────────────────────────────────────────────────────────────
-
-interface StaffSideProps {
-  restaurantId: string;
-  locationId: string;
-  tableId: string;
-  sessionId: string | null;
-  onSessionOpen: (sessionId: string) => void;
-  onSessionClose: () => void;
-}
-
-function StaffSide({
-  restaurantId,
-  locationId,
-  tableId,
-  sessionId,
-  onSessionOpen,
-  onSessionClose,
-}: StaffSideProps) {
-  const { toast } = useToast();
-  const [selectedUserId, setSelectedUserId] = React.useState("");
-  const [confirmClose, setConfirmClose] = React.useState(false);
-
-  const { data: tables = [] } = useTables(restaurantId, locationId || null);
-  const selectedTable = tables.find((t) => t.id === tableId);
-
-  const { data: members = [] } = useSessionMembers(sessionId);
-  const { data: usersPage } = useUsers({ page: 1, limit: 100 });
-  const selectedUser = usersPage?.data.find((u) => u.id === selectedUserId);
-
-  const connectTable = useConnectTable();
-  const closeSession = useCloseTableSession();
-  const addMember = useAddSessionMember();
-
-  function handleOpen() {
-    if (!selectedTable) return;
-    connectTable.mutate(
-      { qrCodeToken: selectedTable.qrCodeToken },
-      {
-        onSuccess: ({ session }) => {
-          onSessionOpen(session.id);
-          toast.success("Mesa aberta com sucesso.");
-        },
-        onError: (err) =>
-          toast.error("Erro ao abrir mesa.", {
-            description: friendlyError(err),
-          }),
-      },
-    );
-  }
-
-  function handleClose() {
-    if (!sessionId) return;
-    closeSession.mutate(
-      { sessionId, restaurantId },
-      {
-        onSuccess: () => {
-          onSessionClose();
-          setConfirmClose(false);
-          toast.success("Mesa encerrada.");
-        },
-        onError: (err) =>
-          toast.error("Erro ao encerrar mesa.", {
-            description: friendlyError(err),
-          }),
-      },
-    );
-  }
-
-  function handleAddUser() {
-    if (!sessionId || !selectedUser) return;
-    addMember.mutate(
-      {
-        sessionId,
-        userId: selectedUser.id,
-        displayName: selectedUser.name ?? selectedUser.email ?? selectedUser.id,
-      },
-      {
-        onSuccess: () => {
-          setSelectedUserId("");
-          toast.success(
-            `${selectedUser.name ?? selectedUser.email} adicionado à mesa.`,
-          );
-        },
-        onError: (err) =>
-          toast.error("Erro ao adicionar cliente.", {
-            description: friendlyError(err),
-          }),
-      },
-    );
-  }
-
-  // Only exclude currently active members from the combobox
-  const alreadyInSession = members
-    .filter((m) => !m.leftAt)
-    .map((m) => m.userId);
-
-  return (
-    <Card className="flex flex-col gap-0">
-      <CardHeader className="border-b border-border pb-4">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          <Badge variant="info">Staff</Badge>
-          Visão do operador
-        </CardTitle>
-      </CardHeader>
-
-      <CardContent className="flex flex-col gap-5 pt-5">
-        {/* Session actions */}
-        <div className="flex gap-2">
-          <Button
-            variant="default"
-            size="sm"
-            disabled={!tableId || !!sessionId || connectTable.isPending}
-            loading={connectTable.isPending}
-            onClick={handleOpen}
-          >
-            Abrir mesa
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            disabled={!sessionId || closeSession.isPending}
-            onClick={() => setConfirmClose(true)}
-          >
-            Fechar mesa
-          </Button>
-        </div>
-
-        {/* Add existing user */}
-        <div className="flex flex-col gap-2">
-          <Text variant="sm" className="font-medium">
-            Adicionar cliente à mesa
-          </Text>
-          <UserCombobox
-            value={selectedUserId}
-            onChange={setSelectedUserId}
-            excludeIds={alreadyInSession}
-            placeholder="Pesquisar usuário…"
-            disabled={!sessionId}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!selectedUserId || !sessionId || addMember.isPending}
-            loading={addMember.isPending}
-            onClick={handleAddUser}
-          >
-            Adicionar
-          </Button>
-        </div>
-
-        {/* Member list */}
-        <div className="flex flex-col gap-2">
-          <Text variant="sm" className="font-medium">
-            Pessoas na mesa
-          </Text>
-          <MemberList members={members} />
-        </div>
-      </CardContent>
-
-      <ConfirmDialog
-        open={confirmClose}
-        onOpenChange={setConfirmClose}
-        title="Encerrar mesa?"
-        description="Isso encerrará a sessão para todos os clientes conectados. Esta ação não pode ser desfeita."
-        confirmLabel="Encerrar"
-        destructive
-        onConfirm={handleClose}
-      />
-    </Card>
   );
 }
 
@@ -589,82 +264,33 @@ function EventLogPanel({
   );
 }
 
-// ── Simulated client card ─────────────────────────────────────────────────────
-
-interface SimulatedClientCardProps {
-  client: SimulatedClient;
-  sessionId: string;
-  onEvent: (envelope: RealtimeEnvelope) => void;
-  onRemove: () => void;
-}
-
-function SimulatedClientCard({
-  client,
-  sessionId,
-  onEvent,
-  onRemove,
-}: SimulatedClientCardProps) {
-  const wsUrl = `${BASE_WS_URL}/ws/session/${sessionId}?token=${client.token}`;
-  const { status } = useWebSocket<RealtimeEnvelope>({
-    url: wsUrl,
-    onMessage: onEvent,
-  });
-
-  return (
-    <div className="rounded-lg border border-border bg-muted/30 p-3 flex flex-col gap-2">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <Avatar
-            fallback={client.displayName.slice(0, 2).toUpperCase()}
-            size="sm"
-          />
-          <div className="min-w-0">
-            <Text variant="sm" className="font-medium truncate">
-              {client.displayName}
-            </Text>
-            <Text variant="xs" muted className="truncate">
-              {client.email}
-            </Text>
-          </div>
-        </div>
-        <button
-          onClick={onRemove}
-          className="shrink-0 text-muted-foreground hover:text-foreground transition-colors mt-0.5"
-          aria-label="Remover cliente simulado"
-        >
-          <XCircle size={15} />
-        </button>
-      </div>
-      <div className="flex items-center justify-between">
-        <WsStatusBadge status={status} label="WS sessão" />
-        <Text variant="xs" muted>
-          há {elapsed(client.joinedAt)}
-        </Text>
-      </div>
-    </div>
-  );
-}
-
 // ── Simulated clients panel ───────────────────────────────────────────────────
 
 interface SimulatedClientsPanelProps {
-  sessionId: string | null;
+  restaurantId: string;
+  locationId: string;
   onEvent: (envelope: RealtimeEnvelope) => void;
 }
 
 function SimulatedClientsPanel({
-  sessionId,
+  restaurantId,
+  locationId,
   onEvent,
 }: SimulatedClientsPanelProps) {
   const { toast } = useToast();
   const [displayName, setDisplayName] = React.useState("");
+  const [tableId, setTableId] = React.useState("");
   const [clients, setClients] = React.useState<SimulatedClient[]>([]);
   const guestJoin = useGuestJoinSession();
 
-  // Reset simulated clients when session changes
+  const { data: tables = [] } = useTables(restaurantId, locationId || null);
+  const selectedTable = tables.find((t) => t.id === tableId);
+  const sessionId = selectedTable?.activeSessionId ?? null;
+
+  // Reset simulated clients when table changes
   React.useEffect(() => {
     setClients([]);
-  }, [sessionId]);
+  }, [tableId]);
 
   function handleSimulate() {
     if (!sessionId || !displayName.trim()) return;
@@ -706,6 +332,36 @@ function SimulatedClientsPanel({
       </CardHeader>
 
       <CardContent className="flex flex-col gap-5 pt-5">
+        {/* Table selector */}
+        <div className="flex flex-col gap-1.5">
+          <Text variant="xs" muted>
+            Mesa para simulação
+          </Text>
+          <Select
+            value={tableId}
+            onValueChange={setTableId}
+            disabled={tables.length === 0}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecionar mesa…" />
+            </SelectTrigger>
+            <SelectContent>
+              {tables.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.label}
+                  {t.area ? ` · ${t.area}` : ""}
+                  {t.activeSessionId ? " ✓" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {tableId && !sessionId && (
+            <Text variant="xs" muted>
+              Abra esta mesa na visão do staff acima.
+            </Text>
+          )}
+        </div>
+
         {/* Simulate form */}
         <div className="flex flex-col gap-2">
           <Text variant="sm" className="font-medium">
@@ -729,15 +385,10 @@ function SimulatedClientsPanel({
           >
             Simular cliente
           </Button>
-          {!sessionId && (
-            <Text variant="xs" muted>
-              Abra a mesa primeiro (lado esquerdo).
-            </Text>
-          )}
         </div>
 
-        {/* Client cards */}
-        <div className="flex flex-col gap-2">
+        {/* Guest session views */}
+        <div className="flex flex-col gap-3">
           <Text variant="sm" className="font-medium">
             Ativos ({clients.length})
           </Text>
@@ -746,19 +397,28 @@ function SimulatedClientsPanel({
               Nenhum cliente simulado ainda.
             </Text>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               {clients.map((client) => (
-                <SimulatedClientCard
-                  key={client.localId}
-                  client={client}
-                  sessionId={sessionId!}
-                  onEvent={onEvent}
-                  onRemove={() =>
-                    setClients((prev) =>
-                      prev.filter((c) => c.localId !== client.localId),
-                    )
-                  }
-                />
+                <div key={client.localId} className="relative">
+                  <button
+                    className="absolute top-2 right-2 z-10 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() =>
+                      setClients((prev) =>
+                        prev.filter((c) => c.localId !== client.localId),
+                      )
+                    }
+                    aria-label="Remover cliente simulado"
+                  >
+                    <XCircle size={15} />
+                  </button>
+                  <GuestSessionView
+                    sessionId={sessionId!}
+                    token={client.token}
+                    displayName={client.displayName}
+                    tableLabel={selectedTable?.label}
+                    onEvent={onEvent}
+                  />
+                </div>
               ))}
             </div>
           )}
@@ -773,8 +433,6 @@ function SimulatedClientsPanel({
 export function SessionTestPanel() {
   const [restaurantId, setRestaurantId] = React.useState("");
   const [locationId, setLocationId] = React.useState("");
-  const [tableId, setTableId] = React.useState("");
-  const [sessionId, setSessionId] = React.useState<string | null>(null);
   const [eventLog, setEventLog] = React.useState<LogEntry[]>([]);
 
   const { sessionToken } = useAuth();
@@ -813,60 +471,49 @@ export function SessionTestPanel() {
     onEvent: addLocationEvent,
   });
 
-  const { data: tables = [] } = useTables(restaurantId, locationId || null);
-  const selectedTable = tables.find((t) => t.id === tableId);
-
-  // Sync active session from table data
-  React.useEffect(() => {
-    if (!selectedTable) {
-      setSessionId(null);
-      return;
-    }
-    setSessionId(selectedTable.activeSessionId ?? null);
-  }, [selectedTable]);
-
-  const ready = !!restaurantId && !!locationId && !!tableId;
+  const ready = !!restaurantId && !!locationId;
 
   return (
     <div className="flex flex-col gap-6">
       {/* Context selector */}
       <div className="rounded-xl border border-border bg-surface p-4">
         <Text variant="sm" className="font-medium mb-3">
-          Selecionar mesa
+          Contexto
         </Text>
         <ContextSelector
           restaurantId={restaurantId}
           locationId={locationId}
-          tableId={tableId}
           onRestaurantChange={setRestaurantId}
           onLocationChange={setLocationId}
-          onTableChange={setTableId}
         />
       </div>
 
-      {/* Status bar */}
-      {ready && (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3 flex-wrap">
-            <WsStatusBadge status={locationStatus} label="WS filial" />
-          </div>
-          <SessionStatusCard sessionId={sessionId} />
+      {/* WS filial badge */}
+      {!!locationId && (
+        <div className="flex items-center gap-3">
+          <WsStatusBadge status={locationStatus} label="WS filial" />
         </div>
       )}
 
-      {/* Main panels */}
+      {/* Staff view — real TablesView */}
+      {ready && (
+        <div className="rounded-xl border border-border overflow-hidden">
+          <div className="border-b border-border bg-surface px-4 py-2.5 flex items-center gap-2">
+            <Badge variant="info">Staff</Badge>
+            <Text variant="sm" className="font-medium">
+              Visão do operador
+            </Text>
+          </div>
+          <TablesView restaurantId={restaurantId} locationId={locationId} />
+        </div>
+      )}
+
+      {/* Bottom panels */}
       {ready ? (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <StaffSide
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <SimulatedClientsPanel
             restaurantId={restaurantId}
             locationId={locationId}
-            tableId={tableId}
-            sessionId={sessionId}
-            onSessionOpen={setSessionId}
-            onSessionClose={() => setSessionId(null)}
-          />
-          <SimulatedClientsPanel
-            sessionId={sessionId}
             onEvent={addSessionEvent}
           />
           <EventLogPanel entries={eventLog} onClear={() => setEventLog([])} />
@@ -874,7 +521,7 @@ export function SessionTestPanel() {
       ) : (
         <div className="flex items-center justify-center rounded-xl border border-dashed border-border py-16">
           <Text variant="sm" muted>
-            Selecione um restaurante, filial e mesa para começar.
+            Selecione um restaurante e filial para começar.
           </Text>
         </div>
       )}
