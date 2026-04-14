@@ -28,7 +28,11 @@ export function CategoryNav({
     const chip = scrollRef.current.querySelector<HTMLElement>(
       `[data-category-id="${activeId}"]`,
     );
-    chip?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    chip?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
   }, [activeId]);
 
   return (
@@ -52,7 +56,13 @@ export function CategoryNav({
                 : "border-border bg-surface text-foreground hover:border-border-strong",
             )}
           >
-            <Text variant="xs" className={cn("font-medium", isActive && "text-primary-foreground")}>
+            <Text
+              variant="xs"
+              className={cn(
+                "font-medium",
+                isActive && "text-primary-foreground",
+              )}
+            >
               {cat.name}
             </Text>
           </button>

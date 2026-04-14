@@ -64,11 +64,7 @@ export function MenuItemCard({ item, onOpenModifiers }: MenuItemCardProps) {
           {item.name}
         </Text>
         {item.description && (
-          <Text
-            variant="xs"
-            muted
-            className="line-clamp-2 leading-snug"
-          >
+          <Text variant="xs" muted className="line-clamp-2 leading-snug">
             {item.description}
           </Text>
         )}

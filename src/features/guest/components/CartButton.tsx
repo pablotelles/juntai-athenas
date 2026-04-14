@@ -29,20 +29,32 @@ export function CartButton({ onOpen }: CartButtonProps) {
         className="flex flex-1 items-center gap-3 rounded-2xl bg-primary px-4 py-3 shadow-lg hover:bg-primary-hover transition-colors active:scale-[0.98]"
       >
         <span className="flex size-6 items-center justify-center rounded-full bg-primary-foreground/20 shrink-0">
-          <Text variant="xs" className="font-bold text-primary-foreground tabular-nums">
+          <Text
+            variant="xs"
+            className="font-bold text-primary-foreground tabular-nums"
+          >
             {itemCount}
           </Text>
         </span>
 
-        <Text variant="sm" className="font-semibold text-primary-foreground flex-1 text-center">
+        <Text
+          variant="sm"
+          className="font-semibold text-primary-foreground flex-1 text-center"
+        >
           Ver carrinho
         </Text>
 
-        <Text variant="sm" className="font-semibold text-primary-foreground shrink-0">
+        <Text
+          variant="sm"
+          className="font-semibold text-primary-foreground shrink-0"
+        >
           {fmtPrice(totalCents)}
         </Text>
 
-        <ShoppingCart size={18} className="text-primary-foreground/80 shrink-0" />
+        <ShoppingCart
+          size={18}
+          className="text-primary-foreground/80 shrink-0"
+        />
       </button>
     </div>
   );

@@ -122,11 +122,18 @@ export function Sidebar({
                                 className={cn(
                                   "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors",
                                   "text-sidebar-fg hover:text-sidebar-fg-active hover:bg-sidebar-active",
-                                  subActive && "bg-sidebar-active text-sidebar-fg-active",
+                                  subActive &&
+                                    "bg-sidebar-active text-sidebar-fg-active",
                                 )}
                               >
-                                <Icon icon={sub.icon} size={15} className="shrink-0 opacity-70" />
-                                <span className="flex-1 truncate">{sub.label}</span>
+                                <Icon
+                                  icon={sub.icon}
+                                  size={15}
+                                  className="shrink-0 opacity-70"
+                                />
+                                <span className="flex-1 truncate">
+                                  {sub.label}
+                                </span>
                                 {sub.badge != null && (
                                   <Badge
                                     variant="secondary"

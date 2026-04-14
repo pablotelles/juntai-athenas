@@ -12,7 +12,10 @@ import type { Order, OrderStatus } from "@juntai/types";
 
 const statusConfig: Record<
   OrderStatus,
-  { label: string; variant: "warning" | "info" | "success" | "secondary" | "destructive" }
+  {
+    label: string;
+    variant: "warning" | "info" | "success" | "secondary" | "destructive";
+  }
 > = {
   PENDING: { label: "Aguardando", variant: "warning" },
   PREPARING: { label: "Preparando…", variant: "info" },

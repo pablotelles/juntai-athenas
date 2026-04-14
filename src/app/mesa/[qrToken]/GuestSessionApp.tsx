@@ -2,10 +2,7 @@
 
 import * as React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  GuestProvider,
-  useGuest,
-} from "@/features/guest/context/GuestContext";
+import { GuestProvider, useGuest } from "@/features/guest/context/GuestContext";
 import { GuestOnboarding } from "@/features/guest/components/GuestOnboarding";
 import { MenuBrowser } from "@/features/guest/components/MenuBrowser";
 import { CartProvider } from "@/features/guest/components/CartProvider";
@@ -30,7 +27,9 @@ const wsColors: Record<WsStatus, string> = {
 
 function WsDot({ status }: { status: WsStatus }) {
   return (
-    <span className={cn("inline-block size-2 rounded-full", wsColors[status])} />
+    <span
+      className={cn("inline-block size-2 rounded-full", wsColors[status])}
+    />
   );
 }
 

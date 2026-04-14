@@ -89,9 +89,7 @@ function ModifierGroupSection({
               <span
                 className={cn(
                   "flex size-4 shrink-0 items-center justify-center",
-                  isSingle
-                    ? "rounded-full border-2"
-                    : "rounded border-2",
+                  isSingle ? "rounded-full border-2" : "rounded border-2",
                   selected
                     ? "border-primary bg-primary"
                     : "border-muted-foreground/40",

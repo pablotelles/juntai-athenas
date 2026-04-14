@@ -16,7 +16,10 @@ import { useAuth } from "@/contexts/auth/AuthProvider";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { NAV_ITEMS } from "@/config/navigation";
 import { resolvePortalProfile } from "@/lib/access";
-import type { NavSection, NavItem } from "@/components/compositions/sidebar/Sidebar";
+import type {
+  NavSection,
+  NavItem,
+} from "@/components/compositions/sidebar/Sidebar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = React.useState(false);
