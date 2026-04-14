@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -59,11 +60,11 @@ export function BottomSheet({
 
   if (!open) return null;
 
-  return (
+  const content = (
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
+        className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -75,7 +76,7 @@ export function BottomSheet({
         aria-label={title}
         className={cn(
           // Mobile: slide up from bottom
-          "fixed bottom-0 left-0 right-0 z-50",
+          "fixed bottom-0 left-0 right-0 z-[71]",
           "bg-background rounded-t-2xl shadow-[0_-4px_24px_0_rgba(0,0,0,0.12)]",
           "animate-in slide-in-from-bottom duration-300",
           // Desktop: centered modal
@@ -114,6 +115,12 @@ export function BottomSheet({
       </div>
     </>
   );
+
+  if (typeof document === "undefined") {
+    return content;
+  }
+
+  return createPortal(content, document.body);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

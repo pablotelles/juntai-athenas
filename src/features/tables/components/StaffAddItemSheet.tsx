@@ -65,202 +65,151 @@ function MenuItemRow({
   const requiresConfiguration = itemNeedsConfiguration(item);
 
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-border last:border-0">
-      <div className="flex-1 min-w-0">
-        <Text variant="body" className="font-medium truncate">
-          {item.name}
-        </Text>
-        {item.description && (
-          <Text variant="sm" muted className="line-clamp-1">
-            {item.description}
+    <div className="rounded-2xl border border-border bg-background px-4 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <Text variant="body" className="truncate font-medium">
+            {item.name}
           </Text>
-        )}
-        <Text variant="sm" className="text-primary font-semibold mt-0.5">
+          {item.description ? (
+            <Text variant="sm" muted className="mt-1 line-clamp-2">
+              {item.description}
+            </Text>
+          ) : null}
+        </div>
+        <Text variant="sm" className="font-semibold text-primary">
           {formatPrice(item.basePrice)}
         </Text>
-        {requiresConfiguration && (
-            <div className="rounded-2xl border border-border bg-background px-4 py-3">
-            Requer configuração de complementos antes do lançamento.
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <Text variant="body" className="truncate font-medium">
-                      {item.name}
-                    </Text>
-                    {item.description && (
-                      <Text variant="sm" muted className="mt-1 line-clamp-2">
-                        {item.description}
-                      </Text>
-                    )}
-                  </div>
-                  <Text variant="sm" className="font-semibold text-primary">
-                    {formatPrice(item.basePrice)}
-                  </Text>
-                </div>
+      </div>
 
-                {requiresConfiguration && (
-                  <Text variant="xs" muted className="mt-2">
-                    Requer configuração de complementos antes do lançamento.
-                  </Text>
-                )}
+      {requiresConfiguration ? (
+        <Text variant="xs" muted className="mt-2">
+          Requer configuração de complementos antes do lançamento.
+        </Text>
+      ) : null}
 
-                {qty > 0 && (
-                  <div className="mt-3">
-                    <Text variant="xs" muted>
-                      Observação rápida
-                    </Text>
-                    <textarea
-                      className="mt-1 min-h-20 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-                      placeholder="Ex.: sem cebola, molho à parte"
-                      value={entry?.notes ?? ""}
-                      onChange={(e) => onNotesChange(e.target.value)}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 shrink-0">
-                  {qty > 0 ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={onRemove}
-                        className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-secondary"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <span className="w-6 text-center text-sm font-semibold tabular-nums">
-                        {qty}
-                      </span>
-                    </>
-                  ) : (
-                    <Text variant="xs" muted>
-                      Toque no + para adicionar
-                    </Text>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={onAdd}
-                  disabled={requiresConfiguration}
-                  className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Plus className="h-4 w-4" />
-                  {qty > 0 ? "Adicionar mais" : "Adicionar"}
-                </button>
-              </div>
-            </div>
-          );
-        }
-
-        function OrderSummaryRow({
-          entry,
-          onAdd,
-          onRemove,
-          onNotesChange,
-        }: {
-          entry: CartEntry;
-          onAdd: () => void;
-          onRemove: () => void;
-          onNotesChange: (notes: string) => void;
-        }) {
-          return (
-            <div className="rounded-2xl border border-border bg-background px-4 py-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <Text variant="sm" className="font-medium">
-                    {entry.item.name}
-                  </Text>
-                  <Text variant="xs" muted className="mt-1">
-                    {formatPrice(entry.item.basePrice)} por unidade
-                  </Text>
-                </div>
-                <Text variant="sm" className="font-semibold">
-                  {formatPrice(entry.item.basePrice * entry.quantity)}
-                </Text>
-              </div>
-
-              <div className="mt-3 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onRemove}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-secondary"
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
-                <span className="w-5 text-center text-sm font-semibold tabular-nums">
-                  {entry.quantity}
-                </span>
-                <button
-                  type="button"
-                  onClick={onAdd}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
-
-              <textarea
-                className="mt-3 min-h-16 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-                placeholder="Observação opcional"
-                value={entry.notes}
-                onChange={(e) => onNotesChange(e.target.value)}
-              />
-            </div>
-          );
-        }
-
-        function EmptyOrderSummary({ onQuickAdd }: { onQuickAdd: () => void }) {
-          return (
-            <div className="rounded-2xl border border-dashed border-border bg-background px-5 py-8 text-center">
-              <ReceiptText className="mx-auto h-8 w-8 text-muted-foreground/50" />
-              <Text variant="body" className="mt-3 font-semibold">
-                Nenhum item no pedido atual
-              </Text>
-              <Text variant="sm" muted className="mt-2">
-                Busque um produto ou toque em adicionar para montar a comanda em
-                sequência.
-              </Text>
-              <Button className="mt-4" variant="outline" onClick={onQuickAdd}>
-                <Search className="h-4 w-4" />
-                Buscar item agora
-              </Button>
-            </div>
-          );
-        )}
-            className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-            placeholder="Observação (opcional)"
+      {qty > 0 ? (
+        <div className="mt-3">
+          <Text variant="xs" muted>
+            Observação rápida
+          </Text>
+          <textarea
+            className="mt-1 min-h-20 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+            placeholder="Ex.: sem cebola, molho à parte"
             value={entry?.notes ?? ""}
             onChange={(e) => onNotesChange(e.target.value)}
           />
-        )}
-      </div>
+        </div>
+      ) : null}
 
-      <div className="flex items-center gap-2 shrink-0">
-        {qty > 0 ? (
-          <>
-            <button
-              type="button"
-              onClick={onRemove}
-              className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-secondary transition-colors"
-            >
-              <Minus className="h-4 w-4" />
-            </button>
-            <span className="w-5 text-center text-sm font-semibold tabular-nums">
-              {qty}
-            </span>
-          </>
-        ) : null}
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <div className="flex shrink-0 items-center gap-2">
+          {qty > 0 ? (
+            <>
+              <button
+                type="button"
+                onClick={onRemove}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-secondary"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              <span className="w-6 text-center text-sm font-semibold tabular-nums">
+                {qty}
+              </span>
+            </>
+          ) : (
+            <Text variant="xs" muted>
+              Toque no + para adicionar
+            </Text>
+          )}
+        </div>
+
         <button
           type="button"
           onClick={onAdd}
           disabled={requiresConfiguration}
-          className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors"
+          className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Plus className="h-4 w-4" />
+          {qty > 0 ? "Adicionar mais" : "Adicionar"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function OrderSummaryRow({
+  entry,
+  onAdd,
+  onRemove,
+  onNotesChange,
+}: {
+  entry: CartEntry;
+  onAdd: () => void;
+  onRemove: () => void;
+  onNotesChange: (notes: string) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-background px-4 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <Text variant="sm" className="font-medium">
+            {entry.item.name}
+          </Text>
+          <Text variant="xs" muted className="mt-1">
+            {formatPrice(entry.item.basePrice)} por unidade
+          </Text>
+        </div>
+        <Text variant="sm" className="font-semibold">
+          {formatPrice(entry.item.basePrice * entry.quantity)}
+        </Text>
+      </div>
+
+      <div className="mt-3 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onRemove}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-secondary"
+        >
+          <Minus className="h-4 w-4" />
+        </button>
+        <span className="w-5 text-center text-sm font-semibold tabular-nums">
+          {entry.quantity}
+        </span>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
         </button>
       </div>
+
+      <textarea
+        className="mt-3 min-h-16 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+        placeholder="Observação opcional"
+        value={entry.notes}
+        onChange={(e) => onNotesChange(e.target.value)}
+      />
+    </div>
+  );
+}
+
+function EmptyOrderSummary({ onQuickAdd }: { onQuickAdd: () => void }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-border bg-background px-5 py-8 text-center">
+      <ReceiptText className="mx-auto h-8 w-8 text-muted-foreground/50" />
+      <Text variant="body" className="mt-3 font-semibold">
+        Nenhum item no pedido atual
+      </Text>
+      <Text variant="sm" muted className="mt-2">
+        Busque um produto ou toque em adicionar para montar a comanda em
+        sequência.
+      </Text>
+      <Button className="mt-4" variant="outline" onClick={onQuickAdd}>
+        <Search className="h-4 w-4" />
+        Buscar item agora
+      </Button>
     </div>
   );
 }

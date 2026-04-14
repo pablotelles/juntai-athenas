@@ -169,14 +169,28 @@ const eventTypeVariant: Record<string, BadgeVariant> = {
 
 // Group events into labelled categories for display
 const eventGroups: Array<{ label: string; emoji: string; types: string[] }> = [
-  { label: "Sessão", emoji: "🟢", types: ["CONNECTION_READY", "SESSION_CLOSED"] },
+  {
+    label: "Sessão",
+    emoji: "🟢",
+    types: ["CONNECTION_READY", "SESSION_CLOSED"],
+  },
   { label: "Usuários", emoji: "👤", types: ["USER_JOINED", "USER_LEFT"] },
-  { label: "Pedidos", emoji: "🛒", types: ["ORDER_CREATED", "ORDER_STATUS_CHANGED"] },
+  {
+    label: "Pedidos",
+    emoji: "🛒",
+    types: ["ORDER_CREATED", "ORDER_STATUS_CHANGED"],
+  },
   { label: "Pagamento", emoji: "💳", types: ["PAYMENT_COMPLETED"] },
 ];
 
 function getGroup(type: string) {
-  return eventGroups.find((g) => g.types.includes(type)) ?? { label: "Outros", emoji: "⚡", types: [] };
+  return (
+    eventGroups.find((g) => g.types.includes(type)) ?? {
+      label: "Outros",
+      emoji: "⚡",
+      types: [],
+    }
+  );
 }
 
 function EventLogEntry({ entry }: { entry: LogEntry }) {
@@ -279,7 +293,10 @@ function EventLogPanel({
               .map((g) => (
                 <div key={g.label}>
                   <div className="sticky top-0 bg-muted/80 backdrop-blur-sm px-3 py-1 border-b border-border">
-                    <Text variant="xs" className="font-semibold text-muted-foreground">
+                    <Text
+                      variant="xs"
+                      className="font-semibold text-muted-foreground"
+                    >
                       {g.emoji} {g.label}
                     </Text>
                   </div>
@@ -292,12 +309,17 @@ function EventLogPanel({
           {/* Ungrouped events */}
           {(() => {
             const knownTypes = eventGroups.flatMap((g) => g.types);
-            const others = entries.filter((e) => !knownTypes.includes(e.envelope.type));
+            const others = entries.filter(
+              (e) => !knownTypes.includes(e.envelope.type),
+            );
             if (others.length === 0) return null;
             return (
               <div>
                 <div className="sticky top-0 bg-muted/80 backdrop-blur-sm px-3 py-1 border-b border-border">
-                  <Text variant="xs" className="font-semibold text-muted-foreground">
+                  <Text
+                    variant="xs"
+                    className="font-semibold text-muted-foreground"
+                  >
                     ⚡ Outros
                   </Text>
                 </div>
@@ -311,9 +333,6 @@ function EventLogPanel({
       </CardContent>
     </Card>
   );
-}
-
-// ── Simulated clients panel
 }
 
 // ── Simulated clients panel ───────────────────────────────────────────────────
@@ -333,7 +352,9 @@ function SimulatedClientsPanel({
   const [displayName, setDisplayName] = React.useState("");
   const [tableId, setTableId] = React.useState("");
   const [clients, setClients] = React.useState<SimulatedClient[]>([]);
-  const [activeClientId, setActiveClientId] = React.useState<string | null>(null);
+  const [activeClientId, setActiveClientId] = React.useState<string | null>(
+    null,
+  );
   const guestJoin = useGuestJoinSession();
 
   const { data: tables = [] } = useTables(restaurantId, locationId || null);
@@ -341,7 +362,8 @@ function SimulatedClientsPanel({
   const sessionId = selectedTable?.activeSessionId ?? null;
 
   // Active client resolved
-  const activeClient = clients.find((c) => c.localId === activeClientId) ?? clients[0] ?? null;
+  const activeClient =
+    clients.find((c) => c.localId === activeClientId) ?? clients[0] ?? null;
 
   // Reset simulated clients when table changes
   React.useEffect(() => {
@@ -438,7 +460,9 @@ function SimulatedClientsPanel({
               <Button
                 variant="default"
                 size="sm"
-                disabled={!sessionId || !displayName.trim() || guestJoin.isPending}
+                disabled={
+                  !sessionId || !displayName.trim() || guestJoin.isPending
+                }
                 loading={guestJoin.isPending}
                 onClick={handleSimulate}
                 className="shrink-0"
@@ -460,7 +484,7 @@ function SimulatedClientsPanel({
             ) : (
               <div className="flex flex-col gap-1">
                 {clients.map((client) => {
-                  const isActive = (activeClient?.localId === client.localId);
+                  const isActive = activeClient?.localId === client.localId;
                   return (
                     <div
                       key={client.localId}

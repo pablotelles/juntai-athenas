@@ -16,6 +16,13 @@ import { Badge } from "@/components/primitives/badge/Badge";
 import { Button } from "@/components/primitives/button/Button";
 import { Text } from "@/components/primitives/text/Text";
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/shared/card/Card";
+import {
   Modal,
   ModalContent,
   ModalDescription,
@@ -238,148 +245,234 @@ export function MesaModal({
   return (
     <>
       <Modal open={!!mesa} onOpenChange={(open) => !open && onClose()}>
-        <ModalContent className="max-w-6xl p-0" showClose={false}>
+        <ModalContent className="max-w-6xl overflow-hidden p-0" showClose={false}>
           {mesa ? (
-            <div className="max-h-[85vh] overflow-y-auto">
-              <div className="border-b border-border bg-surface/95 px-6 py-5">
-                <ModalHeader className="mb-0 gap-2">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <ModalTitle>Comanda da {mesa.nome}</ModalTitle>
-                        <Badge variant={isOccupied ? "warning" : "secondary"}>
-                          {isOccupied ? "Sessão ativa" : "Mesa sem sessão"}
-                        </Badge>
+            <div className="flex max-h-[85vh] flex-col">
+              <div className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur">
+                <div className="px-6 py-5">
+                  <ModalHeader className="mb-0 gap-2">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <ModalTitle>Comanda da {mesa.nome}</ModalTitle>
+                          <Badge variant={isOccupied ? "warning" : "secondary"}>
+                            {isOccupied ? "Sessão ativa" : "Mesa sem sessão"}
+                          </Badge>
+                        </div>
+                        <ModalDescription>
+                          {mesa.area ? `${mesa.area} · ` : ""}
+                          capacidade para {mesa.capacidade} lugares.
+                        </ModalDescription>
                       </div>
-                      <ModalDescription>
-                        {mesa.area ? `${mesa.area} · ` : ""}
-                        capacidade para {mesa.capacidade} lugares.
-                      </ModalDescription>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                      {isOccupied ? (
-                        <Button onClick={() => setAddItemOpen(true)}>
-                          <Plus className="h-4 w-4" />
-                          Adicionar item
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" onClick={handleCopyAccess}>
+                          <QrCode className="h-4 w-4" />
+                          Copiar acesso
                         </Button>
-                      ) : null}
-                      <Button variant="outline" onClick={handleCopyAccess}>
-                        <QrCode className="h-4 w-4" />
-                        Copiar acesso
-                      </Button>
-                      <Button variant="ghost" onClick={onClose}>
-                        Fechar
-                      </Button>
+                        <Button variant="ghost" onClick={onClose}>
+                          Fechar
+                        </Button>
+                      </div>
+                    </div>
+                  </ModalHeader>
+                </div>
+
+                {isOccupied ? (
+                  <div className="border-t border-border/80 px-6 py-4">
+                    <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+                      <Card className="bg-background/80 shadow-none">
+                        <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
+                          <div>
+                            <CardTitle className="text-base">Comanda atual</CardTitle>
+                            <CardDescription className="mt-1">
+                              {sortedOrders.length} pedidos lançados nesta sessão.
+                            </CardDescription>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Button onClick={() => setAddItemOpen(true)}>
+                              <Plus className="h-4 w-4" />
+                              Adicionar item
+                            </Button>
+                            <Button variant="outline" onClick={() => setAddItemOpen(true)}>
+                              <QrCode className="h-4 w-4" />
+                              Buscar rápido
+                            </Button>
+                            <Button variant="outline" onClick={handlePartialClose}>
+                              <ReceiptText className="h-4 w-4" />
+                              Fechar parcial
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => (mesa && onTransfer ? onTransfer(mesa) : null)}
+                              disabled={!onTransfer}
+                            >
+                              <ArrowRightLeft className="h-4 w-4" />
+                              Transferir mesa
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-background/80 shadow-none">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <CardTitle className="text-base">Sessão ativa</CardTitle>
+                              <CardDescription className="mt-1">
+                                Acompanhe o ritmo do atendimento desta mesa.
+                              </CardDescription>
+                            </div>
+                            <Badge variant="success">Em andamento</Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="grid gap-3 p-4 pt-0 sm:grid-cols-2 xl:grid-cols-4 lg:grid-cols-2">
+                          <div className="rounded-lg bg-surface px-4 py-3">
+                            <Text variant="xs" muted>
+                              Duração
+                            </Text>
+                            <Text variant="body" className="mt-1 font-semibold">
+                              {formatElapsed(mesa.ocupacaoInicio)}
+                            </Text>
+                          </div>
+                          <div className="rounded-lg bg-surface px-4 py-3">
+                            <Text variant="xs" muted>
+                              Pessoas
+                            </Text>
+                            <Text variant="body" className="mt-1 font-semibold">
+                              {activeMembers.length}
+                            </Text>
+                          </div>
+                          <div className="rounded-lg bg-surface px-4 py-3">
+                            <Text variant="xs" muted>
+                              Itens lançados
+                            </Text>
+                            <Text variant="body" className="mt-1 font-semibold">
+                              {totalOrderedItems}
+                            </Text>
+                          </div>
+                          <div className="rounded-lg bg-surface px-4 py-3">
+                            <Text variant="xs" muted>
+                              Consumo
+                            </Text>
+                            <Text variant="body" className="mt-1 font-semibold">
+                              {formatPrice(totalConsumption)}
+                            </Text>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
                   </div>
-                </ModalHeader>
+                ) : null}
               </div>
 
-              {!isOccupied ? (
-                <div className="grid gap-4 p-6 lg:grid-cols-[1.2fr_0.8fr]">
-                  <div className="rounded-md border border-dashed border-border bg-background/80 p-6">
-                    <Text variant="h4">Mesa pronta para novo atendimento</Text>
-                    <Text variant="sm" muted className="mt-2">
-                      Compartilhe o acesso da mesa para iniciar uma nova sessão
-                      ou ocupe a mesa pelo atalho do card no salão.
-                    </Text>
-                    <div className="mt-5 rounded-2xl border border-border bg-surface px-4 py-3">
-                        <div className="rounded-md border border-border bg-background/80 px-5 py-4">
-                          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="overflow-y-auto px-6 py-6">
+                {!isOccupied ? (
+                  <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+                    <Card className="border-dashed bg-background/80 shadow-none">
+                      <CardHeader>
+                        <CardTitle>Mesa pronta para novo atendimento</CardTitle>
+                        <CardDescription>
+                          Compartilhe o acesso da mesa para iniciar uma nova sessão
+                          ou ocupe a mesa pelo atalho do card no salão.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="rounded-lg border border-border bg-surface px-4 py-3">
+                          <Text variant="xs" muted>
+                            Link da mesa
+                          </Text>
+                          <Text variant="sm" className="mt-1 break-all font-medium">
+                            {accessLink}
+                          </Text>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-background/80 shadow-none">
+                      <CardHeader>
+                        <CardTitle className="text-base">Resumo rápido</CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid gap-3">
+                        <div className="rounded-lg bg-surface px-4 py-3">
+                          <Text variant="xs" muted>
+                            Status
+                          </Text>
+                          <Text variant="body" className="mt-1 font-semibold capitalize">
+                            {mesa.status}
+                          </Text>
+                        </div>
+                        <div className="rounded-lg bg-surface px-4 py-3">
+                          <Text variant="xs" muted>
+                            Modo de serviço
+                          </Text>
+                          <Text variant="body" className="mt-1 font-semibold">
+                            {mesa.serviceMode === "individual_tabs"
+                              ? "Comandas individuais"
+                              : "Comanda compartilhada"}
+                          </Text>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ) : (
+                  <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+                    <section className="space-y-4">
+                      {isOrdersLoading ? (
+                        <Card className="bg-background/80 shadow-none">
+                          <CardContent className="flex h-40 items-center justify-center p-6">
+                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                          </CardContent>
+                        </Card>
+                      ) : sortedOrders.length === 0 ? (
+                        <Card className="border-dashed bg-background/80 shadow-none">
+                          <CardContent className="flex flex-col items-start gap-4 p-6 text-left">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                              <ReceiptText className="h-5 w-5" />
+                            </div>
                             <div>
-                              <Text variant="body" className="font-semibold">
-                                Comanda atual
-                              </Text>
-                              <Text variant="sm" muted>
-                                {sortedOrders.length} pedidos lançados nesta sessão.
+                              <Text variant="h4">Nenhum pedido ainda</Text>
+                              <Text variant="sm" muted className="mt-2 max-w-xl">
+                                Comece adicionando um item à comanda. O fluxo ideal aqui é buscar,
+                                tocar no item e continuar lançando sem sair da tela.
                               </Text>
                             </div>
-
                             <div className="flex flex-wrap items-center gap-2">
                               <Button onClick={() => setAddItemOpen(true)}>
                                 <Plus className="h-4 w-4" />
-                                Adicionar item
+                                Adicionar primeiro item
                               </Button>
                               <Button variant="outline" onClick={() => setAddItemOpen(true)}>
                                 <QrCode className="h-4 w-4" />
                                 Buscar rápido
                               </Button>
-                              <Button variant="outline" onClick={handlePartialClose}>
-                                <ReceiptText className="h-4 w-4" />
-                                Fechar parcial
-                              </Button>
-                              <Button
-                                variant="outline"
-                                onClick={() => (mesa && onTransfer ? onTransfer(mesa) : null)}
-                                disabled={!onTransfer}
-                              >
-                                <ArrowRightLeft className="h-4 w-4" />
-                                Transferir mesa
-                              </Button>
                             </div>
-                          </div>
-                        </div>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        sortedOrders.map((order) => {
+                          const nextStatus = getNextStatus(order.status);
+                          const isUpdating =
+                            updateOrderStatus.isPending &&
+                            updateOrderStatus.variables?.orderId === order.id;
 
-                        {isOrdersLoading ? (
-                          <div className="flex h-40 items-center justify-center rounded-md border border-border bg-background/70">
-                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                          </div>
-                        ) : sortedOrders.length === 0 ? (
-                          <div className="rounded-md border border-dashed border-border bg-background/70 px-6 py-8">
-                            <div className="flex flex-col items-start gap-4 text-left">
-                              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-                                <ReceiptText className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <Text variant="h4">Nenhum pedido ainda</Text>
-                                <Text variant="sm" muted className="mt-2 max-w-xl">
-                                  Comece adicionando um item à comanda. O fluxo ideal aqui é buscar,
-                                  tocar no item e continuar lançando sem sair da tela.
-                                </Text>
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <Button onClick={() => setAddItemOpen(true)}>
-                                  <Plus className="h-4 w-4" />
-                                  Adicionar primeiro item
-                                </Button>
-                                <Button variant="outline" onClick={() => setAddItemOpen(true)}>
-                                  <QrCode className="h-4 w-4" />
-                                  Buscar rápido
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          sortedOrders.map((order) => {
-                            const nextStatus = getNextStatus(order.status);
-                            const isUpdating =
-                              updateOrderStatus.isPending &&
-                              updateOrderStatus.variables?.orderId === order.id;
-
-                            return (
-                              <article
-                                key={order.id}
-                                className="rounded-md border border-border bg-background/80 p-5"
-                              >
+                          return (
+                            <Card key={order.id} className="bg-background/80 shadow-none">
+                              <CardHeader className="pb-4">
                                 <div className="flex items-start justify-between gap-4">
                                   <div>
                                     <div className="flex items-center gap-2">
-                                      <Text
-                                        variant="body"
-                                        className="font-semibold"
-                                      >
+                                      <CardTitle className="text-base">
                                         Pedido #{order.id.slice(0, 8)}
-                                      </Text>
-                                      <Badge
-                                        variant={STATUS_VARIANTS[order.status]}
-                                      >
+                                      </CardTitle>
+                                      <Badge variant={STATUS_VARIANTS[order.status]}>
                                         {STATUS_LABELS[order.status]}
                                       </Badge>
                                     </div>
-                                    <Text variant="xs" muted className="mt-1">
+                                    <CardDescription className="mt-1">
                                       {formatDateTime(order.createdAt)}
-                                    </Text>
+                                    </CardDescription>
                                   </div>
 
                                   <div className="text-right">
@@ -391,258 +484,156 @@ export function MesaModal({
                                     </Text>
                                   </div>
                                 </div>
+                              </CardHeader>
 
-                                <div className="mt-4 space-y-3">
-                                  {order.items.map((item) => (
-                                    <div
-                                      key={item.id}
-                                      className="rounded-2xl bg-surface px-4 py-3"
-                                    >
-                                      <div className="flex items-start justify-between gap-3">
-                                        <div>
-                                          <Text
-                                            variant="sm"
-                                            className="font-medium"
-                                          >
-                                            {item.quantity}x {item.snapshot.name}
-                                          </Text>
-                                          {item.notes && (
-                                            <Text
-                                              variant="xs"
-                                              muted
-                                              className="mt-1"
-                                            >
-                                              Obs.: {item.notes}
-                                            </Text>
-                                          )}
-                                        </div>
+                              <CardContent className="space-y-3">
+                                {order.items.map((item) => (
+                                  <div
+                                    key={item.id}
+                                    className="rounded-lg bg-surface px-4 py-3"
+                                  >
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div>
                                         <Text variant="sm" className="font-medium">
-                                          {formatPrice(
-                                            item.unitPrice * item.quantity,
-                                          )}
+                                          {item.quantity}x {item.snapshot.name}
                                         </Text>
+                                        {item.notes ? (
+                                          <Text variant="xs" muted className="mt-1">
+                                            Obs.: {item.notes}
+                                          </Text>
+                                        ) : null}
                                       </div>
+                                      <Text variant="sm" className="font-medium">
+                                        {formatPrice(item.unitPrice * item.quantity)}
+                                      </Text>
                                     </div>
-                                  ))}
-                                </div>
+                                  </div>
+                                ))}
 
                                 {nextStatus ? (
-                                  <div className="mt-4 flex justify-end">
+                                  <div className="flex justify-end pt-2">
                                     <Button
                                       variant="outline"
                                       size="sm"
                                       loading={isUpdating}
-                                      onClick={() =>
-                                        handleAdvanceStatus(order.id, order.status)
-                                      }
+                                      onClick={() => handleAdvanceStatus(order.id, order.status)}
                                     >
                                       Avançar para {STATUS_LABELS[nextStatus]}
                                     </Button>
                                   </div>
                                 ) : null}
-                              </article>
-                            );
-                          })
-                        )}
-                                        {item.quantity}x {item.snapshot.name}
-                                      </Text>
-                                      {item.notes && (
-                        <div className="rounded-md border border-border bg-background/80 p-5">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <Text variant="body" className="font-semibold">
-                                Sessão ativa
-                              </Text>
-                              <Text variant="sm" muted>
-                                Acompanhe o ritmo do atendimento desta mesa.
-                              </Text>
-                            </div>
-                            <Badge variant="success">Em andamento</Badge>
-                          </div>
-
-                          <div className="mt-4 space-y-3">
-                            <div className="flex items-center justify-between rounded-2xl bg-surface px-4 py-3">
-                              <Text variant="sm" muted>
-                                Duração
-                              </Text>
-                              <Text variant="sm" className="font-semibold">
-                                {formatElapsed(mesa.ocupacaoInicio)}
-                              </Text>
-                            </div>
-                            <div className="flex items-center justify-between rounded-2xl bg-surface px-4 py-3">
-                              <Text variant="sm" muted>
-                                Pessoas
-                              </Text>
-                              <Text variant="sm" className="font-semibold">
-                                {activeMembers.length}
-                              </Text>
-                            </div>
-                            <div className="flex items-center justify-between rounded-2xl bg-surface px-4 py-3">
-                              <Text variant="sm" muted>
-                                Itens lançados
-                              </Text>
-                              <Text variant="sm" className="font-semibold">
-                                {totalOrderedItems}
-                              </Text>
-                            </div>
-                            <div className="flex items-center justify-between rounded-2xl bg-surface px-4 py-3">
-                              <Text variant="sm" muted>
-                                Consumo
-                              </Text>
-                              <Text variant="sm" className="font-semibold">
-                                {formatPrice(totalConsumption)}
-                              </Text>
-                            </div>
-                          </div>
-                                  onClick={() =>
-                                    handleAdvanceStatus(order.id, order.status)
-                                  }
-                                >
-                                  Avançar para {STATUS_LABELS[nextStatus]}
-                                </Button>
-                              </div>
-                            ) : null}
-                          </article>
-                        );
-                      })
-                    )}
-                  </section>
-
-                  <aside className="space-y-4">
-                    <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-                      <div className="rounded-md border border-border bg-background/80 px-4 py-4">
-                        <Text variant="xs" muted>
-                          Participantes ativos
-                        </Text>
-                        <Text variant="h4" className="mt-2">
-                          {activeMembers.length}
-                        </Text>
-                      </div>
-                      <div className="rounded-md border border-border bg-background/80 px-4 py-4">
-                        <Text variant="xs" muted>
-                          Pedidos lançados
-                        </Text>
-                        <Text variant="h4" className="mt-2">
-                          {sortedOrders.length}
-                        </Text>
-                      </div>
-                      <div className="rounded-md border border-border bg-background/80 px-4 py-4">
-                        <Text variant="xs" muted>
-                          Consumo total
-                        </Text>
-                        <Text variant="h4" className="mt-2">
-                          {formatPrice(totalConsumption)}
-                        </Text>
-                      </div>
-                    </div>
-
-                    <div className="rounded-md border border-border bg-background/80 p-5">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <Text variant="body" className="font-semibold">
-                          Membros da mesa
-                        </Text>
-                      </div>
-
-                      {isMembersLoading ? (
-                        <div className="flex h-28 items-center justify-center">
-                          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                        </div>
-                      ) : activeMembers.length === 0 ? (
-                        <div className="py-8 text-center">
-                          <Text variant="sm" muted>
-                            Nenhum participante ativo nesta sessão.
-                          </Text>
-                        </div>
-                      ) : (
-                        <div className="mt-4 space-y-3">
-                          {activeMembers.map((member) => {
-                            const isRemoving =
-                              removeSessionMember.isPending &&
-                              removeSessionMember.variables?.memberId ===
-                                member.id;
-
-                            return (
-                              <div
-                                key={member.id}
-                                className="rounded-2xl bg-surface px-4 py-3"
-                              >
-                                <div className="flex items-start justify-between gap-3">
-                                  <div>
-                                    <Text variant="sm" className="font-medium">
-                                      {member.displayName}
-                                    </Text>
-                                    <div className="mt-1 flex items-center gap-1 text-muted-foreground">
-                                      <Clock3 className="h-3.5 w-3.5" />
-                                      <Text variant="xs" muted>
-                                        Entrou em{" "}
-                                        {formatDateTime(member.joinedAt)}
-                                      </Text>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={handleViewAsClient}
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                      Ver como cliente
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={handleCopyAccess}
-                                    >
-                                      <QrCode className="h-4 w-4" />
-                                      QR
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      loading={isRemoving}
-                                      className={cn(
-                                        "text-destructive hover:bg-destructive/10 hover:text-destructive",
-                                      )}
-                                      onClick={() =>
-                                        handleRemoveMember(
-                                          member.id,
-                                          member.displayName,
-                                        )
-                                      }
-                                    >
-                                      <UserRoundX className="h-4 w-4" />
-                                      Remover
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })
                       )}
-                    </div>
+                    </section>
 
-                    <div className="rounded-md border border-border bg-background/80 p-5">
-                      <Text variant="body" className="font-semibold">
-                        Encerramento
-                      </Text>
-                      <Text variant="sm" muted className="mt-2">
-                        Feche a conta quando todos os pedidos estiverem
-                        concluídos e a mesa puder voltar para o salão.
-                      </Text>
-                      <Button
-                        className="mt-4 w-full"
-                        variant="destructive"
-                        onClick={() => onCloseBill(mesa)}
-                      >
-                        Fechar conta da mesa
-                      </Button>
-                    </div>
-                  </aside>
-                </div>
-              )}
+                    <aside className="space-y-4 lg:sticky lg:top-0 lg:self-start">
+                      <Card className="bg-background/80 shadow-none">
+                        <CardHeader>
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-base">Membros da mesa</CardTitle>
+                          </div>
+                          <CardDescription>
+                            Controle quem está participando da sessão e acesse o fluxo do cliente.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {isMembersLoading ? (
+                            <div className="flex h-28 items-center justify-center rounded-lg bg-surface px-4 py-4">
+                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            </div>
+                          ) : activeMembers.length === 0 ? (
+                            <div className="rounded-lg bg-surface px-4 py-8 text-center">
+                              <Text variant="sm" muted>
+                                Nenhum participante ativo nesta sessão.
+                              </Text>
+                            </div>
+                          ) : (
+                            activeMembers.map((member) => {
+                              const isRemoving =
+                                removeSessionMember.isPending &&
+                                removeSessionMember.variables?.memberId === member.id;
+
+                              return (
+                                <Card key={member.id} className="bg-surface shadow-none">
+                                  <CardContent className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+                                    <div className="min-w-0">
+                                      <Text variant="body" className="font-semibold">
+                                        {member.displayName}
+                                      </Text>
+                                      <div className="mt-2 flex items-start gap-2 text-muted-foreground">
+                                        <Clock3 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                        <Text variant="xs" muted>
+                                          Entrou em {formatDateTime(member.joinedAt)}
+                                        </Text>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleViewAsClient}
+                                      >
+                                        <Eye className="h-4 w-4" />
+                                        Ver como cliente
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleCopyAccess}
+                                      >
+                                        <QrCode className="h-4 w-4" />
+                                        QR
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        loading={isRemoving}
+                                        className={cn(
+                                          "text-destructive hover:bg-destructive/10 hover:text-destructive",
+                                        )}
+                                        onClick={() =>
+                                          handleRemoveMember(member.id, member.displayName)
+                                        }
+                                      >
+                                        <UserRoundX className="h-4 w-4" />
+                                        Remover
+                                      </Button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              );
+                            })
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-background/80 shadow-none">
+                        <CardHeader>
+                          <CardTitle className="text-base">Encerramento</CardTitle>
+                          <CardDescription>
+                            Feche a conta quando todos os pedidos estiverem concluídos e a mesa
+                            puder voltar para o salão.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <Button
+                            className="w-full"
+                            variant="destructive"
+                            onClick={() => onCloseBill(mesa)}
+                          >
+                            Fechar conta da mesa
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </aside>
+                  </div>
+                )}
+              </div>
             </div>
           ) : null}
         </ModalContent>

@@ -168,13 +168,10 @@ export function TablesView({
     setFormOpen(true);
   }, []);
 
-  const handleViewOrder = React.useCallback(
-    (mesa: Mesa) => {
-      setActionMesa(null);
-      setDetailMesa(mesa);
-    },
-    [],
-  );
+  const handleViewOrder = React.useCallback((mesa: Mesa) => {
+    setActionMesa(null);
+    setDetailMesa(mesa);
+  }, []);
 
   const handleTransfer = React.useCallback(
     (mesa: Mesa) => {
@@ -297,18 +294,18 @@ export function TablesView({
               reserva: undefined,
               sessionId: null,
             }));
-              setDetailMesa((current) =>
-                current?.id === mesa.id
-                  ? {
-                      ...current,
-                      status: "livre",
-                      pessoasConectadas: 0,
-                      ocupacaoInicio: null,
-                      reserva: undefined,
-                      sessionId: null,
-                    }
-                  : current,
-              );
+            setDetailMesa((current) =>
+              current?.id === mesa.id
+                ? {
+                    ...current,
+                    status: "livre",
+                    pessoasConectadas: 0,
+                    ocupacaoInicio: null,
+                    reserva: undefined,
+                    sessionId: null,
+                  }
+                : current,
+            );
             toast.success(`Conta fechada: ${mesa.nome}`, {
               description:
                 "Atendimento encerrado e mesa pronta para o próximo giro.",
