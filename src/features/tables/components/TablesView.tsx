@@ -62,6 +62,8 @@ const FILTERS: MesaFilterValue[] = [
 
 interface TablesViewProps {
   restaurantId: string;
+  /** Override do locationId (ex: painel de teste). Usa contexto ativo se omitido. */
+  locationId?: string | null;
 }
 
 function mergeMesas(previous: Mesa[], next: Mesa[]) {
@@ -99,14 +101,15 @@ function getFriendlyErrorMessage(error: unknown) {
   return "Tente novamente em instantes.";
 }
 
-export function TablesView({ restaurantId }: TablesViewProps) {
+export function TablesView({ restaurantId, locationId: locationIdProp }: TablesViewProps) {
   const { context } = useActiveContext();
   const { user, sessionToken } = useAuth();
   const { toast } = useToast();
   const subheaderOffset = useMobileSubheaderOffset();
 
-  const locationId =
+  const locationFromContext =
     context.type === "restaurant" ? (context.locationId ?? null) : null;
+  const locationId = locationIdProp !== undefined ? locationIdProp : locationFromContext;
 
   useLocationChannel({ locationId, restaurantId, token: sessionToken });
 
