@@ -247,9 +247,29 @@ export function StaffAddItemSheet({
     staleTime: 5 * 60_000,
   });
 
-  // Flatten all categories across menus
-  const allCategories = React.useMemo(
-    () => menus.flatMap((m) => m.categories.filter((c) => c.isActive)),
+  // Constrói seções de navegação respeitando o estilo do menu:
+  // - flat: uma seção por menu usando menu.name como label
+  // - categorized: uma seção por categoria ativa (exclui _default)
+  const allCategories = React.useMemo<CategorySection[]>(
+    () =>
+      menus.flatMap((m) => {
+        if (m.style === "flat") {
+          return [
+            {
+              id: `menu-${m.id}`,
+              name: m.name,
+              items: m.categories.flatMap((c) => c.items).filter((i) => i.isAvailable),
+            },
+          ];
+        }
+        return m.categories
+          .filter((c) => c.isActive && c.name !== "_default")
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            items: c.items.filter((i) => i.isAvailable),
+          }));
+      }),
     [menus],
   );
 
