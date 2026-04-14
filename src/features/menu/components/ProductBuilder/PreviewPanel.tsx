@@ -128,9 +128,16 @@ export function PreviewPanel({ state, className }: PreviewPanelProps) {
                               className="h-9 w-9 rounded-md object-cover bg-secondary shrink-0"
                             />
                           ) : null}
-                          <span className="text-sm truncate">
-                            {opt.name || "—"}
-                          </span>
+                          <div className="min-w-0">
+                            <span className="text-sm truncate block">
+                              {opt.name || "—"}
+                            </span>
+                            {opt.description ? (
+                              <span className="text-xs text-muted-foreground line-clamp-2 leading-tight">
+                                {opt.description}
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
                         <span className="text-xs text-muted-foreground shrink-0">
                           {isQuantity && opt.unitPrice
