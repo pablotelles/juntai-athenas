@@ -111,7 +111,7 @@ function ContextSelector({
     useLocations(restaurantId);
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+    <div className="grid gap-3 lg:grid-cols-2 lg:items-end">
       <div className="flex flex-col gap-1.5 flex-1">
         <Text variant="xs" muted>
           Restaurante
@@ -401,9 +401,9 @@ function SimulatedClientsPanel({
   }
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+    <div className="flex flex-col gap-4">
       {/* ── Left: simulation controls ─────────────────────────── */}
-      <Card className="flex flex-col gap-0 lg:w-72 shrink-0">
+      <Card className="flex flex-col gap-0">
         <CardHeader className="border-b border-border pb-4">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Badge variant="success">Cliente</Badge>
@@ -537,7 +537,7 @@ function SimulatedClientsPanel({
       </Card>
 
       {/* ── Right: phone preview ──────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-2">
         <Text variant="xs" muted className="self-start">
           {activeClient
             ? `Visualizando como: ${activeClient.displayName}`
@@ -553,7 +553,7 @@ function SimulatedClientsPanel({
             interactive
           />
         ) : (
-          <div className="w-[375px] h-[780px] rounded-xl border-4 border-dashed border-border flex items-center justify-center">
+          <div className="h-195 w-93.75 flex items-center justify-center rounded-xl border-4 border-dashed border-border">
             <Text variant="xs" muted className="text-center px-8">
               Simule um cliente e selecione-o para ver o preview mobile.
             </Text>
@@ -610,57 +610,76 @@ export function SessionTestPanel() {
   const ready = !!restaurantId && !!locationId;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Context selector */}
-      <div className="rounded-xl border border-border bg-surface p-4">
-        <Text variant="sm" className="font-medium mb-3">
-          Contexto
-        </Text>
-        <ContextSelector
-          restaurantId={restaurantId}
-          locationId={locationId}
-          onRestaurantChange={setRestaurantId}
-          onLocationChange={setLocationId}
-        />
-      </div>
+    <div className="-m-6 relative flex flex-col">
+      <Card className="supports-backdrop-filter:bg-surface/95 absolute inset-x-0 top-0 z-20 rounded-none border-x-0 border-t-0 bg-surface shadow-none backdrop-blur">
+        <CardContent className="px-6 py-3">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-5">
+            <Text
+              variant="xs"
+              className="shrink-0 font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+            >
+              Contexto
+            </Text>
+            <div className="min-w-0 flex-1">
+              <ContextSelector
+                restaurantId={restaurantId}
+                locationId={locationId}
+                onRestaurantChange={setRestaurantId}
+                onLocationChange={setLocationId}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* WS filial badge */}
-      {!!locationId && (
-        <div className="flex items-center gap-3">
-          <WsStatusBadge status={locationStatus} label="WS filial" />
-        </div>
-      )}
+      <div className="flex flex-col gap-6 px-6 pb-6 pt-28">
+        {!!locationId && (
+          <div className="flex items-center gap-3">
+            <WsStatusBadge status={locationStatus} label="WS filial" />
+          </div>
+        )}
 
-      {/* Staff view — real TablesView */}
-      {ready && (
-        <div className="rounded-xl border border-border overflow-hidden">
-          <div className="border-b border-border bg-surface px-4 py-2.5 flex items-center gap-2">
-            <Badge variant="info">Staff</Badge>
-            <Text variant="sm" className="font-medium">
-              Visão do operador
+        {ready ? (
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)] xl:items-start">
+            <div>
+              <Card className="overflow-hidden">
+                <CardHeader className="border-b border-border bg-surface px-4 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="info">Staff</Badge>
+                    <Text variant="sm" className="font-medium">
+                      Visão do operador
+                    </Text>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-3">
+                  <TablesView
+                    restaurantId={restaurantId}
+                    locationId={locationId}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="flex flex-col gap-4 xl:sticky xl:top-4">
+              <SimulatedClientsPanel
+                restaurantId={restaurantId}
+                locationId={locationId}
+                onEvent={addSessionEvent}
+              />
+              <EventLogPanel
+                entries={eventLog}
+                onClear={() => setEventLog([])}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center rounded-xl border border-dashed border-border py-16">
+            <Text variant="sm" muted>
+              Selecione um restaurante e filial para começar.
             </Text>
           </div>
-          <TablesView restaurantId={restaurantId} locationId={locationId} />
-        </div>
-      )}
-
-      {/* Bottom panels */}
-      {ready ? (
-        <div className="flex flex-col gap-4">
-          <SimulatedClientsPanel
-            restaurantId={restaurantId}
-            locationId={locationId}
-            onEvent={addSessionEvent}
-          />
-          <EventLogPanel entries={eventLog} onClear={() => setEventLog([])} />
-        </div>
-      ) : (
-        <div className="flex items-center justify-center rounded-xl border border-dashed border-border py-16">
-          <Text variant="sm" muted>
-            Selecione um restaurante e filial para começar.
-          </Text>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

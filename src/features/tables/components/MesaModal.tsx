@@ -2,12 +2,7 @@
 
 import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  ArrowRightLeft,
-  Plus,
-  QrCode,
-  ReceiptText,
-} from "lucide-react";
+import { ArrowRightLeft, Plus, QrCode, ReceiptText } from "lucide-react";
 import { Badge } from "@/components/primitives/badge/Badge";
 import { Button } from "@/components/primitives/button/Button";
 import { FilterChip } from "@/components/primitives/filter-chip/FilterChip";
@@ -35,6 +30,7 @@ import {
   useSessionMembers,
   useStaffSessionOrders,
 } from "@/features/tables/hooks";
+import { buildMesaMemberAttribution } from "@/features/tables/member-attribution";
 import type { Mesa } from "../model";
 import { MesaClosingTab } from "./MesaClosingTab";
 import { MesaMembersTab } from "./MesaMembersTab";
@@ -125,6 +121,11 @@ export function MesaModal({
   const totalConsumption = React.useMemo(
     () => sortedOrders.reduce((sum, order) => sum + getOrderTotal(order), 0),
     [sortedOrders],
+  );
+
+  const memberAttribution = React.useMemo(
+    () => buildMesaMemberAttribution(activeMembers, sortedOrders),
+    [activeMembers, sortedOrders],
   );
 
   const accessLink = React.useMemo(() => {
@@ -445,7 +446,7 @@ export function MesaModal({
                         isLoading={isOrdersLoading}
                         updatingOrderId={
                           updateOrderStatus.isPending
-                            ? updateOrderStatus.variables?.orderId ?? null
+                            ? (updateOrderStatus.variables?.orderId ?? null)
                             : null
                         }
                         onUpdateOrderStatus={handleUpdateOrderStatus}
@@ -455,13 +456,14 @@ export function MesaModal({
 
                     {activeTab === "members" ? (
                       <MesaMembersTab
-                        members={activeMembers}
+                        memberSummaries={memberAttribution.memberSummaries}
                         capacity={mesa.capacidade}
                         totalConsumption={totalConsumption}
+                        unassigned={memberAttribution.unassigned}
                         isLoading={isMembersLoading}
                         removingMemberId={
                           removeSessionMember.isPending
-                            ? removeSessionMember.variables?.memberId ?? null
+                            ? (removeSessionMember.variables?.memberId ?? null)
                             : null
                         }
                         onViewAsClient={handleViewAsClient}

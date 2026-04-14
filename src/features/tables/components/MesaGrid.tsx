@@ -19,10 +19,7 @@ export function MesaGrid({
 
   return (
     <div
-      className={cn(
-        "grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3",
-        className,
-      )}
+      className={cn("grid grid-cols-1 gap-4 md:grid-cols-2", className)}
       {...props}
     >
       {children}

@@ -44,12 +44,11 @@ export function MesaClosingTab({
 }: MesaClosingTabProps) {
   const [includeService, setIncludeService] = React.useState(false);
   const [splitMode, setSplitMode] = React.useState<SplitMode>("equal");
-  const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("PIX");
+  const [paymentMethod, setPaymentMethod] =
+    React.useState<PaymentMethod>("PIX");
   const [isConfirmOpen, setConfirmOpen] = React.useState(false);
 
-  const serviceAmount = includeService
-    ? Math.round(totalConsumption * 0.1)
-    : 0;
+  const serviceAmount = includeService ? Math.round(totalConsumption * 0.1) : 0;
   const totalWithService = totalConsumption + serviceAmount;
   const equalShare = Math.round(
     totalWithService / Math.max(activeMembersCount, 1),
@@ -114,14 +113,23 @@ export function MesaClosingTab({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-2">
-              <FilterChip active={splitMode === "equal"} onClick={() => setSplitMode("equal")}>
+              <FilterChip
+                active={splitMode === "equal"}
+                onClick={() => setSplitMode("equal")}
+              >
                 Igual entre {Math.max(activeMembersCount, 1)} pessoa
                 {Math.max(activeMembersCount, 1) === 1 ? "" : "s"}
               </FilterChip>
-              <FilterChip active={splitMode === "items"} onClick={() => setSplitMode("items")}>
+              <FilterChip
+                active={splitMode === "items"}
+                onClick={() => setSplitMode("items")}
+              >
                 Por itens consumidos
               </FilterChip>
-              <FilterChip active={splitMode === "custom"} onClick={() => setSplitMode("custom")}>
+              <FilterChip
+                active={splitMode === "custom"}
+                onClick={() => setSplitMode("custom")}
+              >
                 Porcentagem personalizada
               </FilterChip>
             </div>
@@ -161,7 +169,11 @@ export function MesaClosingTab({
               ) : null}
             </div>
 
-            <Button variant="link" className="justify-start px-0" onClick={onSplitDetails}>
+            <Button
+              variant="link"
+              className="justify-start px-0"
+              onClick={onSplitDetails}
+            >
               Ver detalhamento por pessoa
             </Button>
           </CardContent>
