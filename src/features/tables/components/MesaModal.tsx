@@ -3,7 +3,9 @@
 import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  ArrowRightLeft,
   Clock3,
+  Eye,
   Plus,
   QrCode,
   ReceiptText,
@@ -65,6 +67,20 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
+function formatElapsed(value?: string | null) {
+  if (!value) return "Agora";
+  const diffMinutes = Math.max(
+    1,
+    Math.floor((Date.now() - new Date(value).getTime()) / 60000),
+  );
+
+  if (diffMinutes < 60) return `${diffMinutes} min`;
+
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
+  return minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
+}
+
 function getNextStatus(status: OrderStatus): OrderStatus | null {
   if (status === "PENDING") return "PREPARING";
   if (status === "PREPARING") return "DELIVERED";
@@ -85,6 +101,7 @@ export interface MesaModalProps {
   restaurantId: string;
   onClose: () => void;
   onCloseBill: (mesa: Mesa) => void;
+  onTransfer?: (mesa: Mesa) => void;
 }
 
 export function MesaModal({
@@ -92,6 +109,7 @@ export function MesaModal({
   restaurantId,
   onClose,
   onCloseBill,
+  onTransfer,
 }: MesaModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -120,6 +138,16 @@ export function MesaModal({
 
   const totalConsumption = React.useMemo(
     () => sortedOrders.reduce((sum, order) => sum + getOrderTotal(order), 0),
+    [sortedOrders],
+  );
+
+  const totalOrderedItems = React.useMemo(
+    () =>
+      sortedOrders.reduce(
+        (sum, order) =>
+          sum + order.items.reduce((itemsSum, item) => itemsSum + item.quantity, 0),
+        0,
+      ),
     [sortedOrders],
   );
 
@@ -190,6 +218,17 @@ export function MesaModal({
     }
   }, [accessLink, toast]);
 
+  const handleViewAsClient = React.useCallback(() => {
+    if (!accessLink || typeof window === "undefined") return;
+    window.open(accessLink, "_blank", "noopener,noreferrer");
+  }, [accessLink]);
+
+  const handlePartialClose = React.useCallback(() => {
+    toast.info("Fechamento parcial em preparação.", {
+      description: "O resumo da mesa já está pronto; falta ligar o fluxo financeiro.",
+    });
+  }, [toast]);
+
   React.useEffect(() => {
     if (!mesa) {
       setAddItemOpen(false);
@@ -219,6 +258,12 @@ export function MesaModal({
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {isOccupied ? (
+                        <Button onClick={() => setAddItemOpen(true)}>
+                          <Plus className="h-4 w-4" />
+                          Adicionar item
+                        </Button>
+                      ) : null}
                       <Button variant="outline" onClick={handleCopyAccess}>
                         <QrCode className="h-4 w-4" />
                         Copiar acesso
@@ -240,162 +285,215 @@ export function MesaModal({
                       ou ocupe a mesa pelo atalho do card no salão.
                     </Text>
                     <div className="mt-5 rounded-2xl border border-border bg-surface px-4 py-3">
-                      <Text variant="xs" muted>
-                        Link da mesa
-                      </Text>
-                      <Text variant="sm" className="mt-1 break-all font-medium">
-                        {accessLink}
-                      </Text>
-                    </div>
-                  </div>
-
-                  <div className="rounded-md border border-border bg-background/80 p-6">
-                    <Text variant="body" className="font-semibold">
-                      Resumo rápido
-                    </Text>
-                    <div className="mt-4 grid gap-3">
-                      <div className="rounded-2xl bg-surface px-4 py-3">
-                        <Text variant="xs" muted>
-                          Status
-                        </Text>
-                        <Text
-                          variant="body"
-                          className="mt-1 font-semibold capitalize"
-                        >
-                          {mesa.status}
-                        </Text>
-                      </div>
-                      <div className="rounded-2xl bg-surface px-4 py-3">
-                        <Text variant="xs" muted>
-                          Modo de serviço
-                        </Text>
-                        <Text variant="body" className="mt-1 font-semibold">
-                          {mesa.serviceMode === "individual_tabs"
-                            ? "Comandas individuais"
-                            : "Comanda compartilhada"}
-                        </Text>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid gap-6 p-6 lg:grid-cols-[1.6fr_1fr]">
-                  <section className="space-y-4">
-                    <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-background/80 px-5 py-4">
-                      <div>
-                        <Text variant="body" className="font-semibold">
-                          Comanda atual
-                        </Text>
-                        <Text variant="sm" muted>
-                          {sortedOrders.length} pedidos lançados nesta sessão.
-                        </Text>
-                      </div>
-
-                      <Button onClick={() => setAddItemOpen(true)}>
-                        <Plus className="h-4 w-4" />
-                        Adicionar item
-                      </Button>
-                    </div>
-
-                    {isOrdersLoading ? (
-                      <div className="flex h-40 items-center justify-center rounded-md border border-border bg-background/70">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      </div>
-                    ) : sortedOrders.length === 0 ? (
-                      <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-md border border-dashed border-border bg-background/70 text-center">
-                        <ReceiptText className="h-8 w-8 text-muted-foreground/50" />
-                        <div>
-                          <Text variant="body" className="font-semibold">
-                            Nenhum pedido lançado
-                          </Text>
-                          <Text variant="sm" muted>
-                            Use o atalho acima para registrar os primeiros
-                            itens.
-                          </Text>
-                        </div>
-                      </div>
-                    ) : (
-                      sortedOrders.map((order) => {
-                        const nextStatus = getNextStatus(order.status);
-                        const isUpdating =
-                          updateOrderStatus.isPending &&
-                          updateOrderStatus.variables?.orderId === order.id;
-
-                        return (
-                          <article
-                            key={order.id}
-                            className="rounded-md border border-border bg-background/80 p-5"
-                          >
-                            <div className="flex items-start justify-between gap-4">
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <Text
-                                    variant="body"
-                                    className="font-semibold"
-                                  >
-                                    Pedido #{order.id.slice(0, 8)}
-                                  </Text>
-                                  <Badge
-                                    variant={STATUS_VARIANTS[order.status]}
-                                  >
-                                    {STATUS_LABELS[order.status]}
-                                  </Badge>
-                                </div>
-                                <Text variant="xs" muted className="mt-1">
-                                  {formatDateTime(order.createdAt)}
-                                </Text>
-                              </div>
-
-                              <div className="text-right">
-                                <Text variant="xs" muted>
-                                  Total
-                                </Text>
-                                <Text variant="body" className="font-semibold">
-                                  {formatPrice(getOrderTotal(order))}
-                                </Text>
-                              </div>
+                        <div className="rounded-md border border-border bg-background/80 px-5 py-4">
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div>
+                              <Text variant="body" className="font-semibold">
+                                Comanda atual
+                              </Text>
+                              <Text variant="sm" muted>
+                                {sortedOrders.length} pedidos lançados nesta sessão.
+                              </Text>
                             </div>
 
-                            <div className="mt-4 space-y-3">
-                              {order.items.map((item) => (
-                                <div
-                                  key={item.id}
-                                  className="rounded-2xl bg-surface px-4 py-3"
-                                >
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Button onClick={() => setAddItemOpen(true)}>
+                                <Plus className="h-4 w-4" />
+                                Adicionar item
+                              </Button>
+                              <Button variant="outline" onClick={() => setAddItemOpen(true)}>
+                                <QrCode className="h-4 w-4" />
+                                Buscar rápido
+                              </Button>
+                              <Button variant="outline" onClick={handlePartialClose}>
+                                <ReceiptText className="h-4 w-4" />
+                                Fechar parcial
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => (mesa && onTransfer ? onTransfer(mesa) : null)}
+                                disabled={!onTransfer}
+                              >
+                                <ArrowRightLeft className="h-4 w-4" />
+                                Transferir mesa
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {isOrdersLoading ? (
+                          <div className="flex h-40 items-center justify-center rounded-md border border-border bg-background/70">
+                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                          </div>
+                        ) : sortedOrders.length === 0 ? (
+                          <div className="rounded-md border border-dashed border-border bg-background/70 px-6 py-8">
+                            <div className="flex flex-col items-start gap-4 text-left">
+                              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                                <ReceiptText className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <Text variant="h4">Nenhum pedido ainda</Text>
+                                <Text variant="sm" muted className="mt-2 max-w-xl">
+                                  Comece adicionando um item à comanda. O fluxo ideal aqui é buscar,
+                                  tocar no item e continuar lançando sem sair da tela.
+                                </Text>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Button onClick={() => setAddItemOpen(true)}>
+                                  <Plus className="h-4 w-4" />
+                                  Adicionar primeiro item
+                                </Button>
+                                <Button variant="outline" onClick={() => setAddItemOpen(true)}>
+                                  <QrCode className="h-4 w-4" />
+                                  Buscar rápido
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          sortedOrders.map((order) => {
+                            const nextStatus = getNextStatus(order.status);
+                            const isUpdating =
+                              updateOrderStatus.isPending &&
+                              updateOrderStatus.variables?.orderId === order.id;
+
+                            return (
+                              <article
+                                key={order.id}
+                                className="rounded-md border border-border bg-background/80 p-5"
+                              >
+                                <div className="flex items-start justify-between gap-4">
+                                  <div>
+                                    <div className="flex items-center gap-2">
                                       <Text
-                                        variant="sm"
-                                        className="font-medium"
+                                        variant="body"
+                                        className="font-semibold"
                                       >
-                                        {item.quantity}x {item.snapshot.name}
+                                        Pedido #{order.id.slice(0, 8)}
                                       </Text>
-                                      {item.notes && (
-                                        <Text
-                                          variant="xs"
-                                          muted
-                                          className="mt-1"
-                                        >
-                                          Obs.: {item.notes}
-                                        </Text>
-                                      )}
+                                      <Badge
+                                        variant={STATUS_VARIANTS[order.status]}
+                                      >
+                                        {STATUS_LABELS[order.status]}
+                                      </Badge>
                                     </div>
-                                    <Text variant="sm" className="font-medium">
-                                      {formatPrice(
-                                        item.unitPrice * item.quantity,
-                                      )}
+                                    <Text variant="xs" muted className="mt-1">
+                                      {formatDateTime(order.createdAt)}
+                                    </Text>
+                                  </div>
+
+                                  <div className="text-right">
+                                    <Text variant="xs" muted>
+                                      Total
+                                    </Text>
+                                    <Text variant="body" className="font-semibold">
+                                      {formatPrice(getOrderTotal(order))}
                                     </Text>
                                   </div>
                                 </div>
-                              ))}
-                            </div>
 
-                            {nextStatus ? (
-                              <div className="mt-4 flex justify-end">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  loading={isUpdating}
+                                <div className="mt-4 space-y-3">
+                                  {order.items.map((item) => (
+                                    <div
+                                      key={item.id}
+                                      className="rounded-2xl bg-surface px-4 py-3"
+                                    >
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                          <Text
+                                            variant="sm"
+                                            className="font-medium"
+                                          >
+                                            {item.quantity}x {item.snapshot.name}
+                                          </Text>
+                                          {item.notes && (
+                                            <Text
+                                              variant="xs"
+                                              muted
+                                              className="mt-1"
+                                            >
+                                              Obs.: {item.notes}
+                                            </Text>
+                                          )}
+                                        </div>
+                                        <Text variant="sm" className="font-medium">
+                                          {formatPrice(
+                                            item.unitPrice * item.quantity,
+                                          )}
+                                        </Text>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {nextStatus ? (
+                                  <div className="mt-4 flex justify-end">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      loading={isUpdating}
+                                      onClick={() =>
+                                        handleAdvanceStatus(order.id, order.status)
+                                      }
+                                    >
+                                      Avançar para {STATUS_LABELS[nextStatus]}
+                                    </Button>
+                                  </div>
+                                ) : null}
+                              </article>
+                            );
+                          })
+                        )}
+                                        {item.quantity}x {item.snapshot.name}
+                                      </Text>
+                                      {item.notes && (
+                        <div className="rounded-md border border-border bg-background/80 p-5">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <Text variant="body" className="font-semibold">
+                                Sessão ativa
+                              </Text>
+                              <Text variant="sm" muted>
+                                Acompanhe o ritmo do atendimento desta mesa.
+                              </Text>
+                            </div>
+                            <Badge variant="success">Em andamento</Badge>
+                          </div>
+
+                          <div className="mt-4 space-y-3">
+                            <div className="flex items-center justify-between rounded-2xl bg-surface px-4 py-3">
+                              <Text variant="sm" muted>
+                                Duração
+                              </Text>
+                              <Text variant="sm" className="font-semibold">
+                                {formatElapsed(mesa.ocupacaoInicio)}
+                              </Text>
+                            </div>
+                            <div className="flex items-center justify-between rounded-2xl bg-surface px-4 py-3">
+                              <Text variant="sm" muted>
+                                Pessoas
+                              </Text>
+                              <Text variant="sm" className="font-semibold">
+                                {activeMembers.length}
+                              </Text>
+                            </div>
+                            <div className="flex items-center justify-between rounded-2xl bg-surface px-4 py-3">
+                              <Text variant="sm" muted>
+                                Itens lançados
+                              </Text>
+                              <Text variant="sm" className="font-semibold">
+                                {totalOrderedItems}
+                              </Text>
+                            </div>
+                            <div className="flex items-center justify-between rounded-2xl bg-surface px-4 py-3">
+                              <Text variant="sm" muted>
+                                Consumo
+                              </Text>
+                              <Text variant="sm" className="font-semibold">
+                                {formatPrice(totalConsumption)}
+                              </Text>
+                            </div>
+                          </div>
                                   onClick={() =>
                                     handleAdvanceStatus(order.id, order.status)
                                   }
@@ -484,6 +582,14 @@ export function MesaModal({
                                   </div>
 
                                   <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={handleViewAsClient}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                      Ver como cliente
+                                    </Button>
                                     <Button
                                       variant="outline"
                                       size="sm"

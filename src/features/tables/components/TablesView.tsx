@@ -647,6 +647,7 @@ export function TablesView({
           handleCloseBill(mesa);
           setDetailMesa(null);
         }}
+        onTransfer={handleTransfer}
       />
 
       <MesaQrModal
