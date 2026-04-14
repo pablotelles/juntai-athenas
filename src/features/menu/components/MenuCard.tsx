@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { MoreHorizontal, Pencil, Power, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Power, Trash2, LayoutList, Layers } from "lucide-react";
 import { Card, CardContent } from "@/components/shared/card/Card";
 import { Badge } from "@/components/primitives/badge/Badge";
 import { Text } from "@/components/primitives/text/Text";
@@ -24,6 +24,10 @@ interface MenuCardProps {
 }
 
 export function MenuCard({ menu, onManage, onToggleActive, onEdit, onDelete }: MenuCardProps) {
+  const isFlat = menu.style === "flat";
+  const StyleIcon = isFlat ? LayoutList : Layers;
+  const manageLabel = isFlat ? "Gerenciar itens" : "Gerenciar categorias";
+
   const actions = (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -38,8 +42,8 @@ export function MenuCard({ menu, onManage, onToggleActive, onEdit, onDelete }: M
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => onManage(menu)}>
-          <Pencil className="h-4 w-4 mr-2" />
-          Gerenciar categorias
+          <StyleIcon className="h-4 w-4 mr-2" />
+          {manageLabel}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onEdit(menu)}>
           <Pencil className="h-4 w-4 mr-2" />
@@ -77,6 +81,10 @@ export function MenuCard({ menu, onManage, onToggleActive, onEdit, onDelete }: M
               <Text variant="xs" muted>
                 Criado em {new Date(menu.createdAt).toLocaleDateString("pt-BR")}
               </Text>
+              <Badge variant="secondary" className="gap-1">
+                <StyleIcon className="h-2.5 w-2.5" />
+                {isFlat ? "Simples" : "Com categorias"}
+              </Badge>
               <Badge variant={menu.isActive ? "success" : "secondary"} dot className="lg:hidden">
                 {menu.isActive ? "Ativo" : "Inativo"}
               </Badge>

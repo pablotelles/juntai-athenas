@@ -73,7 +73,23 @@ export function MenuList({ restaurantId, locationId }: MenuListProps) {
 
   const handleManage = (menu: Menu) => {
     const loc = locationId ?? menu.locationId ?? "";
-    router.push(`/menu/${menu.id}?locationId=${loc}`);
+    const locQuery = loc ? `?locationId=${loc}` : "";
+
+    if (menu.style === "flat") {
+      // Para menus flat, navegar direto para os itens da categoria _default.
+      // Os dados do menu já estão carregados — pegar a primeira (e única) categoria.
+      const defaultCategory = menus
+        ?.find((m) => m.id === menu.id)
+        ?.categories[0];
+
+      if (defaultCategory) {
+        router.push(`/menu/${menu.id}/${defaultCategory.id}${locQuery}`);
+        return;
+      }
+      // Fallback: ir para a página intermediária que tem o guard de redirect
+    }
+
+    router.push(`/menu/${menu.id}${locQuery}`);
   };
 
   return (
@@ -140,6 +156,7 @@ export function MenuList({ restaurantId, locationId }: MenuListProps) {
           open={!!editTarget}
           onOpenChange={(open) => { if (!open) setEditTarget(null); }}
           initialName={editTarget.name}
+          initialStyle={editTarget.style}
           onSubmit={handleEdit}
         />
       )}

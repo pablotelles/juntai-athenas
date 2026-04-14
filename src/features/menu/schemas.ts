@@ -10,6 +10,7 @@ export const menuFormSchema = z.object({
   locationId: z
     .string({ error: "Selecione uma filial" })
     .uuid("Selecione uma filial"),
+  style: z.enum(["flat", "categorized"]).default("categorized"),
 });
 
 export type MenuFormValues = z.infer<typeof menuFormSchema>;
