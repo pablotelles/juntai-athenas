@@ -27,17 +27,29 @@ function storageKey(sessionId: string) {
 export function GuestProvider({
   children,
   sessionId,
+  initialToken,
+  initialMemberId,
+  initialDisplayName,
 }: {
   children: React.ReactNode;
   sessionId: string;
+  /** When provided, skip localStorage restore and use these values directly (e.g. admin simulation). */
+  initialToken?: string;
+  initialMemberId?: string;
+  initialDisplayName?: string;
 }) {
-  const [token, setToken] = React.useState<string | null>(null);
-  const [memberId, setMemberId] = React.useState<string | null>(null);
-  const [displayName, setDisplayName] = React.useState<string | null>(null);
-  const [isRestoring, setIsRestoring] = React.useState(true);
+  const [token, setToken] = React.useState<string | null>(initialToken ?? null);
+  const [memberId, setMemberId] = React.useState<string | null>(
+    initialMemberId ?? null,
+  );
+  const [displayName, setDisplayName] = React.useState<string | null>(
+    initialDisplayName ?? null,
+  );
+  const [isRestoring, setIsRestoring] = React.useState(!initialToken);
 
-  // Restore from localStorage on mount (skip SSR)
+  // Restore from localStorage on mount (skip if initialToken was provided)
   React.useEffect(() => {
+    if (initialToken) return; // already initialized from props
     try {
       const raw = localStorage.getItem(storageKey(sessionId));
       if (raw) {
@@ -55,7 +67,7 @@ export function GuestProvider({
     } finally {
       setIsRestoring(false);
     }
-  }, [sessionId]);
+  }, [sessionId, initialToken]);
 
   const join = React.useCallback(
     (newToken: string, newMemberId: string, newDisplayName: string) => {

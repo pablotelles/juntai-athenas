@@ -9,6 +9,12 @@ import { cn } from "@/lib/cn";
 import { useSessionChannel } from "@/hooks/useSessionChannel";
 import { useSessionMembers, useTableSession } from "@/features/tables/hooks";
 import { useSessionOrdersByToken } from "@/features/guest/hooks";
+import { GuestProvider } from "@/features/guest/context/GuestContext";
+import { CartProvider } from "@/features/guest/components/CartProvider";
+import { CartButton } from "@/features/guest/components/CartButton";
+import { CartDrawer } from "@/features/guest/components/CartDrawer";
+import { MenuBrowser } from "@/features/guest/components/MenuBrowser";
+import { MyOrdersSheet } from "@/features/guest/components/MyOrdersSheet";
 import { type WsStatus } from "@/hooks/useWebSocket";
 import type { RealtimeEnvelope } from "@juntai/types";
 
@@ -64,6 +70,42 @@ export interface GuestSessionViewProps {
   tableLabel?: string;
   /** Callback invoked for every WS event (e.g. to feed an event log). */
   onEvent?: (envelope: RealtimeEnvelope) => void;
+  /**
+   * When true, renders the full interactive guest experience (menu browser, cart, orders)
+   * inside the phone-frame card. Intended for the admin dev tool simulation.
+   * Requires that a QueryClient is available in the component tree.
+   */
+  interactive?: boolean;
+}
+
+// ── Interactive content (inside phone frame when interactive=true) ─────────────
+
+function InteractiveGuestContent() {
+  const [cartOpen, setCartOpen] = React.useState(false);
+  const [ordersOpen, setOrdersOpen] = React.useState(false);
+
+  return (
+    <div className="flex flex-col flex-1 overflow-hidden relative">
+      {/* Quick action bar */}
+      <div className="flex border-b border-border bg-surface px-2 py-1 gap-1 shrink-0">
+        <button
+          type="button"
+          onClick={() => setOrdersOpen(true)}
+          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+        >
+          <ShoppingBag size={11} />
+          Pedidos
+        </button>
+      </div>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <MenuBrowser />
+        <div className="h-16 shrink-0" />
+      </div>
+      <CartButton onOpen={() => setCartOpen(true)} />
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+      <MyOrdersSheet open={ordersOpen} onClose={() => setOrdersOpen(false)} />
+    </div>
+  );
 }
 
 /**
@@ -77,6 +119,7 @@ export function GuestSessionView({
   displayName,
   tableLabel,
   onEvent,
+  interactive = false,
 }: GuestSessionViewProps) {
   const { status } = useSessionChannel({ sessionId, token, onEvent });
   const { data: session } = useTableSession(sessionId);
@@ -175,38 +218,53 @@ export function GuestSessionView({
         )}
       </div>
 
-      {/* Orders + Payment summary */}
-      <div className="mx-3 mb-3 mt-1 flex gap-2">
-        {/* Orders summary */}
-        <div className="flex-1 rounded-lg border border-border bg-surface px-2.5 py-2 flex items-center gap-1.5">
-          <ShoppingBag size={12} className="text-muted-foreground shrink-0" />
-          {orders.length === 0 ? (
-            <Text variant="xs" muted>
-              Sem pedidos
-            </Text>
-          ) : (
-            <>
-              <Text variant="xs" className="font-medium flex-1">
-                {orders.length} pedido{orders.length > 1 ? "s" : ""}
+      {/* Orders + Payment summary — only shown in non-interactive mode */}
+      {!interactive && (
+        <div className="mx-3 mb-3 mt-1 flex gap-2">
+          {/* Orders summary */}
+          <div className="flex-1 rounded-lg border border-border bg-surface px-2.5 py-2 flex items-center gap-1.5">
+            <ShoppingBag size={12} className="text-muted-foreground shrink-0" />
+            {orders.length === 0 ? (
+              <Text variant="xs" muted>
+                Sem pedidos
               </Text>
-              {orders.some((o) =>
-                ["PENDING", "PREPARING"].includes(o.status),
-              ) && (
-                <Badge variant="warning" className="text-xs shrink-0">
-                  Em andamento
-                </Badge>
-              )}
-            </>
-          )}
+            ) : (
+              <>
+                <Text variant="xs" className="font-medium flex-1">
+                  {orders.length} pedido{orders.length > 1 ? "s" : ""}
+                </Text>
+                {orders.some((o) =>
+                  ["PENDING", "PREPARING"].includes(o.status),
+                ) && (
+                  <Badge variant="warning" className="text-xs shrink-0">
+                    Em andamento
+                  </Badge>
+                )}
+              </>
+            )}
+          </div>
+          {/* Payment placeholder */}
+          <div className="flex-1 rounded-lg border border-dashed border-border px-2.5 py-2 flex items-center gap-1.5 text-muted-foreground">
+            <CreditCard size={12} />
+            <Text variant="xs" muted>
+              Pagamento
+            </Text>
+          </div>
         </div>
-        {/* Payment placeholder */}
-        <div className="flex-1 rounded-lg border border-dashed border-border px-2.5 py-2 flex items-center gap-1.5 text-muted-foreground">
-          <CreditCard size={12} />
-          <Text variant="xs" muted>
-            Pagamento
-          </Text>
-        </div>
-      </div>
+      )}
+
+      {/* Interactive guest experience (menu + cart) — admin simulation only */}
+      {interactive && (
+        <GuestProvider
+          sessionId={sessionId}
+          initialToken={token}
+          initialDisplayName={displayName}
+        >
+          <CartProvider>
+            <InteractiveGuestContent />
+          </CartProvider>
+        </GuestProvider>
+      )}
     </div>
   );
 }

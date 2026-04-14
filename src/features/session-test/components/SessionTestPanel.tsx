@@ -409,6 +409,7 @@ function SimulatedClientsPanel({
                     displayName={client.displayName}
                     tableLabel={selectedTable?.label}
                     onEvent={onEvent}
+                    interactive
                   />
                 </div>
               ))}
