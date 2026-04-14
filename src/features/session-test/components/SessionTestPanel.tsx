@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, ChevronRight, Trash2, XCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { RestaurantCombobox } from "@/components/shared/restaurant-combobox/RestaurantCombobox";
 import {
   Select,
@@ -17,44 +17,24 @@ import {
   CardTitle,
 } from "@/components/shared/card/Card";
 import { Button } from "@/components/primitives/button/Button";
-import { Input } from "@/components/primitives/input/Input";
 import { Badge, type BadgeVariant } from "@/components/primitives/badge/Badge";
 import { Text } from "@/components/primitives/text/Text";
-import { useToast } from "@/contexts/toast/ToastProvider";
 import { useAuth } from "@/contexts/auth/AuthProvider";
 import { useLocations } from "@/features/restaurants/hooks";
-import { useTables, useGuestJoinSession } from "@/features/tables/hooks";
 import { useLocationChannel } from "@/hooks/useLocationChannel";
 import { type WsStatus } from "@/hooks/useWebSocket";
 import { cn } from "@/lib/cn";
 import type { RealtimeEnvelope } from "@juntai/types";
 import { TablesView } from "@/features/tables/components/TablesView";
-import { GuestSessionView } from "@/features/tables/components/GuestSessionView";
+import { SimulatedClientsPanel } from "./SimulatedClientsPanel";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
-interface SimulatedClient {
-  localId: string;
-  token: string;
-  userId: string;
-  memberId: string;
-  displayName: string;
-  email: string;
-  joinedAt: string;
-}
 
 interface LogEntry {
   id: string;
   channel: "session" | "location";
   envelope: RealtimeEnvelope;
   receivedAt: string;
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function friendlyError(error: unknown) {
-  if (error instanceof Error) return error.message;
-  return "Tente novamente em instantes.";
 }
 
 // ── WS Status Badge ───────────────────────────────────────────────────────────
@@ -97,6 +77,7 @@ function WsStatusBadge({ status, label }: { status: WsStatus; label: string }) {
 interface ContextSelectorProps {
   restaurantId: string;
   locationId: string;
+  trailingContent?: React.ReactNode;
   onRestaurantChange: (id: string) => void;
   onLocationChange: (id: string) => void;
 }
@@ -104,6 +85,7 @@ interface ContextSelectorProps {
 function ContextSelector({
   restaurantId,
   locationId,
+  trailingContent,
   onRestaurantChange,
   onLocationChange,
 }: ContextSelectorProps) {
@@ -111,7 +93,7 @@ function ContextSelector({
     useLocations(restaurantId);
 
   return (
-    <div className="grid gap-3 lg:grid-cols-2 lg:items-end">
+    <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
       <div className="flex flex-col gap-1.5 flex-1">
         <Text variant="xs" muted>
           Restaurante
@@ -151,6 +133,10 @@ function ContextSelector({
           </SelectContent>
         </Select>
       </div>
+
+      {trailingContent ? (
+        <div className="flex items-end lg:justify-end">{trailingContent}</div>
+      ) : null}
     </div>
   );
 }
@@ -335,235 +321,6 @@ function EventLogPanel({
   );
 }
 
-// ── Simulated clients panel ───────────────────────────────────────────────────
-
-interface SimulatedClientsPanelProps {
-  restaurantId: string;
-  locationId: string;
-  onEvent: (envelope: RealtimeEnvelope) => void;
-}
-
-function SimulatedClientsPanel({
-  restaurantId,
-  locationId,
-  onEvent,
-}: SimulatedClientsPanelProps) {
-  const { toast } = useToast();
-  const [displayName, setDisplayName] = React.useState("");
-  const [tableId, setTableId] = React.useState("");
-  const [clients, setClients] = React.useState<SimulatedClient[]>([]);
-  const [activeClientId, setActiveClientId] = React.useState<string | null>(
-    null,
-  );
-  const guestJoin = useGuestJoinSession();
-
-  const { data: tables = [] } = useTables(restaurantId, locationId || null);
-  const selectedTable = tables.find((t) => t.id === tableId);
-  const sessionId = selectedTable?.activeSessionId ?? null;
-
-  // Active client resolved
-  const activeClient =
-    clients.find((c) => c.localId === activeClientId) ?? clients[0] ?? null;
-
-  // Reset simulated clients when table changes
-  React.useEffect(() => {
-    setClients([]);
-    setActiveClientId(null);
-  }, [tableId]);
-
-  function handleSimulate() {
-    if (!sessionId || !displayName.trim()) return;
-    const email = `test-${crypto.randomUUID().slice(0, 8)}@juntai.app`;
-    guestJoin.mutate(
-      { sessionId, email, displayName: displayName.trim() },
-      {
-        onSuccess: (result) => {
-          const newClient: SimulatedClient = {
-            localId: crypto.randomUUID(),
-            token: result.token,
-            userId: result.user.id,
-            memberId: result.member.id,
-            displayName: result.member.displayName,
-            email,
-            joinedAt: result.member.joinedAt,
-          };
-          setClients((prev) => [...prev, newClient]);
-          setActiveClientId(newClient.localId);
-          setDisplayName("");
-          toast.success(`"${displayName.trim()}" entrou na mesa.`);
-        },
-        onError: (err) =>
-          toast.error("Erro ao simular cliente.", {
-            description: friendlyError(err),
-          }),
-      },
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      {/* ── Left: simulation controls ─────────────────────────── */}
-      <Card className="flex flex-col gap-0">
-        <CardHeader className="border-b border-border pb-4">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Badge variant="success">Cliente</Badge>
-            Clientes simulados
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent className="flex flex-col gap-5 pt-5">
-          {/* Table selector */}
-          <div className="flex flex-col gap-1.5">
-            <Text variant="xs" muted>
-              Mesa para simulação
-            </Text>
-            <Select
-              value={tableId}
-              onValueChange={setTableId}
-              disabled={tables.length === 0}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecionar mesa…" />
-              </SelectTrigger>
-              <SelectContent>
-                {tables.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.label}
-                    {t.area ? ` · ${t.area}` : ""}
-                    {t.activeSessionId ? " ✓" : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {tableId && !sessionId && (
-              <Text variant="xs" muted>
-                Abra esta mesa na visão do staff acima.
-              </Text>
-            )}
-          </div>
-
-          {/* Simulate form */}
-          <div className="flex flex-col gap-2">
-            <Text variant="sm" className="font-medium">
-              Simular entrada de cliente
-            </Text>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Nome do cliente…"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                disabled={!sessionId}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSimulate();
-                }}
-              />
-              <Button
-                variant="default"
-                size="sm"
-                disabled={
-                  !sessionId || !displayName.trim() || guestJoin.isPending
-                }
-                loading={guestJoin.isPending}
-                onClick={handleSimulate}
-                className="shrink-0"
-              >
-                +
-              </Button>
-            </div>
-          </div>
-
-          {/* Client selector list */}
-          <div className="flex flex-col gap-1.5">
-            <Text variant="xs" muted>
-              Ativos ({clients.length})
-            </Text>
-            {clients.length === 0 ? (
-              <Text variant="xs" muted className="italic">
-                Nenhum cliente simulado ainda.
-              </Text>
-            ) : (
-              <div className="flex flex-col gap-1">
-                {clients.map((client) => {
-                  const isActive = activeClient?.localId === client.localId;
-                  return (
-                    <div
-                      key={client.localId}
-                      className={cn(
-                        "flex items-center gap-2 rounded-lg px-2.5 py-2 cursor-pointer transition-colors",
-                        isActive
-                          ? "bg-primary/10 border border-primary/30"
-                          : "hover:bg-muted/50 border border-transparent",
-                      )}
-                      onClick={() => setActiveClientId(client.localId)}
-                    >
-                      <span
-                        className={cn(
-                          "size-2 rounded-full shrink-0",
-                          isActive ? "bg-primary" : "bg-muted-foreground/40",
-                        )}
-                      />
-                      <Text
-                        variant="xs"
-                        className={cn(
-                          "flex-1 truncate",
-                          isActive && "font-semibold",
-                        )}
-                      >
-                        {client.displayName}
-                      </Text>
-                      <button
-                        type="button"
-                        className="text-muted-foreground hover:text-destructive transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setClients((prev) =>
-                            prev.filter((c) => c.localId !== client.localId),
-                          );
-                          if (activeClientId === client.localId) {
-                            setActiveClientId(null);
-                          }
-                        }}
-                        aria-label="Remover"
-                      >
-                        <XCircle size={14} />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ── Right: phone preview ──────────────────────────────── */}
-      <div className="flex flex-col items-center gap-2">
-        <Text variant="xs" muted className="self-start">
-          {activeClient
-            ? `Visualizando como: ${activeClient.displayName}`
-            : "Selecione um cliente para ver o preview"}
-        </Text>
-        {activeClient && sessionId ? (
-          <GuestSessionView
-            sessionId={sessionId}
-            token={activeClient.token}
-            displayName={activeClient.displayName}
-            tableLabel={selectedTable?.label}
-            onEvent={onEvent}
-            interactive
-          />
-        ) : (
-          <div className="h-195 w-93.75 flex items-center justify-center rounded-xl border-4 border-dashed border-border">
-            <Text variant="xs" muted className="text-center px-8">
-              Simule um cliente e selecione-o para ver o preview mobile.
-            </Text>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ── Root panel ────────────────────────────────────────────────────────────────
 
 export function SessionTestPanel() {
@@ -624,6 +381,11 @@ export function SessionTestPanel() {
               <ContextSelector
                 restaurantId={restaurantId}
                 locationId={locationId}
+                trailingContent={
+                  locationId ? (
+                    <WsStatusBadge status={locationStatus} label="WS filial" />
+                  ) : null
+                }
                 onRestaurantChange={setRestaurantId}
                 onLocationChange={setLocationId}
               />
@@ -633,15 +395,9 @@ export function SessionTestPanel() {
       </Card>
 
       <div className="flex flex-col gap-6 px-6 pb-6 pt-28">
-        {!!locationId && (
-          <div className="flex items-center gap-3">
-            <WsStatusBadge status={locationStatus} label="WS filial" />
-          </div>
-        )}
-
         {ready ? (
           <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)] xl:items-start">
-            <div>
+            <div className="flex flex-col gap-4">
               <Card className="overflow-hidden">
                 <CardHeader className="border-b border-border bg-surface px-4 py-2.5">
                   <div className="flex items-center gap-2">
@@ -655,9 +411,15 @@ export function SessionTestPanel() {
                   <TablesView
                     restaurantId={restaurantId}
                     locationId={locationId}
+                    showToolbar={false}
                   />
                 </CardContent>
               </Card>
+
+              <EventLogPanel
+                entries={eventLog}
+                onClear={() => setEventLog([])}
+              />
             </div>
 
             <div className="flex flex-col gap-4 xl:sticky xl:top-4">
@@ -665,10 +427,6 @@ export function SessionTestPanel() {
                 restaurantId={restaurantId}
                 locationId={locationId}
                 onEvent={addSessionEvent}
-              />
-              <EventLogPanel
-                entries={eventLog}
-                onClear={() => setEventLog([])}
               />
             </div>
           </div>

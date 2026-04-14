@@ -65,6 +65,7 @@ interface TablesViewProps {
   restaurantId: string;
   /** Override do locationId (ex: painel de teste). Usa contexto ativo se omitido. */
   locationId?: string | null;
+  showToolbar?: boolean;
 }
 
 function mergeMesas(previous: Mesa[], next: Mesa[]) {
@@ -105,6 +106,7 @@ function getFriendlyErrorMessage(error: unknown) {
 export function TablesView({
   restaurantId,
   locationId: locationIdProp,
+  showToolbar = true,
 }: TablesViewProps) {
   const { context } = useActiveContext();
   const { user, sessionToken } = useAuth();
@@ -468,60 +470,64 @@ export function TablesView({
 
   return (
     <div className={cn("flex flex-col gap-4 lg:gap-6", subheaderOffset)}>
-      <div className="hidden lg:block">
-        <Card className="flex flex-col gap-3  bg-surface/90 p-3 shadow-sm backdrop-blur sm:p-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-1 flex-wrap items-center gap-2">
-            <div className="min-w-72 flex-1">
+      {showToolbar ? (
+        <>
+          <div className="hidden lg:block">
+            <Card className="flex flex-col gap-3  bg-surface/90 p-3 shadow-sm backdrop-blur sm:p-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-1 flex-wrap items-center gap-2">
+                <div className="min-w-72 flex-1">
+                  <SearchInput
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="Buscar mesa por nome ou área"
+                  />
+                </div>
+                {FILTERS.map((option) => (
+                  <FilterChip
+                    key={option}
+                    active={filter === option}
+                    count={counts[option]}
+                    onClick={() => setFilter(option)}
+                  >
+                    {MESA_STATUS_LABELS[option]}
+                  </FilterChip>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => setFilterSheetOpen(true)}>
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Filtros
+                </Button>
+                <Button onClick={handleOpenCreate}>
+                  <Plus className="h-4 w-4" />
+                  Nova mesa
+                </Button>
+              </div>
+            </Card>
+          </div>
+
+          <MobileSubheader>
+            <div className="flex flex-col gap-3 lg:hidden">
               <SearchInput
                 value={search}
                 onChange={setSearch}
-                placeholder="Buscar mesa por nome ou área"
+                placeholder="Buscar mesas"
               />
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  className="shrink-0"
+                  onClick={() => setFilterSheetOpen(true)}
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Filtros
+                </Button>
+              </div>
             </div>
-            {FILTERS.map((option) => (
-              <FilterChip
-                key={option}
-                active={filter === option}
-                count={counts[option]}
-                onClick={() => setFilter(option)}
-              >
-                {MESA_STATUS_LABELS[option]}
-              </FilterChip>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setFilterSheetOpen(true)}>
-              <SlidersHorizontal className="h-4 w-4" />
-              Filtros
-            </Button>
-            <Button onClick={handleOpenCreate}>
-              <Plus className="h-4 w-4" />
-              Nova mesa
-            </Button>
-          </div>
-        </Card>
-      </div>
-
-      <MobileSubheader>
-        <div className="flex flex-col gap-3 lg:hidden">
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder="Buscar mesas"
-          />
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              className="shrink-0"
-              onClick={() => setFilterSheetOpen(true)}
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              Filtros
-            </Button>
-          </div>
-        </div>
-      </MobileSubheader>
+          </MobileSubheader>
+        </>
+      ) : null}
 
       <Card className="bg-surface/70">
         <CardContent className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -597,13 +603,15 @@ export function TablesView({
         </MesaGrid>
       )}
 
-      <MesaFilterSheet
-        open={isFilterSheetOpen}
-        onClose={() => setFilterSheetOpen(false)}
-        value={filter}
-        onChange={setFilter}
-        counts={counts}
-      />
+      {showToolbar ? (
+        <MesaFilterSheet
+          open={isFilterSheetOpen}
+          onClose={() => setFilterSheetOpen(false)}
+          value={filter}
+          onChange={setFilter}
+          counts={counts}
+        />
+      ) : null}
 
       <ActionSheet
         open={!!actionMesa}
