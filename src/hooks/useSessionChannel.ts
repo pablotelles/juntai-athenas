@@ -17,6 +17,8 @@ interface UseSessionChannelOptions {
   sessionId: string | null;
   /** Token returned by POST /sessions/:sessionId/guest-join or /sessions/:sessionId/join */
   token: string | null;
+  /** Optional callback invoked for every received envelope (e.g. to feed an event log). */
+  onEvent?: (envelope: RealtimeEnvelope) => void;
 }
 
 interface UseSessionChannelResult {
@@ -30,6 +32,7 @@ interface UseSessionChannelResult {
 export function useSessionChannel({
   sessionId,
   token,
+  onEvent,
 }: UseSessionChannelOptions): UseSessionChannelResult {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -39,18 +42,22 @@ export function useSessionChannel({
     [sessionId, token],
   );
 
+  const onEventRef = React.useRef(onEvent);
+  React.useEffect(() => {
+    onEventRef.current = onEvent;
+  }, [onEvent]);
+
   const handleMessage = React.useCallback(
     (envelope: RealtimeEnvelope) => {
+      onEventRef.current?.(envelope);
       switch (envelope.type) {
         case "USER_JOINED":
-          void queryClient.invalidateQueries({
-            queryKey: ["session", sessionId],
-          });
-          break;
-
         case "USER_LEFT":
           void queryClient.invalidateQueries({
             queryKey: ["session", sessionId],
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ["session-members", sessionId],
           });
           break;
 
