@@ -66,8 +66,13 @@ export function useWebSocket<T>({
         if (!destroyed) setStatus("error");
       };
 
-      ws.onclose = () => {
+      ws.onclose = (ev) => {
         if (destroyed) return;
+        // 4xxx = application-level rejection (auth, forbidden, etc.) — don't retry
+        if (ev.code >= 4000) {
+          setStatus("closed");
+          return;
+        }
         setStatus("closed");
         if (reconnectDelay > 0) {
           retryTimer = setTimeout(connect, reconnectDelay);
