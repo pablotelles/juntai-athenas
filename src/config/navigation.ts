@@ -14,6 +14,7 @@ import {
   BarChart2,
   Settings,
   Users,
+  FlaskConical,
   type LucideIcon,
 } from "lucide-react";
 import type { PortalProfile } from "@/lib/access";
@@ -101,5 +102,13 @@ export const NAV_ITEMS: NavConfigItem[] = [
     icon: Settings,
     contexts: ["platform", "restaurant"],
     profiles: ["platform-admin", "owner", "operator"],
+  },
+  {
+    label: "Admin",
+    href: "/admin",
+    icon: FlaskConical,
+    contexts: ["platform"],
+    profiles: ["platform-admin"],
+    exact: true,
   },
 ];

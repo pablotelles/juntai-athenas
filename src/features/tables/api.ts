@@ -1,6 +1,9 @@
 import { createJuntaiClient } from "@juntai/types";
 import type {
+  AddMemberBody,
   CreateTableBody,
+  GuestJoinBody,
+  GuestJoinResult,
   Table,
   TableSession,
   TableSessionMember,
@@ -8,6 +11,9 @@ import type {
 } from "@juntai/types";
 
 export type {
+  AddMemberBody,
+  GuestJoinBody,
+  GuestJoinResult,
   Table,
   TableSession,
   TableSessionMember,
@@ -67,6 +73,35 @@ export function joinTableSession(
   token: string | null,
 ) {
   return getTablesClient(token).joinSession(sessionId, { displayName });
+}
+
+export function getTableSessionById(sessionId: string, token: string | null) {
+  return getTablesClient(token).getSessionById(sessionId);
+}
+
+export function listTableSessionMembers(
+  sessionId: string,
+  token: string | null,
+) {
+  return getTablesClient(token).listMembers(sessionId);
+}
+
+export function addSessionMember(
+  sessionId: string,
+  userId: string,
+  displayName: string,
+  token: string | null,
+) {
+  return getTablesClient(token).addMember(sessionId, { userId, displayName });
+}
+
+export function guestJoinSession(
+  sessionId: string,
+  email: string,
+  displayName: string,
+  token: string | null,
+): Promise<GuestJoinResult> {
+  return getTablesClient(token).guestJoin(sessionId, { email, displayName });
 }
 
 export function closeTableSession(

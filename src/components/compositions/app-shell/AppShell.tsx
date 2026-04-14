@@ -26,7 +26,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
   const { context } = useActiveContext();
   const { user, memberships } = useAuth();
-  const restaurantId = context.type === "restaurant" ? context.restaurantId : undefined;
+  const restaurantId =
+    context.type === "restaurant" ? context.restaurantId : undefined;
   const profile = resolvePortalProfile(memberships, context.type, restaurantId);
 
   // Close mobile drawer when switching to desktop
@@ -51,7 +52,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (!mounted) return;
 
-    const fallback = context.type === "restaurant" ? "/restaurant" : "/dashboard";
+    const fallback =
+      context.type === "restaurant" ? "/restaurant" : "/dashboard";
 
     // 1. Context-based redirect: some routes only exist in one context
     const isPlatformOnlyRoute = pathname === "/restaurants";

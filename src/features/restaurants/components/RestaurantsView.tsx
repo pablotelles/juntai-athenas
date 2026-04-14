@@ -36,7 +36,8 @@ export function RestaurantsView() {
   const { context, restaurants: accessibleRestaurants } = useActiveContext();
   const { memberships, user } = useAuth();
   const { toast } = useToast();
-  const restaurantId = context.type === "restaurant" ? context.restaurantId : undefined;
+  const restaurantId =
+    context.type === "restaurant" ? context.restaurantId : undefined;
   const profile = resolvePortalProfile(memberships, context.type, restaurantId);
   const [restaurantModalOpen, setRestaurantModalOpen] = React.useState(false);
   const [locationModalRestaurant, setLocationModalRestaurant] =
@@ -233,9 +234,7 @@ export function RestaurantsView() {
         open={restaurantModalOpen}
         canChooseOwner={profile === "platform-admin"}
         currentUser={
-          user
-            ? { id: user.id, name: user.name, email: user.email }
-            : null
+          user ? { id: user.id, name: user.name, email: user.email } : null
         }
         onOpenChange={setRestaurantModalOpen}
         onSubmit={handleCreateRestaurant}

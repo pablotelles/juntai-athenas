@@ -17,6 +17,8 @@ interface UseLocationChannelOptions {
   restaurantId: string | null;
   /** Staff Bearer token */
   token: string | null;
+  /** Optional callback invoked for every received envelope, before cache invalidation. */
+  onEvent?: (envelope: RealtimeEnvelope) => void;
 }
 
 interface UseLocationChannelResult {
@@ -31,6 +33,7 @@ export function useLocationChannel({
   locationId,
   restaurantId,
   token,
+  onEvent,
 }: UseLocationChannelOptions): UseLocationChannelResult {
   const queryClient = useQueryClient();
 
@@ -39,13 +42,22 @@ export function useLocationChannel({
     [locationId, token],
   );
 
+  const onEventRef = React.useRef(onEvent);
+  React.useEffect(() => {
+    onEventRef.current = onEvent;
+  }, [onEvent]);
+
   const handleMessage = React.useCallback(
     (envelope: RealtimeEnvelope) => {
+      onEventRef.current?.(envelope);
       switch (envelope.type) {
         case "USER_JOINED":
         case "USER_LEFT":
           void queryClient.invalidateQueries({
             queryKey: ["tables", restaurantId, locationId],
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ["session-members"],
           });
           break;
 

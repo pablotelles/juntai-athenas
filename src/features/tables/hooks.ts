@@ -5,6 +5,11 @@ import {
   createTable,
   deleteTable,
   getOrCreateTableSession,
+  getTableSessionById,
+  joinTableSession,
+  addSessionMember,
+  guestJoinSession,
+  listTableSessionMembers,
   listTables,
   updateTable,
   type CreateTableBody,
@@ -108,5 +113,87 @@ export function useCloseTableSession() {
       sessionId: string;
       restaurantId: string;
     }) => closeTableSession(sessionId, restaurantId, sessionToken),
+  });
+}
+
+export function useTableSession(sessionId: string | null) {
+  const { sessionToken } = useAuth();
+  return useQuery({
+    queryKey: ["session", sessionId],
+    queryFn: () => getTableSessionById(sessionId!, sessionToken),
+    enabled: !!sessionId,
+  });
+}
+
+export function useSessionMembers(sessionId: string | null) {
+  const { sessionToken } = useAuth();
+  return useQuery({
+    queryKey: ["session-members", sessionId],
+    queryFn: () => listTableSessionMembers(sessionId!, sessionToken),
+    enabled: !!sessionId,
+  });
+}
+
+export function useJoinSession() {
+  const { sessionToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      displayName,
+    }: {
+      sessionId: string;
+      displayName: string;
+    }) => joinTableSession(sessionId, displayName, sessionToken),
+    onSuccess: async (_member, { sessionId }) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["session-members", sessionId],
+      });
+    },
+  });
+}
+
+export function useAddSessionMember() {
+  const { sessionToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      userId,
+      displayName,
+    }: {
+      sessionId: string;
+      userId: string;
+      displayName: string;
+    }) => addSessionMember(sessionId, userId, displayName, sessionToken),
+    onSuccess: async (_member, { sessionId }) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["session-members", sessionId],
+      });
+    },
+  });
+}
+
+export function useGuestJoinSession() {
+  const { sessionToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      email,
+      displayName,
+    }: {
+      sessionId: string;
+      email: string;
+      displayName: string;
+    }) => guestJoinSession(sessionId, email, displayName, sessionToken),
+    onSuccess: async (_result, { sessionId }) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["session-members", sessionId],
+      });
+    },
   });
 }
