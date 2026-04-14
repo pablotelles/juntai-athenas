@@ -101,7 +101,7 @@ function InteractiveGuestContent() {
         <MenuBrowser />
         <div className="h-16 shrink-0" />
       </div>
-      <CartButton onOpen={() => setCartOpen(true)} />
+      <CartButton onOpen={() => setCartOpen(true)} contained />
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
       <MyOrdersSheet open={ordersOpen} onClose={() => setOrdersOpen(false)} />
     </div>
@@ -130,141 +130,151 @@ export function GuestSessionView({
   const activeCount = members.filter((m) => !m.leftAt).length;
 
   return (
-    <div className="rounded-xl border-2 border-border bg-background flex flex-col overflow-hidden">
-      {/* Header — simulates phone top bar */}
-      <div className="bg-surface border-b border-border px-3 py-2.5 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <Text variant="sm" className="font-semibold truncate">
-            {displayName}
-          </Text>
-          {tableLabel && (
-            <Text variant="xs" muted className="shrink-0">
-              · {tableLabel}
+    <div className={cn(interactive ? "flex justify-center w-full" : undefined)}>
+      <div
+        className={cn(
+          "rounded-xl border-2 border-border bg-background flex flex-col overflow-hidden",
+          interactive && "w-[375px] h-[780px] shadow-2xl border-4",
+        )}
+      >
+        {/* Header — simulates phone top bar */}
+        <div className="bg-surface border-b border-border px-3 py-2.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Text variant="sm" className="font-semibold truncate">
+              {displayName}
+            </Text>
+            {tableLabel && (
+              <Text variant="xs" muted className="shrink-0">
+                · {tableLabel}
+              </Text>
+            )}
+          </div>
+          <WsStatusDot status={status} />
+        </div>
+
+        {/* Session status bar */}
+        <div className="px-3 pt-3 pb-1 flex items-center gap-2 flex-wrap">
+          {session ? (
+            <>
+              <Badge variant={isOpen ? "success" : "secondary"} dot>
+                {isOpen ? "Sessão aberta" : "Encerrada"}
+              </Badge>
+              {isOpen && (
+                <Text variant="xs" muted className="flex items-center gap-1">
+                  <Clock size={11} />
+                  {elapsed(session.openedAt)}
+                </Text>
+              )}
+              <Text
+                variant="xs"
+                muted
+                className="ml-auto flex items-center gap-1"
+              >
+                <Users size={11} />
+                {activeCount}
+              </Text>
+            </>
+          ) : (
+            <Text variant="xs" muted>
+              Carregando sessão…
             </Text>
           )}
         </div>
-        <WsStatusDot status={status} />
-      </div>
 
-      {/* Session status bar */}
-      <div className="px-3 pt-3 pb-1 flex items-center gap-2 flex-wrap">
-        {session ? (
-          <>
-            <Badge variant={isOpen ? "success" : "secondary"} dot>
-              {isOpen ? "Sessão aberta" : "Encerrada"}
-            </Badge>
-            {isOpen && (
-              <Text variant="xs" muted className="flex items-center gap-1">
-                <Clock size={11} />
-                {elapsed(session.openedAt)}
-              </Text>
-            )}
-            <Text
-              variant="xs"
-              muted
-              className="ml-auto flex items-center gap-1"
-            >
-              <Users size={11} />
-              {activeCount}
+        {/* Member list */}
+        <div className="px-3 py-2 flex flex-col gap-1.5">
+          {members.length === 0 ? (
+            <Text variant="xs" muted className="italic">
+              Nenhum membro ainda.
             </Text>
-          </>
-        ) : (
-          <Text variant="xs" muted>
-            Carregando sessão…
-          </Text>
-        )}
-      </div>
-
-      {/* Member list */}
-      <div className="px-3 py-2 flex flex-col gap-1.5">
-        {members.length === 0 ? (
-          <Text variant="xs" muted className="italic">
-            Nenhum membro ainda.
-          </Text>
-        ) : (
-          members.map((m) => (
-            <div key={m.id} className="flex items-center gap-2">
-              <Avatar
-                fallback={m.displayName.slice(0, 2).toUpperCase()}
-                size="sm"
-              />
-              <div className="flex-1 min-w-0">
-                <Text
-                  variant="xs"
-                  className={cn(
-                    "truncate",
-                    m.leftAt && "line-through text-muted-foreground",
-                  )}
-                >
-                  {m.displayName}
-                  {m.displayName === displayName && (
-                    <span className="ml-1 text-muted-foreground font-normal">
-                      (você)
-                    </span>
-                  )}
-                </Text>
+          ) : (
+            members.map((m) => (
+              <div key={m.id} className="flex items-center gap-2">
+                <Avatar
+                  fallback={m.displayName.slice(0, 2).toUpperCase()}
+                  size="sm"
+                />
+                <div className="flex-1 min-w-0">
+                  <Text
+                    variant="xs"
+                    className={cn(
+                      "truncate",
+                      m.leftAt && "line-through text-muted-foreground",
+                    )}
+                  >
+                    {m.displayName}
+                    {m.displayName === displayName && (
+                      <span className="ml-1 text-muted-foreground font-normal">
+                        (você)
+                      </span>
+                    )}
+                  </Text>
+                </div>
+                {m.leftAt ? (
+                  <Badge variant="secondary" className="text-xs shrink-0">
+                    Saiu
+                  </Badge>
+                ) : (
+                  <Text variant="xs" muted className="shrink-0 tabular-nums">
+                    {elapsed(m.joinedAt)}
+                  </Text>
+                )}
               </div>
-              {m.leftAt ? (
-                <Badge variant="secondary" className="text-xs shrink-0">
-                  Saiu
-                </Badge>
-              ) : (
-                <Text variant="xs" muted className="shrink-0 tabular-nums">
-                  {elapsed(m.joinedAt)}
+            ))
+          )}
+        </div>
+
+        {/* Orders + Payment summary — only shown in non-interactive mode */}
+        {!interactive && (
+          <div className="mx-3 mb-3 mt-1 flex gap-2">
+            {/* Orders summary */}
+            <div className="flex-1 rounded-lg border border-border bg-surface px-2.5 py-2 flex items-center gap-1.5">
+              <ShoppingBag
+                size={12}
+                className="text-muted-foreground shrink-0"
+              />
+              {orders.length === 0 ? (
+                <Text variant="xs" muted>
+                  Sem pedidos
                 </Text>
+              ) : (
+                <>
+                  <Text variant="xs" className="font-medium flex-1">
+                    {orders.length} pedido{orders.length > 1 ? "s" : ""}
+                  </Text>
+                  {orders.some((o) =>
+                    ["PENDING", "PREPARING"].includes(o.status),
+                  ) && (
+                    <Badge variant="warning" className="text-xs shrink-0">
+                      Em andamento
+                    </Badge>
+                  )}
+                </>
               )}
             </div>
-          ))
+            {/* Payment placeholder */}
+            <div className="flex-1 rounded-lg border border-dashed border-border px-2.5 py-2 flex items-center gap-1.5 text-muted-foreground">
+              <CreditCard size={12} />
+              <Text variant="xs" muted>
+                Pagamento
+              </Text>
+            </div>
+          </div>
+        )}
+
+        {/* Interactive guest experience (menu + cart) — admin simulation only */}
+        {interactive && (
+          <GuestProvider
+            sessionId={sessionId}
+            initialToken={token}
+            initialDisplayName={displayName}
+          >
+            <CartProvider>
+              <InteractiveGuestContent />
+            </CartProvider>
+          </GuestProvider>
         )}
       </div>
-
-      {/* Orders + Payment summary — only shown in non-interactive mode */}
-      {!interactive && (
-        <div className="mx-3 mb-3 mt-1 flex gap-2">
-          {/* Orders summary */}
-          <div className="flex-1 rounded-lg border border-border bg-surface px-2.5 py-2 flex items-center gap-1.5">
-            <ShoppingBag size={12} className="text-muted-foreground shrink-0" />
-            {orders.length === 0 ? (
-              <Text variant="xs" muted>
-                Sem pedidos
-              </Text>
-            ) : (
-              <>
-                <Text variant="xs" className="font-medium flex-1">
-                  {orders.length} pedido{orders.length > 1 ? "s" : ""}
-                </Text>
-                {orders.some((o) =>
-                  ["PENDING", "PREPARING"].includes(o.status),
-                ) && (
-                  <Badge variant="warning" className="text-xs shrink-0">
-                    Em andamento
-                  </Badge>
-                )}
-              </>
-            )}
-          </div>
-          {/* Payment placeholder */}
-          <div className="flex-1 rounded-lg border border-dashed border-border px-2.5 py-2 flex items-center gap-1.5 text-muted-foreground">
-            <CreditCard size={12} />
-            <Text variant="xs" muted>
-              Pagamento
-            </Text>
-          </div>
-        </div>
-      )}
-
-      {/* Interactive guest experience (menu + cart) — admin simulation only */}
-      {interactive && (
-        <GuestProvider
-          sessionId={sessionId}
-          initialToken={token}
-          initialDisplayName={displayName}
-        >
-          <CartProvider>
-            <InteractiveGuestContent />
-          </CartProvider>
-        </GuestProvider>
-      )}
     </div>
   );
 }

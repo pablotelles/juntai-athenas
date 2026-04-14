@@ -167,6 +167,18 @@ const eventTypeVariant: Record<string, BadgeVariant> = {
   SESSION_CLOSED: "destructive",
 };
 
+// Group events into labelled categories for display
+const eventGroups: Array<{ label: string; emoji: string; types: string[] }> = [
+  { label: "Sessão", emoji: "🟢", types: ["CONNECTION_READY", "SESSION_CLOSED"] },
+  { label: "Usuários", emoji: "👤", types: ["USER_JOINED", "USER_LEFT"] },
+  { label: "Pedidos", emoji: "🛒", types: ["ORDER_CREATED", "ORDER_STATUS_CHANGED"] },
+  { label: "Pagamento", emoji: "💳", types: ["PAYMENT_COMPLETED"] },
+];
+
+function getGroup(type: string) {
+  return eventGroups.find((g) => g.types.includes(type)) ?? { label: "Outros", emoji: "⚡", types: [] };
+}
+
 function EventLogEntry({ entry }: { entry: LogEntry }) {
   const [expanded, setExpanded] = React.useState(false);
   const variant = eventTypeVariant[entry.envelope.type] ?? "secondary";
@@ -214,17 +226,33 @@ function EventLogPanel({
 }) {
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
-  // Scroll to top (newest-first) on each new entry
   React.useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [entries.length]);
+
+  // Build grouped structure
+  const grouped = React.useMemo(() => {
+    const map = new Map<string, LogEntry[]>();
+    for (const entry of entries) {
+      const g = getGroup(entry.envelope.type);
+      const key = g.label;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(entry);
+    }
+    return map;
+  }, [entries]);
 
   return (
     <Card className="flex flex-col">
       <CardHeader className="border-b border-border pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-semibold">
-            Log de Eventos
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            📡 Log de Eventos
+            {entries.length > 0 && (
+              <Badge variant="secondary" className="tabular-nums">
+                {entries.length}
+              </Badge>
+            )}
           </CardTitle>
           <Button
             variant="ghost"
@@ -238,22 +266,54 @@ function EventLogPanel({
         </div>
       </CardHeader>
       <CardContent className="p-0 flex-1">
-        <div ref={scrollRef} className="h-115 overflow-y-auto">
+        <div ref={scrollRef} className="max-h-80 overflow-y-auto">
           {entries.length === 0 ? (
-            <div className="flex h-full items-center justify-center">
+            <div className="flex h-20 items-center justify-center">
               <Text variant="xs" muted>
                 Aguardando eventos WS…
               </Text>
             </div>
           ) : (
-            entries.map((entry) => (
-              <EventLogEntry key={entry.id} entry={entry} />
-            ))
+            eventGroups
+              .filter((g) => grouped.has(g.label))
+              .map((g) => (
+                <div key={g.label}>
+                  <div className="sticky top-0 bg-muted/80 backdrop-blur-sm px-3 py-1 border-b border-border">
+                    <Text variant="xs" className="font-semibold text-muted-foreground">
+                      {g.emoji} {g.label}
+                    </Text>
+                  </div>
+                  {grouped.get(g.label)!.map((entry) => (
+                    <EventLogEntry key={entry.id} entry={entry} />
+                  ))}
+                </div>
+              ))
           )}
+          {/* Ungrouped events */}
+          {(() => {
+            const knownTypes = eventGroups.flatMap((g) => g.types);
+            const others = entries.filter((e) => !knownTypes.includes(e.envelope.type));
+            if (others.length === 0) return null;
+            return (
+              <div>
+                <div className="sticky top-0 bg-muted/80 backdrop-blur-sm px-3 py-1 border-b border-border">
+                  <Text variant="xs" className="font-semibold text-muted-foreground">
+                    ⚡ Outros
+                  </Text>
+                </div>
+                {others.map((entry) => (
+                  <EventLogEntry key={entry.id} entry={entry} />
+                ))}
+              </div>
+            );
+          })()}
         </div>
       </CardContent>
     </Card>
   );
+}
+
+// ── Simulated clients panel
 }
 
 // ── Simulated clients panel ───────────────────────────────────────────────────
@@ -273,15 +333,20 @@ function SimulatedClientsPanel({
   const [displayName, setDisplayName] = React.useState("");
   const [tableId, setTableId] = React.useState("");
   const [clients, setClients] = React.useState<SimulatedClient[]>([]);
+  const [activeClientId, setActiveClientId] = React.useState<string | null>(null);
   const guestJoin = useGuestJoinSession();
 
   const { data: tables = [] } = useTables(restaurantId, locationId || null);
   const selectedTable = tables.find((t) => t.id === tableId);
   const sessionId = selectedTable?.activeSessionId ?? null;
 
+  // Active client resolved
+  const activeClient = clients.find((c) => c.localId === activeClientId) ?? clients[0] ?? null;
+
   // Reset simulated clients when table changes
   React.useEffect(() => {
     setClients([]);
+    setActiveClientId(null);
   }, [tableId]);
 
   function handleSimulate() {
@@ -291,18 +356,17 @@ function SimulatedClientsPanel({
       { sessionId, email, displayName: displayName.trim() },
       {
         onSuccess: (result) => {
-          setClients((prev) => [
-            ...prev,
-            {
-              localId: crypto.randomUUID(),
-              token: result.token,
-              userId: result.user.id,
-              memberId: result.member.id,
-              displayName: result.member.displayName,
-              email,
-              joinedAt: result.member.joinedAt,
-            },
-          ]);
+          const newClient: SimulatedClient = {
+            localId: crypto.randomUUID(),
+            token: result.token,
+            userId: result.user.id,
+            memberId: result.member.id,
+            displayName: result.member.displayName,
+            email,
+            joinedAt: result.member.joinedAt,
+          };
+          setClients((prev) => [...prev, newClient]);
+          setActiveClientId(newClient.localId);
           setDisplayName("");
           toast.success(`"${displayName.trim()}" entrou na mesa.`);
         },
@@ -315,109 +379,164 @@ function SimulatedClientsPanel({
   }
 
   return (
-    <Card className="flex flex-col gap-0">
-      <CardHeader className="border-b border-border pb-4">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          <Badge variant="success">Cliente</Badge>
-          Clientes simulados
-        </CardTitle>
-      </CardHeader>
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+      {/* ── Left: simulation controls ─────────────────────────── */}
+      <Card className="flex flex-col gap-0 lg:w-72 shrink-0">
+        <CardHeader className="border-b border-border pb-4">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Badge variant="success">Cliente</Badge>
+            Clientes simulados
+          </CardTitle>
+        </CardHeader>
 
-      <CardContent className="flex flex-col gap-5 pt-5">
-        {/* Table selector */}
-        <div className="flex flex-col gap-1.5">
-          <Text variant="xs" muted>
-            Mesa para simulação
-          </Text>
-          <Select
-            value={tableId}
-            onValueChange={setTableId}
-            disabled={tables.length === 0}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecionar mesa…" />
-            </SelectTrigger>
-            <SelectContent>
-              {tables.map((t) => (
-                <SelectItem key={t.id} value={t.id}>
-                  {t.label}
-                  {t.area ? ` · ${t.area}` : ""}
-                  {t.activeSessionId ? " ✓" : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {tableId && !sessionId && (
+        <CardContent className="flex flex-col gap-5 pt-5">
+          {/* Table selector */}
+          <div className="flex flex-col gap-1.5">
             <Text variant="xs" muted>
-              Abra esta mesa na visão do staff acima.
+              Mesa para simulação
             </Text>
-          )}
-        </div>
+            <Select
+              value={tableId}
+              onValueChange={setTableId}
+              disabled={tables.length === 0}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar mesa…" />
+              </SelectTrigger>
+              <SelectContent>
+                {tables.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.label}
+                    {t.area ? ` · ${t.area}` : ""}
+                    {t.activeSessionId ? " ✓" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {tableId && !sessionId && (
+              <Text variant="xs" muted>
+                Abra esta mesa na visão do staff acima.
+              </Text>
+            )}
+          </div>
 
-        {/* Simulate form */}
-        <div className="flex flex-col gap-2">
-          <Text variant="sm" className="font-medium">
-            Simular entrada de cliente
-          </Text>
-          <Input
-            placeholder="Nome do cliente…"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            disabled={!sessionId}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSimulate();
-            }}
-          />
-          <Button
-            variant="default"
-            size="sm"
-            disabled={!sessionId || !displayName.trim() || guestJoin.isPending}
-            loading={guestJoin.isPending}
-            onClick={handleSimulate}
-          >
-            Simular cliente
-          </Button>
-        </div>
-
-        {/* Guest session views */}
-        <div className="flex flex-col gap-3">
-          <Text variant="sm" className="font-medium">
-            Ativos ({clients.length})
-          </Text>
-          {clients.length === 0 ? (
-            <Text variant="xs" muted className="italic">
-              Nenhum cliente simulado ainda.
+          {/* Simulate form */}
+          <div className="flex flex-col gap-2">
+            <Text variant="sm" className="font-medium">
+              Simular entrada de cliente
             </Text>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {clients.map((client) => (
-                <div key={client.localId} className="relative">
-                  <button
-                    className="absolute top-2 right-2 z-10 text-muted-foreground hover:text-foreground transition-colors"
-                    onClick={() =>
-                      setClients((prev) =>
-                        prev.filter((c) => c.localId !== client.localId),
-                      )
-                    }
-                    aria-label="Remover cliente simulado"
-                  >
-                    <XCircle size={15} />
-                  </button>
-                  <GuestSessionView
-                    sessionId={sessionId!}
-                    token={client.token}
-                    displayName={client.displayName}
-                    tableLabel={selectedTable?.label}
-                    onEvent={onEvent}
-                    interactive
-                  />
-                </div>
-              ))}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nome do cliente…"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                disabled={!sessionId}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSimulate();
+                }}
+              />
+              <Button
+                variant="default"
+                size="sm"
+                disabled={!sessionId || !displayName.trim() || guestJoin.isPending}
+                loading={guestJoin.isPending}
+                onClick={handleSimulate}
+                className="shrink-0"
+              >
+                +
+              </Button>
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+
+          {/* Client selector list */}
+          <div className="flex flex-col gap-1.5">
+            <Text variant="xs" muted>
+              Ativos ({clients.length})
+            </Text>
+            {clients.length === 0 ? (
+              <Text variant="xs" muted className="italic">
+                Nenhum cliente simulado ainda.
+              </Text>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {clients.map((client) => {
+                  const isActive = (activeClient?.localId === client.localId);
+                  return (
+                    <div
+                      key={client.localId}
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg px-2.5 py-2 cursor-pointer transition-colors",
+                        isActive
+                          ? "bg-primary/10 border border-primary/30"
+                          : "hover:bg-muted/50 border border-transparent",
+                      )}
+                      onClick={() => setActiveClientId(client.localId)}
+                    >
+                      <span
+                        className={cn(
+                          "size-2 rounded-full shrink-0",
+                          isActive ? "bg-primary" : "bg-muted-foreground/40",
+                        )}
+                      />
+                      <Text
+                        variant="xs"
+                        className={cn(
+                          "flex-1 truncate",
+                          isActive && "font-semibold",
+                        )}
+                      >
+                        {client.displayName}
+                      </Text>
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setClients((prev) =>
+                            prev.filter((c) => c.localId !== client.localId),
+                          );
+                          if (activeClientId === client.localId) {
+                            setActiveClientId(null);
+                          }
+                        }}
+                        aria-label="Remover"
+                      >
+                        <XCircle size={14} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Right: phone preview ──────────────────────────────── */}
+      <div className="flex-1 flex flex-col items-center gap-2">
+        <Text variant="xs" muted className="self-start">
+          {activeClient
+            ? `Visualizando como: ${activeClient.displayName}`
+            : "Selecione um cliente para ver o preview"}
+        </Text>
+        {activeClient && sessionId ? (
+          <GuestSessionView
+            sessionId={sessionId}
+            token={activeClient.token}
+            displayName={activeClient.displayName}
+            tableLabel={selectedTable?.label}
+            onEvent={onEvent}
+            interactive
+          />
+        ) : (
+          <div className="w-[375px] h-[780px] rounded-xl border-4 border-dashed border-border flex items-center justify-center">
+            <Text variant="xs" muted className="text-center px-8">
+              Simule um cliente e selecione-o para ver o preview mobile.
+            </Text>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -503,7 +622,7 @@ export function SessionTestPanel() {
 
       {/* Bottom panels */}
       {ready ? (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="flex flex-col gap-4">
           <SimulatedClientsPanel
             restaurantId={restaurantId}
             locationId={locationId}
