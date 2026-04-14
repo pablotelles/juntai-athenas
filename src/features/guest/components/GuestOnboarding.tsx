@@ -54,7 +54,7 @@ export function GuestOnboarding() {
         <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <UtensilsCrossed size={28} />
         </div>
-        <Text variant="lg" className="font-bold">
+        <Text variant="h4" className="font-bold">
           Bem-vindo!
         </Text>
         <Text variant="sm" muted className="max-w-xs text-center">

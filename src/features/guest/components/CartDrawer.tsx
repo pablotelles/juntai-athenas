@@ -47,9 +47,16 @@ function CartItemRow({ item }: { item: CartItem }) {
           className="flex size-7 items-center justify-center rounded-full border border-border hover:bg-secondary transition-colors"
           aria-label="Diminuir quantidade"
         >
-          {item.quantity === 1 ? <Trash2 size={12} className="text-destructive" /> : <Minus size={12} />}
+          {item.quantity === 1 ? (
+            <Trash2 size={12} className="text-destructive" />
+          ) : (
+            <Minus size={12} />
+          )}
         </button>
-        <Text variant="sm" className="w-4 text-center font-semibold tabular-nums">
+        <Text
+          variant="sm"
+          className="w-4 text-center font-semibold tabular-nums"
+        >
           {item.quantity}
         </Text>
         <button
@@ -106,7 +113,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
     <BottomSheet open={open} onClose={onClose} title="Meu carrinho">
       {success ? (
         <div className="flex flex-col items-center justify-center gap-3 px-5 py-10 text-center">
-          <Text variant="lg" className="font-bold text-success">
+          <Text variant="h4" className="font-bold text-success">
             Pedido enviado!
           </Text>
           <Text variant="sm" muted>
