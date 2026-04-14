@@ -1,12 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  ChevronDown,
-  ChevronRight,
-  Trash2,
-  XCircle,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2, XCircle } from "lucide-react";
 import { RestaurantCombobox } from "@/components/shared/restaurant-combobox/RestaurantCombobox";
 import {
   Select,
@@ -28,10 +23,7 @@ import { Text } from "@/components/primitives/text/Text";
 import { useToast } from "@/contexts/toast/ToastProvider";
 import { useAuth } from "@/contexts/auth/AuthProvider";
 import { useLocations } from "@/features/restaurants/hooks";
-import {
-  useTables,
-  useGuestJoinSession,
-} from "@/features/tables/hooks";
+import { useTables, useGuestJoinSession } from "@/features/tables/hooks";
 import { useLocationChannel } from "@/hooks/useLocationChannel";
 import { type WsStatus } from "@/hooks/useWebSocket";
 import { cn } from "@/lib/cn";

@@ -22,11 +22,22 @@ function elapsed(isoDate: string): string {
 
 // ── WS status indicator ───────────────────────────────────────────────────────
 
-const wsStatusConfig: Record<WsStatus, { dot: string; text: string; label: string }> = {
+const wsStatusConfig: Record<
+  WsStatus,
+  { dot: string; text: string; label: string }
+> = {
   open: { dot: "bg-success", text: "text-success", label: "OPEN" },
-  connecting: { dot: "bg-warning animate-pulse", text: "text-warning", label: "CONNECTING" },
+  connecting: {
+    dot: "bg-warning animate-pulse",
+    text: "text-warning",
+    label: "CONNECTING",
+  },
   error: { dot: "bg-destructive", text: "text-destructive", label: "ERROR" },
-  closed: { dot: "bg-muted-foreground", text: "text-muted-foreground", label: "CLOSED" },
+  closed: {
+    dot: "bg-muted-foreground",
+    text: "text-muted-foreground",
+    label: "CLOSED",
+  },
 };
 
 function WsStatusDot({ status }: { status: WsStatus }) {
@@ -103,7 +114,11 @@ export function GuestSessionView({
                 {elapsed(session.openedAt)}
               </Text>
             )}
-            <Text variant="xs" muted className="ml-auto flex items-center gap-1">
+            <Text
+              variant="xs"
+              muted
+              className="ml-auto flex items-center gap-1"
+            >
               <Users size={11} />
               {activeCount}
             </Text>
@@ -124,15 +139,23 @@ export function GuestSessionView({
         ) : (
           members.map((m) => (
             <div key={m.id} className="flex items-center gap-2">
-              <Avatar fallback={m.displayName.slice(0, 2).toUpperCase()} size="sm" />
+              <Avatar
+                fallback={m.displayName.slice(0, 2).toUpperCase()}
+                size="sm"
+              />
               <div className="flex-1 min-w-0">
                 <Text
                   variant="xs"
-                  className={cn("truncate", m.leftAt && "line-through text-muted-foreground")}
+                  className={cn(
+                    "truncate",
+                    m.leftAt && "line-through text-muted-foreground",
+                  )}
                 >
                   {m.displayName}
                   {m.displayName === displayName && (
-                    <span className="ml-1 text-muted-foreground font-normal">(você)</span>
+                    <span className="ml-1 text-muted-foreground font-normal">
+                      (você)
+                    </span>
                   )}
                 </Text>
               </div>

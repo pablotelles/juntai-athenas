@@ -101,7 +101,10 @@ function getFriendlyErrorMessage(error: unknown) {
   return "Tente novamente em instantes.";
 }
 
-export function TablesView({ restaurantId, locationId: locationIdProp }: TablesViewProps) {
+export function TablesView({
+  restaurantId,
+  locationId: locationIdProp,
+}: TablesViewProps) {
   const { context } = useActiveContext();
   const { user, sessionToken } = useAuth();
   const { toast } = useToast();
@@ -109,7 +112,8 @@ export function TablesView({ restaurantId, locationId: locationIdProp }: TablesV
 
   const locationFromContext =
     context.type === "restaurant" ? (context.locationId ?? null) : null;
-  const locationId = locationIdProp !== undefined ? locationIdProp : locationFromContext;
+  const locationId =
+    locationIdProp !== undefined ? locationIdProp : locationFromContext;
 
   useLocationChannel({ locationId, restaurantId, token: sessionToken });
 
