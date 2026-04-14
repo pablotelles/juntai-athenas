@@ -9,13 +9,14 @@ import { FAB } from "@/components/primitives/fab/FAB";
 import { useToast } from "@/contexts/toast/ToastProvider";
 import { useMenu, usePatchItem, useDeleteItem } from "../hooks";
 import { ProductCard } from "./ProductCard";
-import type { MenuItem, MenuWithCategories } from "@juntai/types";
+import type { MenuItem, MenuStyle, MenuWithCategories } from "@juntai/types";
 
 interface ProductListProps {
   categoryId: string;
   menuId: string;
   restaurantId: string;
   locationId: string | null;
+  menuStyle?: MenuStyle;
 }
 
 export function ProductList({
@@ -23,9 +24,11 @@ export function ProductList({
   menuId,
   restaurantId,
   locationId,
+  menuStyle = "categorized",
 }: ProductListProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const isFlat = menuStyle === "flat";
 
   const builderHref = `/products/new?categoryId=${categoryId}&menuId=${menuId}${locationId ? `&locationId=${locationId}` : ""}`;
   const navigateToBuilder = () => router.push(builderHref);
@@ -89,6 +92,10 @@ export function ProductList({
     );
   }
 
+  const emptyLabel = isFlat
+    ? "Nenhum produto neste cardápio."
+    : "Nenhum produto nesta categoria.";
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -105,7 +112,7 @@ export function ProductList({
       {items.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
           <Package size={32} className="opacity-40" />
-          <Text variant="sm">Nenhum produto nesta categoria.</Text>
+          <Text variant="sm">{emptyLabel}</Text>
           <Button variant="outline" size="sm" onClick={navigateToBuilder}>
             Criar primeiro produto
           </Button>

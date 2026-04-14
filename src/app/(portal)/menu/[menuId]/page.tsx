@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { Suspense, useEffect } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Text } from "@/components/primitives/text/Text";
 import { BackButton } from "@/components/primitives/back-button/BackButton";
 import { useActiveContext } from "@/contexts/active-context/ActiveContextProvider";
@@ -21,6 +21,7 @@ function MenuCategoriesPageContent() {
   const { context } = useActiveContext();
   const params = useParams<{ menuId: string }>();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const locationIdFromUrl = searchParams.get("locationId");
   const locationId =
     locationIdFromUrl ??
@@ -28,15 +29,36 @@ function MenuCategoriesPageContent() {
 
   const restaurantId =
     context.type === "restaurant" ? context.restaurantId : null;
-  const { data: menus } = useMenu(restaurantId ?? "", locationId);
+  const { data: menus, isLoading } = useMenu(restaurantId ?? "", locationId);
   const menu = menus?.find((m) => m.id === params.menuId);
   useBreadcrumbLabel(params.menuId, menu?.name);
+
+  // Guard: menus flat não têm página de categorias — redirecionar direto para os itens
+  useEffect(() => {
+    if (isLoading || !menu) return;
+    if (menu.style === "flat") {
+      const defaultCategory = menu.categories[0];
+      if (defaultCategory) {
+        const locQuery = locationId ? `?locationId=${locationId}` : "";
+        router.replace(`/menu/${params.menuId}/${defaultCategory.id}${locQuery}`);
+      }
+    }
+  }, [menu, isLoading, params.menuId, locationId, router]);
 
   if (context.type !== "restaurant") {
     return (
       <Text variant="sm" muted>
         Selecione um restaurante.
       </Text>
+    );
+  }
+
+  // Mostrar spinner enquanto carrega ou redireciona (menu flat)
+  if (isLoading || menu?.style === "flat") {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
     );
   }
 

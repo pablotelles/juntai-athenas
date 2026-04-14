@@ -31,8 +31,11 @@ function CategoryProductsPageContent() {
   const { data: menus } = useMenu(restaurantId ?? "", locationId);
   const menu = menus?.find((m) => m.id === params.menuId);
   const category = menu?.categories.find((c) => c.id === params.categoryId);
+  const isFlat = menu?.style === "flat";
+
+  // Breadcrumb: menus flat pulam o nível de categoria
   useBreadcrumbLabel(params.menuId, menu?.name);
-  useBreadcrumbLabel(params.categoryId, category?.name);
+  useBreadcrumbLabel(params.categoryId, isFlat ? undefined : category?.name);
 
   if (context.type !== "restaurant") {
     return (
@@ -42,14 +45,21 @@ function CategoryProductsPageContent() {
     );
   }
 
+  // Back: menus flat voltam direto para /menu; categorized voltam para categorias
+  const backHref = isFlat
+    ? `/menu${locationId ? `?locationId=${locationId}` : ""}`
+    : `/menu/${params.menuId}${locationId ? `?locationId=${locationId}` : ""}`;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start gap-3">
-        <BackButton href={`/menu/${params.menuId}`} className="mt-1" />
+        <BackButton href={backHref} className="mt-1" />
         <div>
           <Text variant="h2">Produtos</Text>
           <Text variant="sm" muted className="mt-1">
-            Crie e gerencie os produtos desta categoria.
+            {isFlat
+              ? `Gerencie os produtos de "${menu?.name ?? "..."}".`
+              : "Crie e gerencie os produtos desta categoria."}
           </Text>
         </div>
       </div>
@@ -59,6 +69,7 @@ function CategoryProductsPageContent() {
         menuId={params.menuId}
         restaurantId={context.restaurantId}
         locationId={locationId}
+        menuStyle={menu?.style ?? "categorized"}
       />
     </div>
   );
