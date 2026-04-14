@@ -11,6 +11,7 @@ import { MenuBrowser } from "@/features/guest/components/MenuBrowser";
 import { CartProvider } from "@/features/guest/components/CartProvider";
 import { CartButton } from "@/features/guest/components/CartButton";
 import { CartDrawer } from "@/features/guest/components/CartDrawer";
+import { MyOrdersSheet } from "@/features/guest/components/MyOrdersSheet";
 import { useSessionChannel } from "@/hooks/useSessionChannel";
 import { useTableSession } from "@/features/tables/hooks";
 import { Badge } from "@/components/primitives/badge/Badge";
@@ -35,7 +36,7 @@ function WsDot({ status }: { status: WsStatus }) {
 
 // ── Session header bar ────────────────────────────────────────────────────────
 
-function SessionHeader() {
+function SessionHeader({ onMyOrders }: { onMyOrders: () => void }) {
   const { sessionId, token } = useGuest();
   const { status } = useSessionChannel({ sessionId, token: token! });
   const { data: session } = useTableSession(sessionId);
@@ -55,6 +56,13 @@ function SessionHeader() {
           </Badge>
         )}
         <WsDot status={status} />
+        <button
+          type="button"
+          onClick={onMyOrders}
+          className="ml-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+        >
+          Meus pedidos
+        </button>
       </div>
     </div>
   );
@@ -64,10 +72,11 @@ function SessionHeader() {
 
 function GuestMainView() {
   const [cartOpen, setCartOpen] = React.useState(false);
+  const [ordersOpen, setOrdersOpen] = React.useState(false);
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <SessionHeader />
+      <SessionHeader onMyOrders={() => setOrdersOpen(true)} />
       <div className="flex flex-1 flex-col overflow-hidden relative">
         <MenuBrowser />
         {/* Spacer so CartButton doesn't overlap last item */}
@@ -75,6 +84,7 @@ function GuestMainView() {
       </div>
       <CartButton onOpen={() => setCartOpen(true)} />
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+      <MyOrdersSheet open={ordersOpen} onClose={() => setOrdersOpen(false)} />
     </div>
   );
 }

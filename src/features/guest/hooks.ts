@@ -20,7 +20,7 @@ export function useGuestMenu() {
 export function useSessionOrders() {
   const { token, sessionId } = useGuest();
   return useQuery({
-    queryKey: ["guest-orders", sessionId],
+    queryKey: ["orders", sessionId],
     queryFn: () => fetchSessionOrders(token!, sessionId),
     enabled: !!token,
     refetchInterval: 10_000,
@@ -34,7 +34,7 @@ export function useCreateOrder() {
     mutationFn: (body: CreateGuestOrderBody) =>
       createGuestOrder(token!, sessionId, body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["guest-orders", sessionId] });
+      qc.invalidateQueries({ queryKey: ["orders", sessionId] });
     },
   });
 }
