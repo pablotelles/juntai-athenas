@@ -14,6 +14,7 @@ export interface NavItem {
   icon: LucideIcon;
   badge?: string | number;
   exact?: boolean;
+  subitems?: Omit<NavItem, "subitems">[];
 }
 
 export interface NavSection {
@@ -76,6 +77,7 @@ export function Sidebar({
                   ? pathname === item.href
                   : pathname === item.href ||
                     pathname.startsWith(item.href + "/");
+                const hasSubitems = !collapsed && !!item.subitems?.length;
 
                 return (
                   <li key={item.href}>
@@ -104,6 +106,41 @@ export function Sidebar({
                         </>
                       )}
                     </Link>
+
+                    {/* Subitems — shown indented when not collapsed */}
+                    {hasSubitems && (
+                      <ul className="mt-0.5 flex flex-col gap-0.5 pl-3">
+                        {item.subitems!.map((sub) => {
+                          const subActive = sub.exact
+                            ? pathname === sub.href
+                            : pathname === sub.href ||
+                              pathname.startsWith(sub.href + "/");
+                          return (
+                            <li key={sub.href}>
+                              <Link
+                                href={sub.href}
+                                className={cn(
+                                  "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors",
+                                  "text-sidebar-fg hover:text-sidebar-fg-active hover:bg-sidebar-active",
+                                  subActive && "bg-sidebar-active text-sidebar-fg-active",
+                                )}
+                              >
+                                <Icon icon={sub.icon} size={15} className="shrink-0 opacity-70" />
+                                <span className="flex-1 truncate">{sub.label}</span>
+                                {sub.badge != null && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="ml-auto text-[10px] h-4 px-1.5"
+                                  >
+                                    {sub.badge}
+                                  </Badge>
+                                )}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </li>
                 );
               })}

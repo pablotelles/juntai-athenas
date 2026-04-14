@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/auth/AuthProvider";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { NAV_ITEMS } from "@/config/navigation";
 import { resolvePortalProfile } from "@/lib/access";
-import type { NavSection } from "@/components/compositions/sidebar/Sidebar";
+import type { NavSection, NavItem } from "@/components/compositions/sidebar/Sidebar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = React.useState(false);
@@ -98,8 +98,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         item.contexts.includes(context.type) &&
         (!item.profiles || item.profiles.includes(profile)),
     );
-    const mainItems = filtered.filter((i) => i.href !== "/settings");
-    const systemItems = filtered.filter((i) => i.href === "/settings");
+    const mapItem = (item: (typeof NAV_ITEMS)[number]): NavItem => ({
+      label: item.label,
+      href: item.href,
+      icon: item.icon,
+      badge: item.badge,
+      exact: item.exact,
+      subitems: item.subitems
+        ?.filter(
+          (sub) =>
+            sub.contexts.includes(context.type) &&
+            (!sub.profiles || sub.profiles.includes(profile)),
+        )
+        .map((sub) => ({
+          label: sub.label,
+          href: sub.href,
+          icon: sub.icon,
+          badge: sub.badge,
+          exact: sub.exact,
+        })),
+    });
+    const mainItems = filtered
+      .filter((i) => i.href !== "/settings")
+      .map(mapItem);
+    const systemItems = filtered
+      .filter((i) => i.href === "/settings")
+      .map(mapItem);
     return [
       { items: mainItems },
       ...(systemItems.length > 0

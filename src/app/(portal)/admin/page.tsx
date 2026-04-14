@@ -10,7 +10,6 @@ import {
 import { Badge } from "@/components/primitives/badge/Badge";
 import { Text } from "@/components/primitives/text/Text";
 import { UtensilsCrossed, Users, CreditCard, TrendingUp } from "lucide-react";
-import { SessionTestPanel } from "@/features/session-test/components/SessionTestPanel";
 
 const stats = [
   {
@@ -118,17 +117,6 @@ export default function AdminDashboardPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Session test panel */}
-        <div className="flex flex-col gap-3">
-          <div>
-            <Text variant="h4">Mesa de Testes</Text>
-            <Text variant="sm" muted className="mt-0.5">
-              Simule abertura de mesa, entrada de clientes e encerramento de sessão.
-            </Text>
-          </div>
-          <SessionTestPanel />
         </div>
       </div>
     </>

@@ -36,6 +36,8 @@ export interface NavConfigItem {
   exact?: boolean;
   /** Optional badge (count, label) */
   badge?: string | number;
+  /** Optional child items rendered indented below the parent */
+  subitems?: Omit<NavConfigItem, "subitems">[];
 }
 
 export const NAV_ITEMS: NavConfigItem[] = [
@@ -109,6 +111,22 @@ export const NAV_ITEMS: NavConfigItem[] = [
     icon: FlaskConical,
     contexts: ["platform"],
     profiles: ["platform-admin"],
-    exact: true,
+    subitems: [
+      {
+        label: "Dashboard",
+        href: "/admin",
+        icon: LayoutDashboard,
+        contexts: ["platform"],
+        profiles: ["platform-admin"],
+        exact: true,
+      },
+      {
+        label: "Mesa de Testes",
+        href: "/admin/session-test",
+        icon: FlaskConical,
+        contexts: ["platform"],
+        profiles: ["platform-admin"],
+      },
+    ],
   },
 ];
