@@ -19,6 +19,18 @@ export type { MesaQrModalProps } from "./MesaQrModal";
 export { MesaModal } from "./MesaModal";
 export type { MesaModalProps } from "./MesaModal";
 
+export { MesaOrdersTab } from "./MesaOrdersTab";
+export type { MesaOrdersTabProps } from "./MesaOrdersTab";
+
+export { MesaMembersTab } from "./MesaMembersTab";
+export type { MesaMembersTabProps } from "./MesaMembersTab";
+
+export { MesaClosingTab } from "./MesaClosingTab";
+export type { MesaClosingTabProps } from "./MesaClosingTab";
+
+export { MesaOrdersTable } from "./MesaOrdersTable";
+export type { MesaOrdersTableProps } from "./MesaOrdersTable";
+
 export { MesaQuickActions } from "./MesaQuickActions";
 export type { MesaQuickActionsProps } from "./MesaQuickActions";
 

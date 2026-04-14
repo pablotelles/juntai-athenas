@@ -143,9 +143,6 @@ export function MesaQrModal({
               <Text variant="sm" className="font-medium">
                 Token: <span className="font-mono">{mesa.qrCodeToken}</span>
               </Text>
-              <Text variant="sm" muted className="mt-1">
-                Capacidade para até {mesa.capacidade} pessoas.
-              </Text>
             </div>
           ) : null}
         </div>
