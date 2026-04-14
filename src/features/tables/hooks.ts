@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/auth/AuthProvider";
 import {
   closeTableSession,
   createTable,
+  createStaffOrder,
   deleteTable,
   getOrCreateTableSession,
   getTableSessionById,
@@ -11,7 +12,10 @@ import {
   guestJoinSession,
   listTableSessionMembers,
   listTables,
+  listStaffSessionOrders,
+  removeSessionMember,
   updateTable,
+  type CreateStaffOrderBody,
   type CreateTableBody,
   type UpdateTableBody,
 } from "./api";
@@ -191,6 +195,56 @@ export function useGuestJoinSession() {
       displayName: string;
     }) => guestJoinSession(sessionId, email, displayName, sessionToken),
     onSuccess: async (_result, { sessionId }) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["session-members", sessionId],
+      });
+    },
+  });
+}
+
+// ── Staff session hooks ───────────────────────────────────────────────────────
+
+export function useStaffSessionOrders(sessionId: string | null) {
+  const { sessionToken } = useAuth();
+  return useQuery({
+    queryKey: ["session-orders", sessionId],
+    queryFn: () => listStaffSessionOrders(sessionId!, sessionToken),
+    enabled: !!sessionId,
+    refetchInterval: 10_000,
+  });
+}
+
+export function useStaffCreateOrder() {
+  const { sessionToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      body,
+    }: {
+      sessionId: string;
+      body: CreateStaffOrderBody;
+    }) => createStaffOrder(sessionId, body, sessionToken),
+    onSuccess: async (_order, { sessionId }) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["session-orders", sessionId],
+      });
+    },
+  });
+}
+
+export function useRemoveSessionMember() {
+  const { sessionToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      memberId,
+    }: {
+      sessionId: string;
+      memberId: string;
+    }) => removeSessionMember(sessionId, memberId, sessionToken),
+    onSuccess: async (_v, { sessionId }) => {
       await queryClient.invalidateQueries({
         queryKey: ["session-members", sessionId],
       });

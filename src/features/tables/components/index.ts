@@ -16,6 +16,9 @@ export type { MesaFilterSheetProps } from "./MesaFilterSheet";
 export { MesaQrModal } from "./MesaQrModal";
 export type { MesaQrModalProps } from "./MesaQrModal";
 
+export { MesaModal } from "./MesaModal";
+export type { MesaModalProps } from "./MesaModal";
+
 export { MesaQuickActions } from "./MesaQuickActions";
 export type { MesaQuickActionsProps } from "./MesaQuickActions";
 

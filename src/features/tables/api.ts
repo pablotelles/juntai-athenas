@@ -1,4 +1,6 @@
 import { createJuntaiClient } from "@juntai/types";
+import { apiClient } from "@/lib/api";
+import type { Order } from "@juntai/types";
 import type {
   AddMemberBody,
   CreateTableBody,
@@ -110,4 +112,46 @@ export function closeTableSession(
   token: string | null,
 ) {
   return getTablesClient(token).closeSession(sessionId, restaurantId);
+}
+
+// ── Staff session order management ───────────────────────────────────────────
+
+export interface StaffOrderItem {
+  menuItemId: string;
+  quantity: number;
+  selectedModifiers: Array<{ groupId: string; optionId: string }>;
+  notes?: string;
+}
+
+export interface CreateStaffOrderBody {
+  items: StaffOrderItem[];
+  notes?: string;
+}
+
+/** List orders for a session — staff token, no x-table-session-id required. */
+export function listStaffSessionOrders(
+  sessionId: string,
+  token: string | null,
+): Promise<Order[]> {
+  return apiClient(token).get<Order[]>(`/sessions/${sessionId}/orders`);
+}
+
+/** Create an order for a session as staff (manual launch). */
+export function createStaffOrder(
+  sessionId: string,
+  body: CreateStaffOrderBody,
+  token: string | null,
+): Promise<Order> {
+  return apiClient(token).post<Order>(`/sessions/${sessionId}/orders`, body);
+}
+
+/** Staff removes a specific member from a session. */
+export function removeSessionMember(
+  sessionId: string,
+  memberId: string,
+  token: string | null,
+): Promise<void> {
+  return apiClient(token).delete<void>(
+    `/sessions/${sessionId}/members/${memberId}`,
+  );
 }

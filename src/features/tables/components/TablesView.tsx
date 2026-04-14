@@ -49,6 +49,7 @@ import { MesaCard } from "./MesaCard";
 import { MesaFilterSheet } from "./MesaFilterSheet";
 import { MesaFormModal } from "./MesaFormModal";
 import { MesaGrid } from "./MesaGrid";
+import { MesaModal } from "./MesaModal";
 import { MesaQrModal } from "./MesaQrModal";
 import { useLocationChannel } from "@/hooks/useLocationChannel";
 
@@ -122,6 +123,7 @@ export function TablesView({
   const [mesas, setMesas] = React.useState<Mesa[]>([]);
   const [qrMesa, setQrMesa] = React.useState<Mesa | null>(null);
   const [actionMesa, setActionMesa] = React.useState<Mesa | null>(null);
+  const [detailMesa, setDetailMesa] = React.useState<Mesa | null>(null);
   const [editingMesa, setEditingMesa] = React.useState<Mesa | null>(null);
   const [deleteMesa, setDeleteMesa] = React.useState<Mesa | null>(null);
   const [isFilterSheetOpen, setFilterSheetOpen] = React.useState(false);
@@ -168,11 +170,10 @@ export function TablesView({
 
   const handleViewOrder = React.useCallback(
     (mesa: Mesa) => {
-      toast.info(`Abrindo comanda da ${mesa.nome}`, {
-        description: "Fluxo de comanda rápida preparado para integração.",
-      });
+      setActionMesa(null);
+      setDetailMesa(mesa);
     },
-    [toast],
+    [],
   );
 
   const handleTransfer = React.useCallback(
@@ -296,6 +297,18 @@ export function TablesView({
               reserva: undefined,
               sessionId: null,
             }));
+              setDetailMesa((current) =>
+                current?.id === mesa.id
+                  ? {
+                      ...current,
+                      status: "livre",
+                      pessoasConectadas: 0,
+                      ocupacaoInicio: null,
+                      reserva: undefined,
+                      sessionId: null,
+                    }
+                  : current,
+              );
             toast.success(`Conta fechada: ${mesa.nome}`, {
               description:
                 "Atendimento encerrado e mesa pronta para o próximo giro.",
@@ -624,6 +637,16 @@ export function TablesView({
           if (!open) setDeleteMesa(null);
         }}
         onConfirm={handleConfirmDelete}
+      />
+
+      <MesaModal
+        mesa={detailMesa}
+        restaurantId={restaurantId}
+        onClose={() => setDetailMesa(null)}
+        onCloseBill={(mesa) => {
+          handleCloseBill(mesa);
+          setDetailMesa(null);
+        }}
       />
 
       <MesaQrModal
