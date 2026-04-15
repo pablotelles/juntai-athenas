@@ -77,27 +77,33 @@ function buildItemsSummary(items: OrderItem[]): string {
 
 // ── Detail panel (rendered inside expanded row) ───────────────────────────────
 
+/** Formata item como "2× Gyoza (Frango, Porco)" */
+function buildItemLabel(item: OrderItem): string {
+  const base = `${item.quantity}× ${item.snapshot.name}`;
+  if (item.snapshot.modifiers.length === 0) return base;
+  const mods = item.snapshot.modifiers.map((m) => m.optionName).join(", ");
+  return `${base} (${mods})`;
+}
+
 function OrderDetailPanel({ order }: { order: Order }) {
+  const total = getOrderTotal(order);
+
   return (
-    <div className="space-y-2">
-      {order.items.map((item) => (
-        <div key={item.id} className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <Text variant="sm" className="font-medium">
-              {item.quantity}× {item.snapshot.name}
-            </Text>
-            {item.snapshot.modifiers.length > 0 && (
-              <ul className="mt-0.5 ml-3 space-y-0.5">
-                {item.snapshot.modifiers.map((m, i) => (
-                  <li key={i} className="flex items-center gap-1">
-                    <span className="text-muted-foreground text-xs">•</span>
-                    <Text variant="xs" muted>{m.optionName}</Text>
-                  </li>
-                ))}
-              </ul>
-            )}
+    <div className="space-y-3">
+      {/* Items */}
+      <div className="space-y-1.5">
+        {order.items.map((item) => (
+          <div key={item.id}>
+            <div className="flex items-baseline justify-between gap-2">
+              <Text variant="sm" className="font-medium">
+                {buildItemLabel(item)}
+              </Text>
+              <Text variant="sm" muted className="shrink-0 tabular-nums whitespace-nowrap">
+                {formatPrice(item.unitPrice * item.quantity)}
+              </Text>
+            </div>
             {item.notes && (
-              <div className="mt-1 ml-3 flex items-start gap-1.5 rounded bg-warning/10 px-2 py-1">
+              <div className="mt-1 flex items-start gap-1.5 rounded bg-warning/10 px-2 py-1">
                 <AlertTriangle size={11} className="text-warning mt-px shrink-0" />
                 <Text variant="xs" className="text-warning leading-snug">
                   {item.notes}
@@ -105,11 +111,16 @@ function OrderDetailPanel({ order }: { order: Order }) {
               </div>
             )}
           </div>
-          <Text variant="xs" muted className="shrink-0 tabular-nums whitespace-nowrap">
-            {formatPrice(item.unitPrice * item.quantity)}
-          </Text>
-        </div>
-      ))}
+        ))}
+      </div>
+
+      {/* Total */}
+      <div className="flex items-center justify-between border-t border-border pt-2">
+        <Text variant="xs" muted>Total</Text>
+        <Text variant="sm" className="font-bold tabular-nums">
+          {formatPrice(total)}
+        </Text>
+      </div>
     </div>
   );
 }
