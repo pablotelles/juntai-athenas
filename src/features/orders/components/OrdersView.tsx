@@ -81,9 +81,20 @@ export function OrdersView({ restaurantId }: OrdersViewProps) {
       key: "items",
       header: "Itens",
       cell: (row) => (
-        <Text variant="sm">
-          {row.items.map((i) => `${i.quantity}× ${i.snapshot.name}`).join(", ")}
-        </Text>
+        <div className="space-y-1">
+          {row.items.map((item) => (
+            <div key={item.id}>
+              <Text variant="sm">
+                {item.quantity}× {item.snapshot.name}
+              </Text>
+              {item.snapshot.modifiers.length > 0 && (
+                <Text variant="xs" muted>
+                  {item.snapshot.modifiers.map((m) => m.optionName).join(", ")}
+                </Text>
+              )}
+            </div>
+          ))}
+        </div>
       ),
     },
     {

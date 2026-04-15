@@ -134,6 +134,11 @@ export function MesaOrdersTable({
                   <Text variant="sm" className="font-medium">
                     {item.quantity}x {item.snapshot.name}
                   </Text>
+                  {item.snapshot.modifiers.length > 0 && (
+                    <Text variant="xs" muted className="mt-0.5">
+                      {item.snapshot.modifiers.map((m) => m.optionName).join(", ")}
+                    </Text>
+                  )}
                   {item.notes ? (
                     <Text variant="xs" muted className="mt-0.5">
                       Obs.: {item.notes}
