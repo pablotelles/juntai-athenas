@@ -2,6 +2,22 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
 import { BookOpen, Plus } from "lucide-react";
 import { Text } from "@/components/primitives/text/Text";
 import { Button } from "@/components/primitives/button/Button";
@@ -12,7 +28,7 @@ import { useMenu, useCreateMenu, usePatchMenu, useDeleteMenu } from "../hooks";
 import { MenuCard } from "./MenuCard";
 import { MenuFormModal } from "./MenuFormModal";
 import type { MenuFormValues } from "../schemas";
-import type { Menu } from "@juntai/types";
+import type { Menu, MenuWithCategories } from "@juntai/types";
 
 interface MenuListProps {
   restaurantId: string;
@@ -26,11 +42,39 @@ export function MenuList({ restaurantId, locationId }: MenuListProps) {
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editTarget, setEditTarget] = React.useState<Menu | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<Menu | null>(null);
+  const [orderedMenus, setOrderedMenus] = React.useState<MenuWithCategories[]>([]);
 
   const { data: menus, isLoading } = useMenu(restaurantId, locationId);
   const createMenu = useCreateMenu(restaurantId);
   const patchMenu = usePatchMenu(restaurantId);
   const deleteMenu = useDeleteMenu(restaurantId);
+
+  // Sincroniza ordem local com dados do servidor
+  React.useEffect(() => {
+    if (menus) {
+      setOrderedMenus([...menus].sort((a, b) => a.displayOrder - b.displayOrder));
+    }
+  }, [menus]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = orderedMenus.findIndex((m) => m.id === active.id);
+    const newIndex = orderedMenus.findIndex((m) => m.id === over.id);
+    const reordered = arrayMove(orderedMenus, oldIndex, newIndex);
+    setOrderedMenus(reordered);
+    reordered.forEach((menu, index) => {
+      if (menu.displayOrder !== index) {
+        patchMenu.mutate({ menuId: menu.id, body: { restaurantId, displayOrder: index } });
+      }
+    });
+  };
 
   const handleCreate = async (values: MenuFormValues) => {
     await createMenu.mutateAsync(values);
@@ -76,17 +120,14 @@ export function MenuList({ restaurantId, locationId }: MenuListProps) {
     const locQuery = loc ? `?locationId=${loc}` : "";
 
     if (menu.style === "flat") {
-      // Para menus flat, navegar direto para os itens da categoria _default.
-      // Os dados do menu já estão carregados — pegar a primeira (e única) categoria.
-      const defaultCategory = menus
-        ?.find((m) => m.id === menu.id)
+      const defaultCategory = orderedMenus
+        .find((m) => m.id === menu.id)
         ?.categories[0];
 
       if (defaultCategory) {
         router.push(`/menu/${menu.id}/${defaultCategory.id}${locQuery}`);
         return;
       }
-      // Fallback: ir para a página intermediária que tem o guard de redirect
     }
 
     router.push(`/menu/${menu.id}${locQuery}`);
@@ -97,7 +138,7 @@ export function MenuList({ restaurantId, locationId }: MenuListProps) {
       <div className="flex items-center justify-between">
         <Text variant="sm" muted>
           {locationId
-            ? `${menus?.length ?? 0} cardápio${(menus?.length ?? 0) !== 1 ? "s" : ""}`
+            ? `${orderedMenus.length} cardápio${orderedMenus.length !== 1 ? "s" : ""}`
             : "Selecione uma filial"}
         </Text>
         <Button
@@ -119,7 +160,7 @@ export function MenuList({ restaurantId, locationId }: MenuListProps) {
         </div>
       )}
 
-      {!isLoading && locationId && (!menus || menus.length === 0) && (
+      {!isLoading && locationId && orderedMenus.length === 0 && (
         <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
           <BookOpen size={32} className="opacity-40" />
           <Text variant="sm">Nenhum cardápio cadastrado para esta filial.</Text>
@@ -129,16 +170,31 @@ export function MenuList({ restaurantId, locationId }: MenuListProps) {
         </div>
       )}
 
-      {menus?.map((menu) => (
-        <MenuCard
-          key={menu.id}
-          menu={menu}
-          onManage={handleManage}
-          onToggleActive={handleToggleActive}
-          onEdit={setEditTarget}
-          onDelete={setDeleteTarget}
-        />
-      ))}
+      {orderedMenus.length > 0 && (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={orderedMenus.map((m) => m.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="flex flex-col gap-2">
+              {orderedMenus.map((menu) => (
+                <MenuCard
+                  key={menu.id}
+                  menu={menu}
+                  onManage={handleManage}
+                  onToggleActive={handleToggleActive}
+                  onEdit={setEditTarget}
+                  onDelete={setDeleteTarget}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
 
       {/* Create modal */}
       <MenuFormModal
