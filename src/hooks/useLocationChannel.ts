@@ -66,6 +66,10 @@ export function useLocationChannel({
           void queryClient.invalidateQueries({
             queryKey: ["orders", restaurantId],
           });
+          // session-orders é usado pela MesaModal para listar pedidos por sessão
+          void queryClient.invalidateQueries({
+            queryKey: ["session-orders"],
+          });
           break;
 
         case "PAYMENT_COMPLETED":

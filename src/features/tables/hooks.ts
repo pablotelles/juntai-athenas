@@ -210,7 +210,6 @@ export function useStaffSessionOrders(sessionId: string | null) {
     queryKey: ["session-orders", sessionId],
     queryFn: () => listStaffSessionOrders(sessionId!, sessionToken),
     enabled: !!sessionId,
-    refetchInterval: 10_000,
   });
 }
 

@@ -65,12 +65,18 @@ export function useSessionChannel({
           void queryClient.invalidateQueries({
             queryKey: ["orders", sessionId],
           });
+          void queryClient.invalidateQueries({
+            queryKey: ["session-orders", sessionId],
+          });
           toast.info("Novo pedido registrado");
           break;
 
         case "ORDER_STATUS_CHANGED":
           void queryClient.invalidateQueries({
             queryKey: ["orders", sessionId],
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ["session-orders", sessionId],
           });
           break;
 
