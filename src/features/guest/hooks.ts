@@ -29,7 +29,6 @@ export function useSessionOrdersByToken(
     queryKey: ["orders", sessionId],
     queryFn: () => fetchSessionOrders(token!, sessionId),
     enabled: !!token,
-    refetchInterval: 15_000,
   });
 }
 
@@ -39,7 +38,6 @@ export function useSessionOrders() {
     queryKey: ["orders", sessionId],
     queryFn: () => fetchSessionOrders(token!, sessionId),
     enabled: !!token,
-    refetchInterval: 10_000,
   });
 }
 

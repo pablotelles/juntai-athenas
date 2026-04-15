@@ -7,12 +7,38 @@ import { Button } from "@/components/primitives/button/Button";
 import { Text } from "@/components/primitives/text/Text";
 import { useCart, type CartItem } from "./CartProvider";
 import { useCreateOrder } from "@/features/guest/hooks";
+import type { CreateGuestOrderBody } from "@/features/guest/api";
 
 function fmtPrice(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
   });
+}
+
+/**
+ * Agrupa itens do carrinho por menuItemId.
+ * Cada grupo vira um pedido separado — itens com modifier selections diferentes
+ * ficam como OrderItems distintos dentro do mesmo pedido.
+ */
+function groupByProduct(items: CartItem[]): CreateGuestOrderBody[] {
+  const map = new Map<string, CartItem[]>();
+  for (const item of items) {
+    const group = map.get(item.menuItemId) ?? [];
+    group.push(item);
+    map.set(item.menuItemId, group);
+  }
+  return Array.from(map.values()).map((group) => ({
+    items: group.map((item) => ({
+      menuItemId: item.menuItemId,
+      quantity: item.quantity,
+      selectedModifiers: item.selectedModifiers.map((m) => ({
+        groupId: m.groupId,
+        optionId: m.optionId,
+      })),
+      notes: item.notes || undefined,
+    })),
+  }));
 }
 
 // ── Cart item row ─────────────────────────────────────────────────────────────
@@ -84,20 +110,16 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
   const createOrder = useCreateOrder();
 
   const [success, setSuccess] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [hasError, setHasError] = React.useState(false);
 
   const handlePlaceOrder = async () => {
+    setIsSubmitting(true);
+    setHasError(false);
     try {
-      await createOrder.mutateAsync({
-        items: items.map((item) => ({
-          menuItemId: item.menuItemId,
-          quantity: item.quantity,
-          selectedModifiers: item.selectedModifiers.map((m) => ({
-            groupId: m.groupId,
-            optionId: m.optionId,
-          })),
-          notes: item.notes || undefined,
-        })),
-      });
+      const orders = groupByProduct(items);
+      // Um POST /orders por produto — execuções paralelas
+      await Promise.all(orders.map((body) => createOrder.mutateAsync(body)));
       setSuccess(true);
       clear();
       setTimeout(() => {
@@ -105,7 +127,9 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
         onClose();
       }, 2000);
     } catch {
-      // Error handled by mutation state
+      setHasError(true);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -141,13 +165,13 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
             </div>
             <Button
               onClick={handlePlaceOrder}
-              loading={createOrder.isPending}
+              loading={isSubmitting}
               disabled={items.length === 0}
               className="w-full"
             >
               Fazer pedido
             </Button>
-            {createOrder.isError && (
+            {hasError && (
               <Text variant="xs" className="text-destructive text-center">
                 Erro ao enviar pedido. Tente novamente.
               </Text>
