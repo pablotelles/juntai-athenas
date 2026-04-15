@@ -291,14 +291,21 @@ export function MesaModal({
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <ModalTitle>{mesa.nome}</ModalTitle>
-                          {isOccupied ? (
-                            <Badge variant="secondary">Comanda</Badge>
-                          ) : null}
                           <Badge variant={isOccupied ? "warning" : "secondary"}>
                             {isOccupied ? "Sessão ativa" : "Mesa sem sessão"}
                           </Badge>
                         </div>
-                        {mesa.area ? (
+                        {isOccupied ? (
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <span>{formatElapsed(mesa.ocupacaoInicio)}</span>
+                            <span>
+                              {activeMembers.length} pessoa{activeMembers.length !== 1 ? "s" : ""}
+                            </span>
+                            <span className="font-semibold text-foreground">
+                              {formatPrice(totalConsumption)}
+                            </span>
+                          </div>
+                        ) : mesa.area ? (
                           <ModalDescription>{mesa.area}</ModalDescription>
                         ) : null}
                       </div>
@@ -327,34 +334,7 @@ export function MesaModal({
 
                 {isOccupied ? (
                   <div className="border-t border-border/80 px-6 py-4">
-                    <div className="space-y-4">
-                      <Card className="bg-background/80 shadow-none">
-                        <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-2 p-4">
-                          <div className="flex items-center gap-2">
-                            <Text variant="body" className="font-semibold">
-                              {mesa.nome}
-                            </Text>
-                            <Badge variant="secondary">
-                              <ReceiptText className="h-3.5 w-3.5" />
-                              {sortedOrders.length} pedido
-                              {sortedOrders.length === 1 ? "" : "s"}
-                            </Badge>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                            <span>{mesa.capacidade} lugares</span>
-                            <span>{formatElapsed(mesa.ocupacaoInicio)}</span>
-                            <span>
-                              {activeMembers.length} pessoa
-                              {activeMembers.length === 1 ? "" : "s"}
-                            </span>
-                            <span className="font-medium text-foreground">
-                              {formatPrice(totalConsumption)}
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <FilterChip
                           active={activeTab === "orders"}
                           count={sortedOrders.length}
@@ -376,7 +356,6 @@ export function MesaModal({
                           Fechamento
                         </FilterChip>
                       </div>
-                    </div>
                   </div>
                 ) : null}
               </div>
