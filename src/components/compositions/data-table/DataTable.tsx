@@ -59,7 +59,27 @@ export interface DataTableProps<T> {
   selection?: SelectionConfig<T>;
   emptyState?: React.ReactNode;
   className?: string;
+  /**
+   * Applied to the inner scroll container (the div wrapping the <table>).
+   * Use this to set max-height when stickyHeader is true, e.g. "max-h-[60vh]".
+   */
+  scrollClassName?: string;
   onSortChange?: (key: string, direction: SortDirection) => void;
+  /**
+   * When provided, each row gets an expand toggle.
+   * Clicking it renders the returned node in a full-width detail row below.
+   */
+  rowDetail?: (row: T, index: number) => React.ReactNode;
+  /**
+   * Required when `rowDetail` is used to track expanded state stably.
+   * Falls back to row index if omitted.
+   */
+  rowId?: (row: T) => string;
+  /**
+   * When true, the thead sticks to the top of its scroll container.
+   * Set scrollClassName with a max-height so vertical scrolling kicks in.
+   */
+  stickyHeader?: boolean;
 }
 
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
@@ -108,13 +128,36 @@ export function DataTable<T>({
   selection,
   emptyState,
   className,
+  scrollClassName,
   onSortChange,
+  rowDetail,
+  rowId,
+  stickyHeader = false,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = React.useState<string | null>(null);
   const [sortDir, setSortDir] = React.useState<SortDirection>(null);
+  const [expandedRows, setExpandedRows] = React.useState<Set<string>>(
+    new Set(),
+  );
 
+  const hasExpandCol = !!rowDetail;
   const totalCols =
-    columns.length + (selection ? 1 : 0) + (rowActions?.length ? 1 : 0);
+    columns.length +
+    (selection ? 1 : 0) +
+    (rowActions?.length ? 1 : 0) +
+    (hasExpandCol ? 1 : 0);
+
+  const getRowKey = (row: T, index: number): string =>
+    rowId ? rowId(row) : String(index);
+
+  const toggleExpand = (key: string) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   function handleSort(key: string) {
     const next: SortDirection =
@@ -186,10 +229,24 @@ export function DataTable<T>({
         className,
       )}
     >
-      <div className="overflow-x-auto">
+      <div
+        className={cn(
+          "overflow-x-auto",
+          stickyHeader && "overflow-y-auto",
+          scrollClassName,
+        )}
+      >
         <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted">
+          <thead
+            className={cn(
+              "border-b border-border bg-muted",
+              stickyHeader && "sticky top-0 z-10",
+            )}
+          >
+            <tr>
+              {/* Expand toggle column */}
+              {hasExpandCol && <th className="w-8 px-2 py-3" />}
+
               {selection && (
                 <th className="w-10 px-4 py-3">
                   <Checkbox
@@ -241,6 +298,8 @@ export function DataTable<T>({
               </tr>
             ) : (
               data.map((row, i) => {
+                const rowKey = getRowKey(row, i);
+                const isExpanded = expandedRows.has(rowKey);
                 const isRowSelected = selection
                   ? selection.selectedRows.some(
                       (r) => selection.rowId(r) === selection.rowId(row),
@@ -248,69 +307,104 @@ export function DataTable<T>({
                   : false;
 
                 return (
-                  <tr
-                    key={i}
-                    className={cn(
-                      "border-b border-border last:border-0 transition-colors",
-                      "hover:bg-muted/60",
-                      isRowSelected && "bg-primary/5",
+                  <React.Fragment key={rowKey}>
+                    <tr
+                      className={cn(
+                        "border-b border-border transition-colors",
+                        !isExpanded && "last:border-0",
+                        "hover:bg-muted/60",
+                        isRowSelected && "bg-primary/5",
+                      )}
+                    >
+                      {/* Expand toggle */}
+                      {hasExpandCol && (
+                        <td className="w-8 px-2 py-3">
+                          <button
+                            type="button"
+                            onClick={() => toggleExpand(rowKey)}
+                            aria-label={isExpanded ? "Recolher" : "Expandir"}
+                            className="flex size-6 items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <ChevronDown
+                              className={cn(
+                                "h-3.5 w-3.5 transition-transform duration-150",
+                                isExpanded && "rotate-180",
+                              )}
+                            />
+                          </button>
+                        </td>
+                      )}
+
+                      {selection && (
+                        <td className="w-10 px-4 py-3">
+                          <Checkbox
+                            checked={isRowSelected}
+                            onCheckedChange={() => toggleRow(row)}
+                            aria-label="Selecionar linha"
+                          />
+                        </td>
+                      )}
+                      {columns.map((col) => (
+                        <td
+                          key={col.key}
+                          className={cn(
+                            "px-4 py-3 text-foreground",
+                            col.align === "center" && "text-center",
+                            col.align === "right" && "text-right",
+                          )}
+                        >
+                          {col.cell
+                            ? col.cell(row, i)
+                            : String(
+                                (row as Record<string, unknown>)[col.key] ?? "",
+                              )}
+                        </td>
+                      ))}
+                      {rowActions?.length ? (
+                        <td className="w-10 px-4 py-3">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                aria-label="Ações"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {rowActions
+                                .filter((a) => !a.hidden?.(row))
+                                .map((action) => (
+                                  <DropdownMenuItem
+                                    key={action.label}
+                                    destructive={action.destructive}
+                                    onClick={() => action.onClick(row)}
+                                  >
+                                    {action.label}
+                                  </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      ) : null}
+                    </tr>
+
+                    {/* Detail row */}
+                    {hasExpandCol && isExpanded && (
+                      <tr className="border-b border-border last:border-0">
+                        <td
+                          colSpan={totalCols}
+                          className="p-0"
+                        >
+                          <div className="border-t border-border bg-muted/30 px-6 py-3">
+                            {rowDetail!(row, i)}
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  >
-                    {selection && (
-                      <td className="w-10 px-4 py-3">
-                        <Checkbox
-                          checked={isRowSelected}
-                          onCheckedChange={() => toggleRow(row)}
-                          aria-label="Selecionar linha"
-                        />
-                      </td>
-                    )}
-                    {columns.map((col) => (
-                      <td
-                        key={col.key}
-                        className={cn(
-                          "px-4 py-3 text-foreground",
-                          col.align === "center" && "text-center",
-                          col.align === "right" && "text-right",
-                        )}
-                      >
-                        {col.cell
-                          ? col.cell(row, i)
-                          : String(
-                              (row as Record<string, unknown>)[col.key] ?? "",
-                            )}
-                      </td>
-                    ))}
-                    {rowActions?.length ? (
-                      <td className="w-10 px-4 py-3">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              aria-label="Ações"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {rowActions
-                              .filter((a) => !a.hidden?.(row))
-                              .map((action) => (
-                                <DropdownMenuItem
-                                  key={action.label}
-                                  destructive={action.destructive}
-                                  onClick={() => action.onClick(row)}
-                                >
-                                  {action.label}
-                                </DropdownMenuItem>
-                              ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    ) : null}
-                  </tr>
+                  </React.Fragment>
                 );
               })
             )}

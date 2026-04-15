@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { AlertTriangle, Plus, QrCode, ReceiptText } from "lucide-react";
 import {
   DataTable,
   type ColumnDef,
@@ -8,12 +9,14 @@ import {
 import { Badge } from "@/components/primitives/badge/Badge";
 import { Button } from "@/components/primitives/button/Button";
 import { Text } from "@/components/primitives/text/Text";
-import { ReceiptText, Plus, QrCode } from "lucide-react";
-import type { Order, OrderStatus } from "@/features/orders/types";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog/ConfirmDialog";
+import type { Order, OrderItem, OrderStatus } from "@/features/orders/types";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   PENDING: "Pendente",
-  PREPARING: "Preparando",
+  PREPARING: "Em preparo",
   DELIVERED: "Entregue",
   CANCELLED: "Cancelado",
 };
@@ -44,34 +47,143 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
-function formatElapsed(value?: string | null) {
-  if (!value) return "Agora";
+function formatElapsed(value: string) {
   const diffMinutes = Math.max(
     1,
     Math.floor((Date.now() - new Date(value).getTime()) / 60000),
   );
-
   if (diffMinutes < 60) return `${diffMinutes} min`;
-
   const hours = Math.floor(diffMinutes / 60);
   const minutes = diffMinutes % 60;
   return minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
 }
 
-function getNextStatus(status: OrderStatus): OrderStatus | null {
-  if (status === "PENDING") return "PREPARING";
-  if (status === "PREPARING") return "DELIVERED";
-  return null;
+function getOrderTotal(order: Order) {
+  return order.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
 }
 
-function getOrderTotal(order: {
-  items: Array<{ quantity: number; unitPrice: number }>;
-}) {
-  return order.items.reduce(
-    (sum, item) => sum + item.unitPrice * item.quantity,
-    0,
+/** "2x Gyoza, 1x Heineken" — truncado se muito longo */
+function buildItemsSummary(items: OrderItem[]): string {
+  const counts = new Map<string, number>();
+  for (const item of items) {
+    counts.set(item.snapshot.name, (counts.get(item.snapshot.name) ?? 0) + item.quantity);
+  }
+  const parts = Array.from(counts.entries()).map(([name, qty]) => `${qty}× ${name}`);
+  const full = parts.join(", ");
+  if (full.length <= 48) return full;
+  const total = items.reduce((a, i) => a + i.quantity, 0);
+  return `${total} ${total === 1 ? "item" : "itens"}`;
+}
+
+// ── Detail panel (rendered inside expanded row) ───────────────────────────────
+
+function OrderDetailPanel({ order }: { order: Order }) {
+  return (
+    <div className="space-y-2">
+      {order.items.map((item) => (
+        <div key={item.id} className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <Text variant="sm" className="font-medium">
+              {item.quantity}× {item.snapshot.name}
+            </Text>
+            {item.snapshot.modifiers.length > 0 && (
+              <ul className="mt-0.5 ml-3 space-y-0.5">
+                {item.snapshot.modifiers.map((m, i) => (
+                  <li key={i} className="flex items-center gap-1">
+                    <span className="text-muted-foreground text-xs">•</span>
+                    <Text variant="xs" muted>{m.optionName}</Text>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {item.notes && (
+              <div className="mt-1 ml-3 flex items-start gap-1.5 rounded bg-warning/10 px-2 py-1">
+                <AlertTriangle size={11} className="text-warning mt-px shrink-0" />
+                <Text variant="xs" className="text-warning leading-snug">
+                  {item.notes}
+                </Text>
+              </div>
+            )}
+          </div>
+          <Text variant="xs" muted className="shrink-0 tabular-nums whitespace-nowrap">
+            {formatPrice(item.unitPrice * item.quantity)}
+          </Text>
+        </div>
+      ))}
+    </div>
   );
 }
+
+// ── Actions cell — needs local confirm state per row ──────────────────────────
+
+function ActionsCell({
+  order,
+  isUpdating,
+  onUpdateStatus,
+}: {
+  order: Order;
+  isUpdating: boolean;
+  onUpdateStatus: (orderId: string, status: OrderStatus) => void;
+}) {
+  const [confirmCancel, setConfirmCancel] = React.useState(false);
+
+  const canPrepare = order.status === "PENDING";
+  const canDeliver = order.status === "PREPARING";
+  const canCancel = order.status !== "DELIVERED" && order.status !== "CANCELLED";
+
+  return (
+    <>
+      <div className="flex flex-wrap justify-end gap-2">
+        {canPrepare && (
+          <Button
+            size="sm"
+            variant="outline"
+            loading={isUpdating}
+            onClick={() => onUpdateStatus(order.id, "PREPARING")}
+          >
+            Preparar
+          </Button>
+        )}
+        {canDeliver && (
+          <Button
+            size="sm"
+            loading={isUpdating}
+            onClick={() => onUpdateStatus(order.id, "DELIVERED")}
+            className="bg-success hover:bg-success/90 text-white border-transparent"
+          >
+            Entregar
+          </Button>
+        )}
+        {canCancel && (
+          <Button
+            size="sm"
+            variant="ghost"
+            loading={isUpdating && !canPrepare && !canDeliver}
+            onClick={() => setConfirmCancel(true)}
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            Cancelar
+          </Button>
+        )}
+      </div>
+
+      <ConfirmDialog
+        open={confirmCancel}
+        onOpenChange={setConfirmCancel}
+        title="Cancelar pedido"
+        description={`Cancelar pedido #${order.id.slice(0, 8)}? Esta ação não pode ser desfeita.`}
+        confirmLabel="Cancelar pedido"
+        destructive
+        onConfirm={() => {
+          onUpdateStatus(order.id, "CANCELLED");
+          setConfirmCancel(false);
+        }}
+      />
+    </>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export interface MesaOrdersTableProps {
   orders: Order[];
@@ -93,11 +205,11 @@ export function MesaOrdersTable({
       {
         key: "id",
         header: "Pedido",
-        width: "12rem",
+        width: "11rem",
         cell: (order) => (
-          <div className="space-y-1">
-            <Text variant="sm" className="font-semibold">
-              Pedido #{order.id.slice(0, 8)}
+          <div className="space-y-0.5">
+            <Text variant="sm" className="font-semibold tabular-nums">
+              #{order.id.slice(0, 8)}
             </Text>
             <Text variant="xs" muted>
               {formatDateTime(order.createdAt)}
@@ -110,12 +222,12 @@ export function MesaOrdersTable({
         header: "Status",
         width: "10rem",
         cell: (order) => (
-          <div className="space-y-1">
-            <Badge variant={STATUS_VARIANTS[order.status]}>
+          <div className="space-y-0.5">
+            <Badge variant={STATUS_VARIANTS[order.status]} dot>
               {STATUS_LABELS[order.status]}
             </Badge>
             <Text variant="xs" muted>
-              Aberto há {formatElapsed(order.createdAt)}
+              {formatElapsed(order.createdAt)} atrás
             </Text>
           </div>
         ),
@@ -124,33 +236,9 @@ export function MesaOrdersTable({
         key: "items",
         header: "Itens",
         cell: (order) => (
-          <div className="space-y-1">
-            {order.items.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-start justify-between gap-3"
-              >
-                <div className="min-w-0">
-                  <Text variant="sm" className="font-medium">
-                    {item.quantity}x {item.snapshot.name}
-                  </Text>
-                  {item.snapshot.modifiers.length > 0 && (
-                    <Text variant="xs" muted className="mt-0.5">
-                      {item.snapshot.modifiers.map((m) => m.optionName).join(", ")}
-                    </Text>
-                  )}
-                  {item.notes ? (
-                    <Text variant="xs" muted className="mt-0.5">
-                      Obs.: {item.notes}
-                    </Text>
-                  ) : null}
-                </div>
-                <Text variant="xs" muted className="shrink-0 whitespace-nowrap">
-                  {formatPrice(item.unitPrice * item.quantity)}
-                </Text>
-              </div>
-            ))}
-          </div>
+          <Text variant="sm" muted className="truncate max-w-xs">
+            {buildItemsSummary(order.items)}
+          </Text>
         ),
       },
       {
@@ -169,38 +257,13 @@ export function MesaOrdersTable({
         header: "Ações",
         align: "right",
         width: "16rem",
-        cell: (order) => {
-          const nextStatus = getNextStatus(order.status);
-          const isUpdating = updatingOrderId === order.id;
-          const canCancel =
-            order.status !== "DELIVERED" && order.status !== "CANCELLED";
-
-          return (
-            <div className="flex flex-wrap justify-end gap-2">
-              {nextStatus ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  loading={isUpdating}
-                  onClick={() => onUpdateOrderStatus(order.id, nextStatus)}
-                >
-                  {nextStatus === "PREPARING" ? "Preparar" : "Entregar"}
-                </Button>
-              ) : null}
-              {canCancel ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  loading={isUpdating && !nextStatus}
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => onUpdateOrderStatus(order.id, "CANCELLED")}
-                >
-                  Cancelar
-                </Button>
-              ) : null}
-            </div>
-          );
-        },
+        cell: (order) => (
+          <ActionsCell
+            order={order}
+            isUpdating={updatingOrderId === order.id}
+            onUpdateStatus={onUpdateOrderStatus}
+          />
+        ),
       },
     ],
     [onUpdateOrderStatus, updatingOrderId],
@@ -211,6 +274,8 @@ export function MesaOrdersTable({
       data={orders}
       columns={columns}
       isLoading={isLoading}
+      rowId={(order) => order.id}
+      rowDetail={(order) => <OrderDetailPanel order={order} />}
       emptyState={
         <div className="flex flex-col items-start gap-4 py-2 text-left">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-muted-foreground">
