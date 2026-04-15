@@ -22,7 +22,7 @@ function fmtPrice(cents: number) {
 export function CartButton({ onOpen, contained = false }: CartButtonProps) {
   const { itemCount, totalCents } = useCart();
 
-  if (itemCount === 0) return null;
+  const isEmpty = itemCount === 0;
 
   return (
     <div
@@ -35,13 +35,27 @@ export function CartButton({ onOpen, contained = false }: CartButtonProps) {
     >
       <button
         type="button"
-        onClick={onOpen}
-        className="flex flex-1 items-center gap-3 rounded-2xl bg-primary px-4 py-3 shadow-lg hover:bg-primary-hover transition-colors active:scale-[0.98]"
+        onClick={isEmpty ? undefined : onOpen}
+        aria-label={isEmpty ? "Carrinho vazio" : `Ver carrinho — ${itemCount} ${itemCount === 1 ? "item" : "itens"}`}
+        className={cn(
+          "flex flex-1 items-center gap-3 rounded-2xl px-4 py-3 shadow-lg transition-all active:scale-[0.98]",
+          isEmpty
+            ? "bg-secondary/80 cursor-default"
+            : "bg-primary hover:bg-primary-hover cursor-pointer",
+        )}
       >
-        <span className="flex size-6 items-center justify-center rounded-full bg-primary-foreground/20 shrink-0">
+        <span
+          className={cn(
+            "flex size-6 items-center justify-center rounded-full shrink-0",
+            isEmpty ? "bg-muted-foreground/20" : "bg-primary-foreground/20",
+          )}
+        >
           <Text
             variant="xs"
-            className="font-bold text-primary-foreground tabular-nums"
+            className={cn(
+              "font-bold tabular-nums",
+              isEmpty ? "text-muted-foreground" : "text-primary-foreground",
+            )}
           >
             {itemCount}
           </Text>
@@ -49,21 +63,29 @@ export function CartButton({ onOpen, contained = false }: CartButtonProps) {
 
         <Text
           variant="sm"
-          className="font-semibold text-primary-foreground flex-1 text-center"
+          className={cn(
+            "font-semibold flex-1 text-center",
+            isEmpty ? "text-muted-foreground" : "text-primary-foreground",
+          )}
         >
-          Ver carrinho
+          {isEmpty ? "Carrinho vazio" : "Ver carrinho"}
         </Text>
 
-        <Text
-          variant="sm"
-          className="font-semibold text-primary-foreground shrink-0"
-        >
-          {fmtPrice(totalCents)}
-        </Text>
+        {!isEmpty && (
+          <Text
+            variant="sm"
+            className="font-semibold text-primary-foreground shrink-0"
+          >
+            {fmtPrice(totalCents)}
+          </Text>
+        )}
 
         <ShoppingCart
           size={18}
-          className="text-primary-foreground/80 shrink-0"
+          className={cn(
+            "shrink-0",
+            isEmpty ? "text-muted-foreground/60" : "text-primary-foreground/80",
+          )}
         />
       </button>
     </div>

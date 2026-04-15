@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Text } from "@/components/primitives/text/Text";
+import { SearchInput } from "@/components/primitives/search-input/SearchInput";
 import { CategoryNav } from "./CategoryNav";
 import { MenuItemCard } from "./MenuItemCard";
 import { ModifierSheet } from "./ModifierSheet";
@@ -44,14 +45,35 @@ function buildSections(menus: MenuWithCategories[]): MenuSection[] {
   });
 }
 
+function filterSections(sections: MenuSection[], term: string): MenuSection[] {
+  if (!term.trim()) return sections;
+  const lower = term.toLowerCase();
+  return sections
+    .map((s) => ({
+      ...s,
+      items: s.items.filter(
+        (item) =>
+          item.name.toLowerCase().includes(lower) ||
+          (item.description ?? "").toLowerCase().includes(lower),
+      ),
+    }))
+    .filter((s) => s.items.length > 0);
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function MenuBrowser() {
   const { data: menus = [], isLoading, error } = useGuestMenu();
   const [activeSectionId, setActiveSectionId] = React.useState<string | null>(null);
   const [selectedItem, setSelectedItem] = React.useState<MenuItem | null>(null);
+  const [searchTerm, setSearchTerm] = React.useState("");
 
   const sections = React.useMemo(() => buildSections(menus), [menus]);
+  const visibleSections = React.useMemo(
+    () => filterSections(sections, searchTerm),
+    [sections, searchTerm],
+  );
+  const isSearching = searchTerm.trim().length > 0;
 
   // Seção ativa padrão
   React.useEffect(() => {
@@ -71,7 +93,7 @@ export function MenuBrowser() {
   const sectionRefs = React.useRef<Map<string, HTMLElement>>(new Map());
 
   React.useEffect(() => {
-    if (sections.length === 0) return;
+    if (sections.length === 0 || isSearching) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -87,7 +109,7 @@ export function MenuBrowser() {
     const refs = sectionRefs.current;
     refs.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, [sections]);
+  }, [sections, isSearching]);
 
   if (isLoading) {
     return (
@@ -128,44 +150,64 @@ export function MenuBrowser() {
 
   return (
     <>
-      {/* Sticky section nav */}
+      {/* Sticky header: search + section nav */}
       <div className="sticky top-0 z-10 bg-background border-b border-border">
-        <CategoryNav
-          categories={navItems}
-          activeId={activeSectionId}
-          onSelect={handleSectionSelect}
-        />
+        <div className="px-4 pt-3 pb-2">
+          <SearchInput
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Buscar no cardápio…"
+          />
+        </div>
+        {!isSearching && (
+          <CategoryNav
+            categories={navItems}
+            activeId={activeSectionId}
+            onSelect={handleSectionSelect}
+          />
+        )}
       </div>
 
       {/* Menu content */}
       <div className="flex-1 overflow-y-auto">
-        {sections.map((section) => (
-          <section
-            key={section.id}
-            id={section.id}
-            ref={(el) => {
-              if (el) sectionRefs.current.set(section.id, el);
-              else sectionRefs.current.delete(section.id);
-            }}
-            className="px-4 py-4"
-          >
-            <Text
-              variant="sm"
-              className="font-bold mb-3 text-muted-foreground uppercase tracking-wide"
-            >
-              {section.label}
+        {visibleSections.length === 0 && isSearching ? (
+          <div className="flex flex-col items-center justify-center gap-1 py-16 px-6 text-center">
+            <Text variant="sm" className="font-medium">
+              Nenhum item encontrado
             </Text>
-            <div className="flex flex-col gap-2">
-              {section.items.map((item) => (
-                <MenuItemCard
-                  key={item.id}
-                  item={item}
-                  onOpenModifiers={setSelectedItem}
-                />
-              ))}
-            </div>
-          </section>
-        ))}
+            <Text variant="xs" muted>
+              Tente outro termo de busca.
+            </Text>
+          </div>
+        ) : (
+          visibleSections.map((section) => (
+            <section
+              key={section.id}
+              id={section.id}
+              ref={(el) => {
+                if (el) sectionRefs.current.set(section.id, el);
+                else sectionRefs.current.delete(section.id);
+              }}
+              className="px-4 py-4"
+            >
+              <Text
+                variant="sm"
+                className="font-bold mb-3 text-muted-foreground uppercase tracking-wide"
+              >
+                {section.label}
+              </Text>
+              <div className="flex flex-col gap-2">
+                {section.items.map((item) => (
+                  <MenuItemCard
+                    key={item.id}
+                    item={item}
+                    onOpenModifiers={setSelectedItem}
+                  />
+                ))}
+              </div>
+            </section>
+          ))
+        )}
       </div>
 
       {/* Modifier sheet */}
