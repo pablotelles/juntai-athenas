@@ -485,38 +485,39 @@ export function MesaModal({
                       />
                     ) : null}
 
-                    <div className="flex flex-wrap items-center gap-2 border-t border-border px-1 pt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setAddItemOpen(true)}
-                      >
-                        <QrCode className="h-4 w-4" />
-                        Buscar rápido
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handlePartialClose}
-                      >
-                        <ReceiptText className="h-4 w-4" />
-                        Fechar parcial
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          mesa && onTransfer ? onTransfer(mesa) : null
-                        }
-                        disabled={!onTransfer}
-                      >
-                        <ArrowRightLeft className="h-4 w-4" />
-                        Transferir mesa
-                      </Button>
-                    </div>
                   </div>
                 )}
               </div>
+
+              {isOccupied && (
+                <div className="shrink-0 border-t border-border bg-surface/95 px-6 py-3 flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAddItemOpen(true)}
+                  >
+                    <QrCode className="h-4 w-4" />
+                    Buscar rápido
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePartialClose}
+                  >
+                    <ReceiptText className="h-4 w-4" />
+                    Fechar parcial
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => mesa && onTransfer ? onTransfer(mesa) : null}
+                    disabled={!onTransfer}
+                  >
+                    <ArrowRightLeft className="h-4 w-4" />
+                    Transferir mesa
+                  </Button>
+                </div>
+              )}
             </div>
           ) : null}
         </ModalContent>
