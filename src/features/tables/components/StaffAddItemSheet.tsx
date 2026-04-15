@@ -11,6 +11,7 @@ import { cn } from "@/lib/cn";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/contexts/auth/AuthProvider";
 import { useStaffCreateOrder } from "@/features/tables/hooks";
+import { useUpdateOrderStatus } from "@/features/orders/hooks";
 import type { MenuWithCategories, MenuItem } from "@juntai/types";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -231,6 +232,7 @@ export function StaffAddItemSheet({
 }: StaffAddItemSheetProps) {
   const { sessionToken } = useAuth();
   const createOrder = useStaffCreateOrder();
+  const updateStatus = useUpdateOrderStatus(restaurantId);
   const searchRef = React.useRef<HTMLInputElement>(null);
 
   const [cart, setCart] = React.useState<Map<string, CartEntry>>(new Map());
@@ -388,20 +390,17 @@ export function StaffAddItemSheet({
       ...(e.notes.trim() ? { notes: e.notes.trim() } : {}),
     }));
 
-    await createOrder.mutateAsync(
-      { sessionId, body: { items } },
-      {
-        onSuccess: () => {
-          setCart(new Map());
-          if (closeAfterSubmit) {
-            onClose();
-            return;
-          }
+    const order = await createOrder.mutateAsync({ sessionId, body: { items } });
 
-          searchRef.current?.focus();
-        },
-      },
-    );
+    // Move imediatamente para PREPARING — pedidos do staff entram prontos para preparo
+    await updateStatus.mutateAsync({ orderId: order.id, status: "PREPARING" });
+
+    setCart(new Map());
+    if (closeAfterSubmit) {
+      onClose();
+      return;
+    }
+    searchRef.current?.focus();
   }
 
   return (

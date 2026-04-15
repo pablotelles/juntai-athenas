@@ -1,21 +1,16 @@
 "use client";
 
-import { Clock3, Eye, Plus, QrCode, UserRoundX, Users } from "lucide-react";
-import { Badge } from "@/components/primitives/badge/Badge";
+import * as React from "react";
+import { Eye, Plus, QrCode, UserRoundX } from "lucide-react";
 import { Button } from "@/components/primitives/button/Button";
+import { FilterChip } from "@/components/primitives/filter-chip/FilterChip";
 import { Text } from "@/components/primitives/text/Text";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/shared/card/Card";
-import { cn } from "@/lib/cn";
+import type { OrderStatus } from "@/features/orders/types";
 import type {
   MesaMemberConsumptionSummary,
   MesaUnassignedOrdersSummary,
 } from "@/features/tables/member-attribution";
+import { MesaOrdersTable } from "./MesaOrdersTable";
 
 function formatPrice(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", {
@@ -39,346 +34,177 @@ export interface MesaMembersTabProps {
   totalConsumption: number;
   unassigned: MesaUnassignedOrdersSummary;
   isLoading?: boolean;
+  updatingOrderId?: string | null;
   removingMemberId?: string | null;
+  onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void;
   onViewAsClient: () => void;
   onCopyAccess: () => void;
   onAddPerson: () => void;
   onRemoveMember: (memberId: string, displayName: string) => void;
 }
 
-const ORDER_STATUS_LABELS = {
-  PENDING: "Pendente",
-  PREPARING: "Preparando",
-  DELIVERED: "Entregue",
-  CANCELLED: "Cancelado",
-} as const;
-
-function getOrderStatusLabel(status: keyof typeof ORDER_STATUS_LABELS) {
-  return ORDER_STATUS_LABELS[status] ?? status;
-}
+const UNASSIGNED_TAB = "__unassigned__";
 
 export function MesaMembersTab({
   memberSummaries,
-  capacity,
-  totalConsumption,
   unassigned,
   isLoading = false,
+  updatingOrderId,
   removingMemberId,
+  onUpdateOrderStatus,
   onViewAsClient,
   onCopyAccess,
   onAddPerson,
   onRemoveMember,
 }: MesaMembersTabProps) {
-  const linkedOrders = memberSummaries.reduce(
-    (sum, summary) => sum + summary.orders.length,
-    0,
+  const hasUnassigned = unassigned.orders.length > 0;
+
+  const defaultTab =
+    memberSummaries.length > 0
+      ? memberSummaries[0].member.id
+      : hasUnassigned
+        ? UNASSIGNED_TAB
+        : null;
+
+  const [selectedTab, setSelectedTab] = React.useState<string | null>(
+    defaultTab,
   );
-  const linkedItems = memberSummaries.reduce(
-    (sum, summary) => sum + summary.totalItems,
-    0,
-  );
+
+  // Reset selected tab when member list changes (e.g., after removal)
+  React.useEffect(() => {
+    setSelectedTab((prev) => {
+      const stillExists =
+        prev === UNASSIGNED_TAB
+          ? hasUnassigned
+          : memberSummaries.some((s) => s.member.id === prev);
+      if (stillExists) return prev;
+      if (memberSummaries.length > 0) return memberSummaries[0].member.id;
+      if (hasUnassigned) return UNASSIGNED_TAB;
+      return null;
+    });
+  }, [memberSummaries, hasUnassigned]);
+
+  const selectedSummary =
+    selectedTab && selectedTab !== UNASSIGNED_TAB
+      ? (memberSummaries.find((s) => s.member.id === selectedTab) ?? null)
+      : null;
+
+  const isUnassignedTab = selectedTab === UNASSIGNED_TAB;
 
   return (
     <section className="space-y-4">
-      <Card className="bg-background/80 shadow-none">
-        <CardHeader className="gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-base">
-                Membros ({memberSummaries.length}/{capacity})
-              </CardTitle>
-            </div>
-            <CardDescription>
-              Acompanhe quem entrou na sessão e o consumo já vinculado por
-              pessoa.
-            </CardDescription>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={onViewAsClient}>
-              <Eye className="mr-2 h-4 w-4" />
-              Ver como cliente
-            </Button>
-            <Button variant="outline" size="sm" onClick={onCopyAccess}>
-              <QrCode className="mr-2 h-4 w-4" />
-              QR do cliente
-            </Button>
-            <Button size="sm" onClick={onAddPerson}>
-              <Plus className="mr-2 h-4 w-4" />
-              Adicionar pessoa
-            </Button>
-          </div>
-        </CardHeader>
-
-        <CardContent className="grid gap-3 md:grid-cols-4">
-          <div className="rounded-2xl border border-border/60 bg-muted/30 p-3">
-            <Text variant="xs" muted>
-              Lugares ocupados
-            </Text>
-            <Text className="mt-1 text-lg font-semibold tabular-nums">
-              {memberSummaries.length}/{capacity}
-            </Text>
-          </div>
-
-          <div className="rounded-2xl border border-border/60 bg-muted/30 p-3">
-            <Text variant="xs" muted>
-              Pedidos vinculados
-            </Text>
-            <Text className="mt-1 text-lg font-semibold tabular-nums">
-              {linkedOrders}
-            </Text>
-          </div>
-
-          <div className="rounded-2xl border border-border/60 bg-muted/30 p-3">
-            <Text variant="xs" muted>
-              Itens atribuídos
-            </Text>
-            <Text className="mt-1 text-lg font-semibold tabular-nums">
-              {linkedItems}
-            </Text>
-          </div>
-
-          <div className="rounded-2xl border border-border/60 bg-muted/30 p-3">
-            <Text variant="xs" muted>
-              Consumo total da mesa
-            </Text>
-            <Text className="mt-1 text-lg font-semibold tabular-nums">
-              {formatPrice(totalConsumption)}
-            </Text>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Action buttons */}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" onClick={onViewAsClient}>
+          <Eye className="h-4 w-4" />
+          Ver como cliente
+        </Button>
+        <Button variant="outline" size="sm" onClick={onCopyAccess}>
+          <QrCode className="h-4 w-4" />
+          QR do cliente
+        </Button>
+        <Button size="sm" onClick={onAddPerson}>
+          <Plus className="h-4 w-4" />
+          Adicionar pessoa
+        </Button>
+      </div>
 
       {isLoading ? (
-        <Card className="border-dashed bg-background/70 shadow-none">
-          <CardContent className="py-8">
-            <Text muted>Carregando participantes da sessão...</Text>
-          </CardContent>
-        </Card>
-      ) : memberSummaries.length === 0 ? (
-        <Card className="border-dashed bg-background/70 shadow-none">
-          <CardContent className="py-8">
-            <Text muted>Nenhum participante ativo na sessão.</Text>
-          </CardContent>
-        </Card>
+        <Text muted>Carregando participantes da sessão...</Text>
+      ) : memberSummaries.length === 0 && !hasUnassigned ? (
+        <Text muted>Nenhum participante ativo na sessão.</Text>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {memberSummaries.map((summary) => {
-            const {
-              member,
-              items,
-              orders,
-              totalConsumption: memberTotal,
-            } = summary;
-            const isRemoving = removingMemberId === member.id;
-
-            return (
-              <Card key={member.id} className="bg-background/80 shadow-none">
-                <CardHeader className="gap-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <CardTitle className="text-base">
-                        {member.displayName}
-                      </CardTitle>
-                      <CardDescription className="flex flex-wrap items-center gap-3 text-xs">
-                        <span className="inline-flex items-center gap-1">
-                          <Clock3 className="h-3.5 w-3.5" />
-                          Entrou: {formatDateTime(member.joinedAt)}
-                        </span>
-                        <span>{orders.length} pedido(s)</span>
-                        <span>{summary.totalItems} item(ns)</span>
-                      </CardDescription>
-                    </div>
-
-                    <div className="text-right">
-                      <Text variant="xs" muted>
-                        Consumo
-                      </Text>
-                      <Text className="text-base font-semibold tabular-nums">
-                        {formatPrice(memberTotal)}
-                      </Text>
-                    </div>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  {items.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-5">
-                      <Text muted>
-                        Sem pedidos atribuídos para este participante.
-                      </Text>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {items.map((item) => (
-                        <div
-                          key={`${item.orderId}:${item.id}`}
-                          className="rounded-2xl border border-border/70 bg-muted/20 p-3"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 space-y-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <Text className="font-medium">{item.name}</Text>
-                                <Badge
-                                  variant="outline"
-                                  className="text-[11px]"
-                                >
-                                  {getOrderStatusLabel(item.orderStatus)}
-                                </Badge>
-                              </div>
-                              <Text variant="xs" muted>
-                                Pedido em {formatDateTime(item.orderCreatedAt)}
-                              </Text>
-                              {item.notes ? (
-                                <Text
-                                  variant="xs"
-                                  className="text-muted-foreground"
-                                >
-                                  Obs.: {item.notes}
-                                </Text>
-                              ) : null}
-                            </div>
-
-                            <div className="text-right">
-                              <Text variant="xs" muted>
-                                {item.quantity} x {formatPrice(item.unitPrice)}
-                              </Text>
-                              <Text className="font-medium tabular-nums">
-                                {formatPrice(item.totalPrice)}
-                              </Text>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex flex-wrap justify-end gap-2 border-t border-border/60 pt-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={cn("gap-2", isRemoving && "opacity-80")}
-                      disabled={isRemoving || !!removingMemberId}
-                      onClick={() =>
-                        onRemoveMember(member.id, member.displayName)
-                      }
-                    >
-                      <UserRoundX className="h-4 w-4" />
-                      {isRemoving ? "Removendo..." : "Remover da mesa"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {unassigned.orders.length > 0 ? (
-        <Card className="border-dashed bg-background/80 shadow-none">
-          <CardHeader>
-            <CardTitle className="text-base">Pedidos sem vínculo</CardTitle>
-            <CardDescription>
-              Itens lançados na sessão sem associação direta a um participante.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-2xl border border-border/60 bg-muted/30 p-3">
-                <Text variant="xs" muted>
-                  Pedidos sem vínculo
-                </Text>
-                <Text className="mt-1 text-lg font-semibold tabular-nums">
-                  {unassigned.orders.length}
-                </Text>
-              </div>
-              <div className="rounded-2xl border border-border/60 bg-muted/30 p-3">
-                <Text variant="xs" muted>
-                  Itens sem vínculo
-                </Text>
-                <Text className="mt-1 text-lg font-semibold tabular-nums">
-                  {unassigned.totalItems}
-                </Text>
-              </div>
-              <div className="rounded-2xl border border-border/60 bg-muted/30 p-3">
-                <Text variant="xs" muted>
-                  Valor pendente de associação
-                </Text>
-                <Text className="mt-1 text-lg font-semibold tabular-nums">
-                  {formatPrice(unassigned.totalConsumption)}
-                </Text>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {unassigned.orders.map((order) => (
-                <div
-                  key={order.id}
-                  className="rounded-2xl border border-border/70 bg-muted/20 p-3"
+        <>
+          {/* Member tabs */}
+          <div className="flex flex-wrap gap-2">
+            {memberSummaries.map((summary) => {
+              const { member } = summary;
+              const label = member.leftAt
+                ? `${member.displayName} (saiu)`
+                : member.displayName;
+              return (
+                <FilterChip
+                  key={member.id}
+                  active={selectedTab === member.id}
+                  count={summary.orders.length}
+                  onClick={() => setSelectedTab(member.id)}
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Text className="font-medium">
-                          Pedido #{order.id.slice(-6)}
-                        </Text>
-                        <Badge variant="outline" className="text-[11px]">
-                          {getOrderStatusLabel(order.status)}
-                        </Badge>
-                      </div>
-                      <Text variant="xs" muted>
-                        Criado em {formatDateTime(order.createdAt)}
-                      </Text>
-                    </div>
+                  {label}
+                </FilterChip>
+              );
+            })}
+            {hasUnassigned && (
+              <FilterChip
+                active={selectedTab === UNASSIGNED_TAB}
+                count={unassigned.orders.length}
+                onClick={() => setSelectedTab(UNASSIGNED_TAB)}
+              >
+                Sem vínculo
+              </FilterChip>
+            )}
+          </div>
 
-                    <Text className="font-medium tabular-nums">
-                      {formatPrice(
-                        order.items.reduce(
-                          (sum, item) => sum + item.unitPrice * item.quantity,
-                          0,
-                        ),
-                      )}
-                    </Text>
-                  </div>
-
-                  <div className="mt-3 space-y-2">
-                    {order.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-start justify-between gap-3 rounded-xl border border-border/50 bg-background/70 px-3 py-2"
-                      >
-                        <div className="min-w-0">
-                          <Text className="font-medium">
-                            {item.snapshot.name}
-                          </Text>
-                          {item.notes ? (
-                            <Text
-                              variant="xs"
-                              className="text-muted-foreground"
-                            >
-                              Obs.: {item.notes}
-                            </Text>
-                          ) : null}
-                        </div>
-
-                        <div className="text-right">
-                          <Text variant="xs" muted>
-                            {item.quantity} x {formatPrice(item.unitPrice)}
-                          </Text>
-                          <Text className="font-medium tabular-nums">
-                            {formatPrice(item.unitPrice * item.quantity)}
-                          </Text>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+          {/* Tab content */}
+          {selectedSummary ? (
+            <div className="space-y-4">
+              {/* Member meta */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <Text variant="sm" muted>
+                    Entrou: {formatDateTime(selectedSummary.member.joinedAt)}
+                    {selectedSummary.member.leftAt
+                      ? ` · Saiu: ${formatDateTime(selectedSummary.member.leftAt)}`
+                      : ""}
+                  </Text>
+                  <Text variant="sm" className="font-semibold tabular-nums">
+                    {formatPrice(selectedSummary.totalConsumption)}
+                  </Text>
                 </div>
-              ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={
+                    !!removingMemberId ||
+                    removingMemberId === selectedSummary.member.id
+                  }
+                  onClick={() =>
+                    onRemoveMember(
+                      selectedSummary.member.id,
+                      selectedSummary.member.displayName,
+                    )
+                  }
+                >
+                  <UserRoundX className="h-4 w-4" />
+                  {removingMemberId === selectedSummary.member.id
+                    ? "Removendo..."
+                    : "Remover da mesa"}
+                </Button>
+              </div>
+
+              <MesaOrdersTable
+                orders={selectedSummary.orders}
+                isLoading={false}
+                updatingOrderId={updatingOrderId}
+                onUpdateOrderStatus={onUpdateOrderStatus}
+                onAddFirstItem={onAddPerson}
+              />
             </div>
-          </CardContent>
-        </Card>
-      ) : null}
+          ) : isUnassignedTab ? (
+            <div className="space-y-4">
+              <Text variant="sm" muted>
+                Pedidos lançados na sessão sem associação a um participante.
+              </Text>
+              <MesaOrdersTable
+                orders={unassigned.orders}
+                isLoading={false}
+                updatingOrderId={updatingOrderId}
+                onUpdateOrderStatus={onUpdateOrderStatus}
+                onAddFirstItem={onAddPerson}
+              />
+            </div>
+          ) : null}
+        </>
+      )}
     </section>
   );
 }

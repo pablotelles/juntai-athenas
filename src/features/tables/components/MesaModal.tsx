@@ -279,11 +279,11 @@ export function MesaModal({
     <>
       <Modal open={!!mesa} onOpenChange={(open) => !open && onClose()}>
         <ModalContent
-          className="max-w-6xl overflow-hidden p-0"
+          className="max-w-6xl h-[90vh] overflow-hidden p-0"
           showClose={false}
         >
           {mesa ? (
-            <div className="flex max-h-[85vh] flex-col">
+            <div className="flex h-full flex-col">
               <div className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur">
                 <div className="px-6 py-5">
                   <ModalHeader className="mb-0 gap-2">
@@ -360,7 +360,7 @@ export function MesaModal({
                 ) : null}
               </div>
 
-              <div className="overflow-y-auto px-6 py-6">
+              <div className="flex-1 overflow-y-auto px-6 py-6">
                 {!isOccupied ? (
                   <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
                     <Card className="border-dashed bg-background/80 shadow-none">
@@ -440,11 +440,17 @@ export function MesaModal({
                         totalConsumption={totalConsumption}
                         unassigned={memberAttribution.unassigned}
                         isLoading={isMembersLoading}
+                        updatingOrderId={
+                          updateOrderStatus.isPending
+                            ? (updateOrderStatus.variables?.orderId ?? null)
+                            : null
+                        }
                         removingMemberId={
                           removeSessionMember.isPending
                             ? (removeSessionMember.variables?.memberId ?? null)
                             : null
                         }
+                        onUpdateOrderStatus={handleUpdateOrderStatus}
                         onViewAsClient={handleViewAsClient}
                         onCopyAccess={handleCopyAccess}
                         onAddPerson={handleAddPerson}

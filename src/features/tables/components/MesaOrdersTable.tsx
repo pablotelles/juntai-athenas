@@ -1,7 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, Plus, QrCode, ReceiptText } from "lucide-react";
+import {
+  AlertTriangle,
+  Ban,
+  ChefHat,
+  ChevronDown,
+  Loader2,
+  PackageCheck,
+  Plus,
+  QrCode,
+  ReceiptText,
+  RotateCcw,
+  Clock,
+} from "lucide-react";
 import {
   DataTable,
   type ColumnDef,
@@ -10,9 +22,17 @@ import { Badge } from "@/components/primitives/badge/Badge";
 import { Button } from "@/components/primitives/button/Button";
 import { Text } from "@/components/primitives/text/Text";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog/ConfirmDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/shared/dropdown-menu/DropdownMenu";
 import type { Order, OrderItem, OrderStatus } from "@/features/orders/types";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Status config ─────────────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   PENDING: "Pendente",
@@ -30,6 +50,45 @@ const STATUS_VARIANTS: Record<
   DELIVERED: "success",
   CANCELLED: "destructive",
 };
+
+const STATUS_ICONS: Record<OrderStatus, React.ElementType> = {
+  PENDING: Clock,
+  PREPARING: ChefHat,
+  DELIVERED: PackageCheck,
+  CANCELLED: Ban,
+};
+
+// ── Transition map ────────────────────────────────────────────────────────────
+
+interface Transition {
+  status: OrderStatus;
+  label: string;
+  icon: React.ElementType;
+  destructive?: boolean;
+  confirm?: boolean;
+}
+
+const TRANSITIONS: Record<OrderStatus, Transition[]> = {
+  PENDING: [
+    { status: "PREPARING", label: "Iniciar preparo", icon: ChefHat },
+    { status: "DELIVERED", label: "Marcar como entregue", icon: PackageCheck },
+    { status: "CANCELLED", label: "Cancelar pedido", icon: Ban, destructive: true, confirm: true },
+  ],
+  PREPARING: [
+    { status: "DELIVERED", label: "Marcar como entregue", icon: PackageCheck },
+    { status: "PENDING", label: "Reverter para pendente", icon: RotateCcw },
+    { status: "CANCELLED", label: "Cancelar pedido", icon: Ban, destructive: true, confirm: true },
+  ],
+  DELIVERED: [
+    { status: "PREPARING", label: "Reverter para em preparo", icon: RotateCcw },
+    { status: "PENDING", label: "Reverter para pendente", icon: RotateCcw },
+  ],
+  CANCELLED: [
+    { status: "PENDING", label: "Reativar pedido", icon: RotateCcw },
+  ],
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatPrice(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", {
@@ -62,7 +121,6 @@ function getOrderTotal(order: Order) {
   return order.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
 }
 
-/** "2x Gyoza, 1x Heineken" — truncado se muito longo */
 function buildItemsSummary(items: OrderItem[]): string {
   const counts = new Map<string, number>();
   for (const item of items) {
@@ -75,9 +133,6 @@ function buildItemsSummary(items: OrderItem[]): string {
   return `${total} ${total === 1 ? "item" : "itens"}`;
 }
 
-// ── Detail panel (rendered inside expanded row) ───────────────────────────────
-
-/** Formata item como "2× Gyoza (Frango, Porco)" */
 function buildItemLabel(item: OrderItem): string {
   const base = `${item.quantity}× ${item.snapshot.name}`;
   if (item.snapshot.modifiers.length === 0) return base;
@@ -85,12 +140,13 @@ function buildItemLabel(item: OrderItem): string {
   return `${base} (${mods})`;
 }
 
+// ── Detail panel ──────────────────────────────────────────────────────────────
+
 function OrderDetailPanel({ order }: { order: Order }) {
   const total = getOrderTotal(order);
 
   return (
     <div className="space-y-3">
-      {/* Items */}
       <div className="space-y-1.5">
         {order.items.map((item) => (
           <div key={item.id}>
@@ -113,8 +169,6 @@ function OrderDetailPanel({ order }: { order: Order }) {
           </div>
         ))}
       </div>
-
-      {/* Total */}
       <div className="flex items-center justify-between border-t border-border pt-2">
         <Text variant="xs" muted>Total</Text>
         <Text variant="sm" className="font-bold tabular-nums">
@@ -125,9 +179,9 @@ function OrderDetailPanel({ order }: { order: Order }) {
   );
 }
 
-// ── Actions cell — needs local confirm state per row ──────────────────────────
+// ── Status cell with transition dropdown ──────────────────────────────────────
 
-function ActionsCell({
+function StatusCell({
   order,
   isUpdating,
   onUpdateStatus,
@@ -136,58 +190,72 @@ function ActionsCell({
   isUpdating: boolean;
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
 }) {
-  const [confirmCancel, setConfirmCancel] = React.useState(false);
+  const [confirmTransition, setConfirmTransition] = React.useState<Transition | null>(null);
 
-  const canPrepare = order.status === "PENDING";
-  const canDeliver = order.status === "PREPARING";
-  const canCancel = order.status !== "DELIVERED" && order.status !== "CANCELLED";
+  const transitions = TRANSITIONS[order.status] ?? [];
+  const StatusIcon = STATUS_ICONS[order.status];
 
   return (
     <>
-      <div className="flex flex-wrap justify-end gap-2">
-        {canPrepare && (
-          <Button
-            size="sm"
-            variant="outline"
-            loading={isUpdating}
-            onClick={() => onUpdateStatus(order.id, "PREPARING")}
-          >
-            Preparar
-          </Button>
-        )}
-        {canDeliver && (
-          <Button
-            size="sm"
-            loading={isUpdating}
-            onClick={() => onUpdateStatus(order.id, "DELIVERED")}
-            className="bg-success hover:bg-success/90 text-white border-transparent"
-          >
-            Entregar
-          </Button>
-        )}
-        {canCancel && (
-          <Button
-            size="sm"
-            variant="ghost"
-            loading={isUpdating && !canPrepare && !canDeliver}
-            onClick={() => setConfirmCancel(true)}
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-          >
-            Cancelar
-          </Button>
-        )}
-      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          disabled={isUpdating}
+          className="group flex flex-col items-start gap-0.5 rounded outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <Badge variant={STATUS_VARIANTS[order.status]} className="gap-1.5 cursor-pointer">
+            {isUpdating ? (
+              <Loader2 size={11} className="animate-spin" />
+            ) : (
+              <StatusIcon size={11} />
+            )}
+            {STATUS_LABELS[order.status]}
+            <ChevronDown
+              size={10}
+              className="opacity-50 transition-transform group-data-[state=open]:rotate-180"
+            />
+          </Badge>
+          <Text variant="xs" muted className="pl-0.5">
+            {formatElapsed(order.createdAt)} atrás
+          </Text>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent align="start" className="min-w-52">
+          <DropdownMenuLabel>Mover para</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {transitions.map((t) => {
+            const Icon = t.icon;
+            return (
+              <DropdownMenuItem
+                key={t.status}
+                destructive={t.destructive}
+                onClick={() => {
+                  if (t.confirm) {
+                    setConfirmTransition(t);
+                  } else {
+                    onUpdateStatus(order.id, t.status);
+                  }
+                }}
+              >
+                <Icon size={14} />
+                {t.label}
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <ConfirmDialog
-        open={confirmCancel}
-        onOpenChange={setConfirmCancel}
+        open={!!confirmTransition}
+        onOpenChange={(open) => !open && setConfirmTransition(null)}
         title="Cancelar pedido"
         description={`Cancelar pedido #${order.id.slice(0, 8)}? Esta ação não pode ser desfeita.`}
         confirmLabel="Cancelar pedido"
         destructive
         onConfirm={() => {
-          onUpdateStatus(order.id, "CANCELLED");
-          setConfirmCancel(false);
+          if (confirmTransition) {
+            onUpdateStatus(order.id, confirmTransition.status);
+            setConfirmTransition(null);
+          }
         }}
       />
     </>
@@ -216,7 +284,7 @@ export function MesaOrdersTable({
       {
         key: "id",
         header: "Pedido",
-        width: "11rem",
+        width: "10rem",
         cell: (order) => (
           <div className="space-y-0.5">
             <Text variant="sm" className="font-semibold tabular-nums">
@@ -231,16 +299,13 @@ export function MesaOrdersTable({
       {
         key: "status",
         header: "Status",
-        width: "10rem",
+        width: "13rem",
         cell: (order) => (
-          <div className="space-y-0.5">
-            <Badge variant={STATUS_VARIANTS[order.status]} dot>
-              {STATUS_LABELS[order.status]}
-            </Badge>
-            <Text variant="xs" muted>
-              {formatElapsed(order.createdAt)} atrás
-            </Text>
-          </div>
+          <StatusCell
+            order={order}
+            isUpdating={updatingOrderId === order.id}
+            onUpdateStatus={onUpdateOrderStatus}
+          />
         ),
       },
       {
@@ -261,19 +326,6 @@ export function MesaOrdersTable({
           <Text variant="sm" className="font-semibold tabular-nums">
             {formatPrice(getOrderTotal(order))}
           </Text>
-        ),
-      },
-      {
-        key: "actions",
-        header: "Ações",
-        align: "right",
-        width: "16rem",
-        cell: (order) => (
-          <ActionsCell
-            order={order}
-            isUpdating={updatingOrderId === order.id}
-            onUpdateStatus={onUpdateOrderStatus}
-          />
         ),
       },
     ],
